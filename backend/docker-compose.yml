@@ -1,0 +1,20 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: talentika_postgres
+    environment:
+      POSTGRES_DB: talentika_dev
+      POSTGRES_USER: talentika_user
+      POSTGRES_PASSWORD: talentika_password
+    ports:
+      - "5438:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U talentika_user -d talentika_dev"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_data:
