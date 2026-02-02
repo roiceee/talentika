@@ -21,6 +21,7 @@ from .serializers import (
     OrganizationApprovalSerializer,
     OrganizationMembershipSerializer,
 )
+from .emails import send_invitation_email
 
 
 # ============= User Registration =============
@@ -34,6 +35,7 @@ from .serializers import (
         201: openapi.Response("User created successfully", UserSerializer),
         400: "Validation error",
     },
+    tags=["Users"],
 )
 @api_view(["POST"])
 @permission_classes([AllowAny])
@@ -56,6 +58,7 @@ def register_user(request):
     method="get",
     operation_description="List all organizations the authenticated user belongs to.",
     responses={200: OrganizationListSerializer(many=True)},
+    tags=["Organizations"],
 )
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
@@ -81,6 +84,7 @@ def list_user_organizations(request):
         ),
         400: "Validation error",
     },
+    tags=["Organizations"],
 )
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
@@ -122,6 +126,7 @@ def create_organization(request):
         403: "User is not a member of this organization",
         404: "Organization not found",
     },
+    tags=["Organizations"],
 )
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
@@ -153,6 +158,7 @@ def get_organization(request, org_id):
         403: "User is not an admin of this organization",
         404: "Organization not found",
     },
+    tags=["Organizations"],
 )
 @api_view(["PATCH"])
 @permission_classes([IsAuthenticated])
@@ -191,6 +197,7 @@ def update_organization(request, org_id):
         200: OrganizationListSerializer(many=True),
         403: "Super admin access required",
     },
+    tags=["Admin"],
 )
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
@@ -225,6 +232,7 @@ def list_pending_organizations(request):
         403: "Super admin access required",
         404: "Organization not found",
     },
+    tags=["Admin"],
 )
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
@@ -284,6 +292,7 @@ def manage_organization_status(request, org_id):
         403: "User is not a member of this organization",
         404: "Organization not found",
     },
+    tags=["Organizations"],
 )
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
@@ -333,6 +342,7 @@ def list_organization_members(request, org_id):
         403: "Only organization admins can invite users",
         404: "Organization or user not found",
     },
+    tags=["Organizations"],
 )
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
@@ -342,9 +352,7 @@ def invite_user_to_organization(request, org_id):
     - Only approved organizations can invite users
     - Only organization admins can invite
     - Cannot invite user who is already a member
-
-    TODO: Send invitation email to the user instead of directly adding them
-    TODO: Implement invitation token/link system
+    - Sends invitation email to the user
     """
     organization = get_object_or_404(Organization, id=org_id)
 
@@ -380,8 +388,9 @@ def invite_user_to_organization(request, org_id):
         user=user_to_invite, organization=organization, role=role
     )
 
-    # TODO: Send invitation email
-    # send_invitation_email(user_to_invite, organization, request.user)
+    # Send invitation email
+    email_sent = send_invitation_email(user_to_invite, organization, request.user)
 
     serializer = OrganizationMembershipSerializer(membership)
-    return Response(serializer.data, status=status.HTTP_201_CREATED)
+    response_data = {**serializer.data, "email_sent": email_sent}
+    return Response(response_data, status=status.HTTP_201_CREATED)
