@@ -7,7 +7,7 @@ from .models import (
     Organization,
     OrganizationMembership,
     is_org_admin,
-    get_user_organizations,
+    get_user_organization,
 )
 
 
@@ -107,7 +107,7 @@ class OrganizationModelTests(TestCase):
         self.org = Organization.objects.create(name="Test Org")
 
     def test_organization_starts_as_pending(self):
-        """Test new organizations start with PENDING status"""
+        """Test organizations created directly via model start with PENDING status by default"""
         self.assertEqual(self.org.status, Organization.Status.PENDING)
         self.assertFalse(self.org.is_approved())
 
@@ -142,7 +142,7 @@ class OrganizationCreationTests(APITestCase):
         self.client.force_authenticate(user=self.user)
 
     def test_create_organization(self):
-        """Test creating organization creates it as PENDING and adds creator as admin"""
+        """Test creating organization via API creates it as APPROVED and adds creator as admin"""
         url = reverse("create-organization")
         data = {"name": "New Org", "address": "123 Test St"}
         response = self.client.post(url, data)
@@ -151,7 +151,8 @@ class OrganizationCreationTests(APITestCase):
         self.assertEqual(Organization.objects.count(), 1)
 
         org = Organization.objects.first()
-        self.assertEqual(org.status, Organization.Status.PENDING)
+        self.assertEqual(org.status, Organization.Status.APPROVED)
+        self.assertTrue(org.is_approved())
 
         # Check membership was created with ORG_ADMIN role
         membership = OrganizationMembership.objects.get(
@@ -209,14 +210,14 @@ class OrganizationMembershipTests(APITestCase):
             is_org_admin(self.superuser, self.org)
         )  # Superuser is always admin
 
-    def test_get_user_organizations(self):
-        """Test getting organizations for a user"""
-        orgs = get_user_organizations(self.admin_user)
-        self.assertEqual(orgs.count(), 1)
-        self.assertIn(self.org, orgs)
+    def test_get_user_organization(self):
+        """Test getting organization for a user"""
+        org = get_user_organization(self.admin_user)
+        self.assertIsNotNone(org)
+        self.assertEqual(org, self.org)
 
-        orgs = get_user_organizations(self.outsider_user)
-        self.assertEqual(orgs.count(), 0)
+        org = get_user_organization(self.outsider_user)
+        self.assertIsNone(org)
 
     def test_invite_user_requires_admin(self):
         """Test only org admins can invite users"""
@@ -307,29 +308,19 @@ class OrganizationPermissionTests(TestCase):
         self.user = User.objects.create_user(
             email="user@example.com", username="user", password="pass"
         )
-        self.pending_org = Organization.objects.create(
-            name="Pending Org", status=Organization.Status.PENDING
+        self.org = Organization.objects.create(
+            name="Test Org", status=Organization.Status.APPROVED
         )
-        self.approved_org = Organization.objects.create(
-            name="Approved Org", status=Organization.Status.APPROVED
-        )
-        OrganizationMembership.objects.create(
-            user=self.user, organization=self.pending_org
-        )
-        OrganizationMembership.objects.create(
-            user=self.user, organization=self.approved_org
-        )
+        OrganizationMembership.objects.create(user=self.user, organization=self.org)
 
-    def test_get_user_organizations_by_status(self):
-        """Test filtering user organizations by status"""
-        pending_orgs = get_user_organizations(
-            self.user, status=Organization.Status.PENDING
-        )
-        self.assertEqual(pending_orgs.count(), 1)
-        self.assertIn(self.pending_org, pending_orgs)
+    def test_get_user_organization(self):
+        """Test getting the user's organization"""
+        org = get_user_organization(self.user)
+        self.assertEqual(org, self.org)
 
-        approved_orgs = get_user_organizations(
-            self.user, status=Organization.Status.APPROVED
+        # Test user with no organization
+        new_user = User.objects.create_user(
+            email="newuser@example.com", username="newuser", password="pass"
         )
-        self.assertEqual(approved_orgs.count(), 1)
-        self.assertIn(self.approved_org, approved_orgs)
+        org = get_user_organization(new_user)
+        self.assertIsNone(org)

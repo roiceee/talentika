@@ -58,21 +58,21 @@ urlpatterns = [
         "organizations/create/", views.create_organization, name="create-organization"
     ),
     path(
-        "organizations/<int:org_id>/", views.get_organization, name="get-organization"
+        "organizations/<uuid:org_id>/", views.get_organization, name="get-organization"
     ),
     path(
-        "organizations/<int:org_id>/update/",
+        "organizations/<uuid:org_id>/update/",
         views.update_organization,
         name="update-organization",
     ),
     # Organization members
     path(
-        "organizations/<int:org_id>/members/",
+        "organizations/<uuid:org_id>/members/",
         views.list_organization_members,
         name="list-members",
     ),
     path(
-        "organizations/<int:org_id>/invite/",
+        "organizations/<uuid:org_id>/invite/",
         views.invite_user_to_organization,
         name="invite-user",
     ),
@@ -83,7 +83,7 @@ urlpatterns = [
         name="list-pending-organizations",
     ),
     path(
-        "admin/organizations/<int:org_id>/status/",
+        "admin/organizations/<uuid:org_id>/status/",
         views.manage_organization_status,
         name="manage-organization-status",
     ),

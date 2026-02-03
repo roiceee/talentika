@@ -1,3 +1,4 @@
+import uuid
 from django.db import models
 from django.contrib.auth.models import AbstractUser
 from django.utils import timezone
@@ -9,6 +10,7 @@ class User(AbstractUser):
     Uses email as the unique identifier for authentication.
     """
 
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     email = models.EmailField(unique=True, blank=False)
     # first_name, last_name, password are inherited from AbstractUser
     # is_superuser is also inherited for app owner/super admin access
@@ -37,6 +39,7 @@ class Organization(models.Model):
         REJECTED = "REJECTED", "Rejected"
         SUSPENDED = "SUSPENDED", "Suspended"
 
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     name = models.CharField(max_length=255, unique=True)
     address = models.TextField(blank=True, null=True)
     status = models.CharField(
@@ -96,8 +99,9 @@ class OrganizationMembership(models.Model):
         ORG_ADMIN = "ORG_ADMIN", "Organization Admin"
         MEMBER = "MEMBER", "Member"
 
-    user = models.ForeignKey(
-        User, on_delete=models.CASCADE, related_name="organization_memberships"
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.OneToOneField(
+        User, on_delete=models.CASCADE, related_name="organization_membership"
     )
     organization = models.ForeignKey(
         Organization, on_delete=models.CASCADE, related_name="memberships"
@@ -107,7 +111,6 @@ class OrganizationMembership(models.Model):
 
     class Meta:
         db_table = "organization_memberships"
-        unique_together = [["user", "organization"]]
         ordering = ["-created_at"]
 
     def __str__(self):
@@ -153,33 +156,32 @@ def is_org_approved(organization):
     return organization.is_approved()
 
 
-def get_user_organizations(user, status=None):
+def get_user_organization(user):
     """
-    Get all organizations a user belongs to, optionally filtered by status.
-
-    Args:
-        user: User instance
-        status: Optional organization status to filter by
-
-    Returns:
-        QuerySet of Organization instances
-    """
-    queryset = Organization.objects.filter(memberships__user=user)
-    if status:
-        queryset = queryset.filter(status=status)
-    return queryset.distinct()
-
-
-def get_user_admin_organizations(user):
-    """
-    Get all organizations where the user is an admin.
+    Get the organization a user belongs to.
+    Users can only belong to one organization.
 
     Args:
         user: User instance
 
     Returns:
-        QuerySet of Organization instances
+        Organization instance or None if user doesn't belong to any organization
     """
-    return Organization.objects.filter(
-        memberships__user=user, memberships__role=OrganizationMembership.Role.ORG_ADMIN
-    ).distinct()
+    if hasattr(user, "organization_membership"):
+        return user.organization_membership.organization
+    return None
+
+
+def is_user_org_admin(user):
+    """
+    Check if the user is an admin of their organization.
+
+    Args:
+        user: User instance
+
+    Returns:
+        bool: True if user is an admin of their organization
+    """
+    if not hasattr(user, "organization_membership"):
+        return False
+    return user.organization_membership.role == OrganizationMembership.Role.ORG_ADMIN

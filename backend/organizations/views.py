@@ -11,7 +11,7 @@ from .models import (
     Organization,
     OrganizationMembership,
     is_org_admin,
-    get_user_organizations,
+    get_user_organization,
 )
 from .serializers import (
     UserSerializer,
@@ -35,7 +35,7 @@ from .emails import send_invitation_email
         201: openapi.Response("User created successfully", UserSerializer),
         400: "Validation error",
     },
-    tags=["Users"],
+    tags=["Authentication"],
 )
 @api_view(["POST"])
 @permission_classes([AllowAny])
@@ -56,18 +56,28 @@ def register_user(request):
 
 @swagger_auto_schema(
     method="get",
-    operation_description="List all organizations the authenticated user belongs to.",
-    responses={200: OrganizationListSerializer(many=True)},
+    operation_description="Get the organization the authenticated user belongs to. Users can only belong to one organization.",
+    responses={
+        200: OrganizationListSerializer,
+        404: "User does not belong to any organization",
+    },
     tags=["Organizations"],
 )
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
 def list_user_organizations(request):
     """
-    List all organizations the authenticated user belongs to.
+    Get the organization the authenticated user belongs to.
+    Users can only belong to one organization.
     """
-    organizations = get_user_organizations(request.user)
-    serializer = OrganizationListSerializer(organizations, many=True)
+    if not hasattr(request.user, "organization_membership"):
+        return Response(
+            {"error": "You do not belong to any organization."},
+            status=status.HTTP_404_NOT_FOUND,
+        )
+
+    organization = request.user.organization_membership.organization
+    serializer = OrganizationListSerializer(organization)
     return Response(serializer.data)
 
 
@@ -75,7 +85,7 @@ def list_user_organizations(request):
     method="post",
     operation_description="""
     Create a new organization. The authenticated user becomes the organization admin.
-    Organization starts with PENDING status and must be approved by a super admin.
+    Organization is automatically approved upon creation.
     """,
     request_body=OrganizationCreateSerializer,
     responses={
@@ -91,16 +101,24 @@ def list_user_organizations(request):
 def create_organization(request):
     """
     Create a new organization.
-    - Sets status to PENDING
+    - User can only belong to one organization
+    - Organization is automatically approved (APPROVED status)
     - Creates OrganizationMembership with ORG_ADMIN role for the creator
-    - Pending organizations cannot invite users or access protected features
-
-    TODO: Send notification email to super admins about new pending organization
+    - Creator can immediately invite users and access all features
     """
+    # Check if user already belongs to an organization
+    if hasattr(request.user, "organization_membership"):
+        return Response(
+            {
+                "error": "You already belong to an organization. Users can only be members of one organization."
+            },
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
     serializer = OrganizationCreateSerializer(data=request.data)
     if serializer.is_valid():
-        # Create organization with PENDING status (default)
-        organization = serializer.save()
+        # Create organization with APPROVED status
+        organization = serializer.save(status=Organization.Status.APPROVED)
 
         # Create membership with ORG_ADMIN role for the creator
         OrganizationMembership.objects.create(
@@ -108,9 +126,6 @@ def create_organization(request):
             organization=organization,
             role=OrganizationMembership.Role.ORG_ADMIN,
         )
-
-        # TODO: Send email notification to super admins
-        # send_new_organization_notification(organization)
 
         # Return full organization details
         response_serializer = OrganizationSerializer(organization)
@@ -327,7 +342,9 @@ def list_organization_members(request, org_id):
         required=["user_id", "role"],
         properties={
             "user_id": openapi.Schema(
-                type=openapi.TYPE_INTEGER, description="ID of user to invite"
+                type=openapi.TYPE_STRING,
+                format="uuid",
+                description="UUID of user to invite",
             ),
             "role": openapi.Schema(
                 type=openapi.TYPE_STRING,
@@ -376,10 +393,12 @@ def invite_user_to_organization(request, org_id):
     # Get the user to invite
     user_to_invite = get_object_or_404(User, id=user_id)
 
-    # Check if user is already a member
-    if organization.memberships.filter(user=user_to_invite).exists():
+    # Check if user already belongs to any organization
+    if hasattr(user_to_invite, "organization_membership"):
         return Response(
-            {"error": "User is already a member of this organization."},
+            {
+                "error": "User already belongs to an organization. Users can only be members of one organization."
+            },
             status=status.HTTP_400_BAD_REQUEST,
         )
 

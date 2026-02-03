@@ -1,5 +1,4 @@
 from rest_framework import serializers
-from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
 from .models import User, Organization, OrganizationMembership
 
@@ -7,10 +6,10 @@ from .models import User, Organization, OrganizationMembership
 class UserSerializer(serializers.ModelSerializer):
     """Serializer for User model"""
 
-    password = serializers.CharField(
-        write_only=True, required=True, validators=[validate_password]
-    )
+    password = serializers.CharField(write_only=True, required=True)
     password_confirm = serializers.CharField(write_only=True, required=True)
+    first_name = serializers.CharField(required=True)
+    last_name = serializers.CharField(required=True)
 
     class Meta:
         model = User
