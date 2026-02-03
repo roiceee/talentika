@@ -127,3 +127,21 @@ def get_user_role_in_organization(user, organization):
         return membership.role
     except:
         return None
+
+
+class IsOrgAdminOfOwnOrganization(BasePermission):
+    """
+    Permission class to check if user is an admin of at least one organization.
+    Used for creating invitations - requires org_id in request data.
+    """
+
+    def has_permission(self, request, view):
+        if not request.user.is_authenticated:
+            return False
+
+        # User must have at least one organization membership with admin role
+        from .models import OrganizationMembership
+
+        return OrganizationMembership.objects.filter(
+            user=request.user, role=OrganizationMembership.Role.ORG_ADMIN
+        ).exists()

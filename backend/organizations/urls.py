@@ -71,20 +71,16 @@ urlpatterns = [
         views.list_organization_members,
         name="list-members",
     ),
+    # Invitation endpoints
     path(
-        "organizations/<uuid:org_id>/invite/",
-        views.invite_user_to_organization,
-        name="invite-user",
-    ),
-    # Admin endpoints
-    path(
-        "admin/organizations/pending/",
-        views.list_pending_organizations,
-        name="list-pending-organizations",
+        "organizations/<uuid:org_id>/invitations/",
+        views.create_invitation,
+        name="create-invitation",
     ),
     path(
-        "admin/organizations/<uuid:org_id>/status/",
-        views.manage_organization_status,
-        name="manage-organization-status",
+        "invitations/validate/",
+        views.validate_invitation,
+        name="validate-invitation",
     ),
+    path("invitations/accept/", views.accept_invitation, name="accept-invitation"),
 ]
