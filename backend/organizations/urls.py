@@ -78,6 +78,11 @@ urlpatterns = [
         name="create-invitation",
     ),
     path(
+        "organizations/<uuid:org_id>/invitations/list/",
+        views.list_organization_invitations,
+        name="list-invitations",
+    ),
+    path(
         "invitations/validate/",
         views.validate_invitation,
         name="validate-invitation",

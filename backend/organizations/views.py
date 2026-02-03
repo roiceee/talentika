@@ -26,7 +26,7 @@ from .serializers import (
     InvitationAcceptSerializer,
 )
 from .emails import send_invitation_token_email
-from .permissions import IsOrgAdminOfOwnOrganization
+from .permissions import IsOrgAdminOfOwnOrganization, IsOrganizationMember
 
 
 # ============= User Registration =============
@@ -353,6 +353,57 @@ def create_invitation(request, org_id):
     response_serializer = OrganizationInvitationSerializer(invitation)
     response_data = {**response_serializer.data, "email_sent": email_sent}
     return Response(response_data, status=status.HTTP_201_CREATED)
+
+
+@swagger_auto_schema(
+    method="get",
+    operation_description="""
+    List all invitations for the organization.
+    Shows both pending and accepted invitations.
+    Only organization members can view invitations.
+    """,
+    manual_parameters=[
+        openapi.Parameter(
+            "org_id",
+            openapi.IN_PATH,
+            description="UUID of the organization",
+            type=openapi.TYPE_STRING,
+            format="uuid",
+            required=True,
+        ),
+    ],
+    responses={
+        200: openapi.Response(
+            "List of invitations", OrganizationInvitationSerializer(many=True)
+        ),
+        403: "Only organization members can view invitations",
+        404: "Organization not found",
+    },
+    tags=["Invitations"],
+)
+@api_view(["GET"])
+@permission_classes([IsAuthenticated, IsOrganizationMember])
+def list_organization_invitations(request, org_id):
+    """
+    List all invitations for the organization.
+
+    Returns both pending and accepted invitations with details including:
+    - Email address
+    - Role
+    - Invited by
+    - Status (accepted/pending)
+    - Expiration date
+    """
+    organization = get_object_or_404(Organization, id=org_id)
+
+    invitations = (
+        OrganizationInvitation.objects.filter(organization=organization)
+        .select_related("invited_by")
+        .order_by("-created_at")
+    )
+
+    serializer = OrganizationInvitationSerializer(invitations, many=True)
+    return Response(serializer.data)
 
 
 @swagger_auto_schema(
