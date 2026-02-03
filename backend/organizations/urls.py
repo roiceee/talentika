@@ -2,7 +2,20 @@ from django.urls import path
 from rest_framework_simplejwt.views import TokenRefreshView
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
-from . import views
+from .views import (
+    register_user,
+    list_user_organizations,
+    create_organization,
+    get_organization,
+    update_organization,
+    list_organization_members,
+    remove_member,
+    leave_organization,
+    create_invitation,
+    list_organization_invitations,
+    validate_invitation,
+    accept_invitation,
+)
 from .authentication import EmailTokenObtainPairView
 
 # Decorate TokenRefreshView with Swagger documentation
@@ -51,41 +64,51 @@ urlpatterns = [
     path("auth/login/", EmailTokenObtainPairView.as_view(), name="token-obtain"),
     path("auth/refresh/", decorated_token_refresh, name="token-refresh"),
     # User registration
-    path("register/", views.register_user, name="register-user"),
+    path("register/", register_user, name="register-user"),
     # Organization management
-    path("organizations/", views.list_user_organizations, name="list-organizations"),
+    path("organizations/", list_user_organizations, name="list-organizations"),
     path(
-        "organizations/create/", views.create_organization, name="create-organization"
+        "organizations/create/", create_organization, name="create-organization"
     ),
     path(
-        "organizations/<uuid:org_id>/", views.get_organization, name="get-organization"
+        "organizations/<uuid:org_id>/", get_organization, name="get-organization"
     ),
     path(
         "organizations/<uuid:org_id>/update/",
-        views.update_organization,
+        update_organization,
         name="update-organization",
     ),
     # Organization members
     path(
         "organizations/<uuid:org_id>/members/",
-        views.list_organization_members,
+        list_organization_members,
         name="list-members",
+    ),
+    path(
+        "organizations/<uuid:org_id>/members/<uuid:membership_id>/",
+        remove_member,
+        name="remove-member",
+    ),
+    path(
+        "organizations/<uuid:org_id>/leave/",
+        leave_organization,
+        name="leave-organization",
     ),
     # Invitation endpoints
     path(
         "organizations/<uuid:org_id>/invitations/",
-        views.create_invitation,
+        create_invitation,
         name="create-invitation",
     ),
     path(
         "organizations/<uuid:org_id>/invitations/list/",
-        views.list_organization_invitations,
+        list_organization_invitations,
         name="list-invitations",
     ),
     path(
         "invitations/validate/",
-        views.validate_invitation,
+        validate_invitation,
         name="validate-invitation",
     ),
-    path("invitations/accept/", views.accept_invitation, name="accept-invitation"),
+    path("invitations/accept/", accept_invitation, name="accept-invitation"),
 ]
