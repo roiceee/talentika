@@ -67,12 +67,8 @@ urlpatterns = [
     path("register/", register_user, name="register-user"),
     # Organization management
     path("organizations/", list_user_organizations, name="list-organizations"),
-    path(
-        "organizations/create/", create_organization, name="create-organization"
-    ),
-    path(
-        "organizations/<uuid:org_id>/", get_organization, name="get-organization"
-    ),
+    path("organizations/create/", create_organization, name="create-organization"),
+    path("organizations/<uuid:org_id>/", get_organization, name="get-organization"),
     path(
         "organizations/<uuid:org_id>/update/",
         update_organization,

@@ -84,7 +84,7 @@ def list_organization_members(request, org_id):
 def remove_member(request, org_id, membership_id):
     """
     Remove a member from the organization.
-    
+
     Rules:
     - Only org admins can remove members
     - Cannot remove the last admin (must have at least one admin)
@@ -139,13 +139,13 @@ def remove_member(request, org_id, membership_id):
 def leave_organization(request, org_id):
     """
     Leave the organization.
-    
+
     Rules:
     - Any member can leave
     - Admins can only leave if there is at least one other admin
     """
     organization = get_object_or_404(Organization, id=org_id)
-    
+
     try:
         membership = OrganizationMembership.objects.get(
             user=request.user, organization=organization
