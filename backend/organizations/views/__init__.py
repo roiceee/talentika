@@ -1,4 +1,3 @@
-from .authentication import register_user
 from .organizations import (
     list_user_organizations,
     create_organization,
@@ -18,8 +17,6 @@ from .invitations import (
 )
 
 __all__ = [
-    # Authentication
-    "register_user",
     # Organizations
     "list_user_organizations",
     "create_organization",

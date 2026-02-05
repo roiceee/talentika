@@ -24,7 +24,10 @@ class OrganizationInvitation(models.Model):
     role = models.CharField(max_length=20, choices=Role.choices, default=Role.MEMBER)
     token = models.CharField(max_length=64, unique=True, editable=False)
     invited_by = models.ForeignKey(
-        "User", on_delete=models.SET_NULL, null=True, related_name="sent_invitations"
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name="sent_invitations",
     )
     accepted_at = models.DateTimeField(null=True, blank=True)
     expires_at = models.DateTimeField()

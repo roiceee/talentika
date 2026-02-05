@@ -1,11 +1,12 @@
 """
 Django models for the organizations app.
 
-This package contains all models related to users, organizations, memberships, and addresses.
+This package contains all models related to organizations, memberships, and addresses.
+User model is now in the users app.
 """
 
 # Import all models to make them available when importing from organizations.models
-from .user import User
+from users.models import User
 from .address import Address
 from .organization import Organization
 from .organization_membership import OrganizationMembership

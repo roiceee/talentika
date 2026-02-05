@@ -1,60 +1,7 @@
 from django.contrib import admin
-from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.utils.html import format_html
 from django.utils import timezone
-from .models import User, Organization, OrganizationMembership
-
-
-@admin.register(User)
-class UserAdmin(BaseUserAdmin):
-    """Custom User admin with email as primary identifier"""
-
-    list_display = [
-        "email",
-        "username",
-        "first_name",
-        "last_name",
-        "is_staff",
-        "is_superuser",
-    ]
-    list_filter = ["is_staff", "is_superuser", "is_active"]
-    search_fields = ["email", "username", "first_name", "last_name"]
-    ordering = ["-date_joined"]
-
-    fieldsets = (
-        (None, {"fields": ("email", "username", "password")}),
-        ("Personal info", {"fields": ("first_name", "last_name")}),
-        (
-            "Permissions",
-            {
-                "fields": (
-                    "is_active",
-                    "is_staff",
-                    "is_superuser",
-                    "groups",
-                    "user_permissions",
-                )
-            },
-        ),
-        ("Important dates", {"fields": ("last_login", "date_joined")}),
-    )
-
-    add_fieldsets = (
-        (
-            None,
-            {
-                "classes": ("wide",),
-                "fields": (
-                    "email",
-                    "username",
-                    "first_name",
-                    "last_name",
-                    "password1",
-                    "password2",
-                ),
-            },
-        ),
-    )
+from .models import Organization, OrganizationMembership
 
 
 class OrganizationMembershipInline(admin.TabularInline):
@@ -63,7 +10,7 @@ class OrganizationMembershipInline(admin.TabularInline):
     model = OrganizationMembership
     extra = 0
     readonly_fields = ["created_at"]
-    autocomplete_fields = ["user"]
+    # Note: autocomplete_fields removed - User is now in different app
 
 
 @admin.register(Organization)
@@ -159,7 +106,7 @@ class OrganizationMembershipAdmin(admin.ModelAdmin):
     list_display = ["user", "organization", "role", "created_at"]
     list_filter = ["role", "created_at", "organization__status"]
     search_fields = ["user__email", "user__username", "organization__name"]
-    autocomplete_fields = ["user", "organization"]
+    autocomplete_fields = ["organization"]
     readonly_fields = ["created_at"]
 
     fieldsets = (

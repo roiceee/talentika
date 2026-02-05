@@ -48,11 +48,12 @@ INSTALLED_APPS = [
     "rest_framework",
     "health",
     "organizations",
+    "users",
     "drf_yasg",
 ]
 
 # Custom User Model
-AUTH_USER_MODEL = "organizations.User"
+AUTH_USER_MODEL = "users.User"
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",

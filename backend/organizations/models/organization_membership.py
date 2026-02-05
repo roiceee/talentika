@@ -1,5 +1,6 @@
 import uuid
 from django.db import models
+from django.conf import settings
 
 
 class OrganizationMembership(models.Model):
@@ -13,7 +14,9 @@ class OrganizationMembership(models.Model):
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     user = models.ForeignKey(
-        "User", on_delete=models.CASCADE, related_name="organization_memberships"
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="organization_memberships",
     )
     organization = models.ForeignKey(
         "Organization", on_delete=models.CASCADE, related_name="memberships"
