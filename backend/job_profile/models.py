@@ -124,6 +124,9 @@ class JobProfile(models.Model):
         related_name="job_profiles",
         help_text="AI screening configuration for this job",
     )
+    is_active = models.BooleanField(
+        default=True, help_text="Whether the job profile is active"
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

@@ -143,6 +143,7 @@ class JobProfileDetailSerializer(serializers.ModelSerializer):
             "skills",
             "ai_screening_configuration",
             "questions",
+            "is_active",
             "created_at",
             "updated_at",
         ]
