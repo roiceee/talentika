@@ -66,24 +66,16 @@ class Command(BaseCommand):
         # Seed AI Screening Configurations
         ai_configs = [
             {
-                "title": "Standard Technical Screening",
-                "description": "AI-powered screening focused on technical skills assessment, coding proficiency, and problem-solving abilities. Evaluates candidates based on technical knowledge and hands-on experience.",
+                "title": "Strict",
+                "description": "Exact Matches Only",
             },
             {
-                "title": "Behavioral Assessment",
-                "description": "Screening configuration emphasizing soft skills, communication abilities, teamwork, and cultural fit. Uses AI to analyze behavioral patterns and interpersonal skills.",
+                "title": "Balanced",
+                "description": "Allow Similar Skills",
             },
             {
-                "title": "Leadership Evaluation",
-                "description": "Advanced screening for leadership positions focusing on strategic thinking, decision-making, team management, and organizational impact.",
-            },
-            {
-                "title": "Entry Level Assessment",
-                "description": "Tailored screening for entry-level positions emphasizing learning potential, basic skills, educational background, and enthusiasm.",
-            },
-            {
-                "title": "Comprehensive Screening",
-                "description": "Complete assessment combining technical skills, behavioral traits, cultural fit, and experience evaluation for comprehensive candidate analysis.",
+                "title": "Flexible",
+                "description": "Consider Potential",
             },
         ]
 

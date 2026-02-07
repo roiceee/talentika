@@ -122,3 +122,11 @@ class UserProfileSerializer(serializers.ModelSerializer):
         model = User
         fields = ["id", "email", "username", "first_name", "last_name", "date_joined"]
         read_only_fields = ["id", "email", "date_joined"]
+
+
+class UserBasicSerializer(serializers.ModelSerializer):
+    """Basic user serializer without sensitive fields"""
+
+    class Meta:
+        model = User
+        fields = ["id", "email", "first_name", "last_name"]

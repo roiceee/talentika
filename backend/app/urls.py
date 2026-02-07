@@ -36,6 +36,7 @@ urlpatterns = [
     path("health/", include("health.urls")),
     path("api/users/", include("users.urls")),
     path("api/", include("organizations.urls")),
+    path("api/", include("job_profile.urls")),
     path(
         "swagger.<format>/", schema_view.without_ui(cache_timeout=0), name="schema-json"
     ),
