@@ -133,3 +133,47 @@ class JobProfile(models.Model):
 
     def __str__(self):
         return f"{self.title} ({self.category}) - {self.organization.name}"
+
+
+class Question(models.Model):
+    """
+    Questions for job profiles to gather applicant information.
+    """
+
+    class QuestionType(models.TextChoices):
+        TEXT = "text", "Text"
+        MCQ = "mcq", "Multiple Choice"
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    job_profile = models.ForeignKey(
+        JobProfile,
+        on_delete=models.CASCADE,
+        related_name="questions",
+        help_text="Job profile this question belongs to",
+    )
+    text = models.TextField(help_text="Question text")
+    question_type = models.CharField(
+        max_length=10,
+        choices=QuestionType.choices,
+        default=QuestionType.TEXT,
+    )
+    order = models.PositiveIntegerField(
+        default=0, help_text="Display order of the question"
+    )
+    choices = models.JSONField(
+        default=list,
+        blank=True,
+        help_text="Array of choice strings for multiple choice questions",
+    )
+    is_required = models.BooleanField(
+        default=True, help_text="Whether this question must be answered"
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = "questions"
+        ordering = ["job_profile", "order"]
+
+    def __str__(self):
+        return f"{self.text[:50]} ({self.question_type}) - {self.job_profile.title}"

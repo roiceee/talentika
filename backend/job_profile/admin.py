@@ -4,6 +4,7 @@ from .models import (
     JobCategory,
     ExperienceLevel,
     JobProfile,
+    Question,
 )
 
 
@@ -49,3 +50,26 @@ class JobProfileAdmin(admin.ModelAdmin):
         "organization",
         "created_by",
     ]
+
+
+@admin.register(Question)
+class QuestionAdmin(admin.ModelAdmin):
+    list_display = [
+        "text_preview",
+        "job_profile",
+        "question_type",
+        "order",
+        "is_required",
+        "created_at",
+    ]
+    list_filter = ["question_type", "is_required", "job_profile__organization"]
+    search_fields = ["text", "job_profile__title"]
+    readonly_fields = ["id", "created_at", "updated_at"]
+    autocomplete_fields = ["job_profile"]
+    ordering = ["job_profile", "order"]
+
+    def text_preview(self, obj):
+        """Show first 50 characters of question text"""
+        return obj.text[:50] + "..." if len(obj.text) > 50 else obj.text
+
+    text_preview.short_description = "Question"
