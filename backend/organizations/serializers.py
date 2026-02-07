@@ -171,6 +171,7 @@ class OrganizationSerializer(serializers.ModelSerializer):
         fields = [
             "id",
             "name",
+            "description",
             "address",
             "status",
             "created_at",
@@ -203,7 +204,7 @@ class OrganizationCreateSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Organization
-        fields = ["name", "address"]
+        fields = ["name", "description", "address"]
 
     def validate_name(self, value):
         """Validate organization name uniqueness"""
@@ -258,7 +259,15 @@ class OrganizationListSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Organization
-        fields = ["id", "name", "address", "status", "created_at", "member_count"]
+        fields = [
+            "id",
+            "name",
+            "description",
+            "address",
+            "status",
+            "created_at",
+            "member_count",
+        ]
 
 
 class OrganizationApprovalSerializer(serializers.Serializer):

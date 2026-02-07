@@ -18,6 +18,11 @@ class Organization(models.Model):
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     name = models.CharField(max_length=255, unique=True)
+    description = models.TextField(
+        blank=True,
+        null=True,
+        help_text="Description of the organization",
+    )
     address = models.ForeignKey(
         "Address",
         on_delete=models.SET_NULL,
