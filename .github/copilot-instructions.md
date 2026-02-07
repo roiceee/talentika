@@ -11,19 +11,26 @@ Talentika is a Django 6.0 REST API backend with PostgreSQL database, using moder
 ### Backend Organization
 
 - **`backend/app/`**: Main Django project configuration (settings, URLs, WSGI/ASGI)
-- **`backend/organizations/`**: Core app with custom User model, organizations, memberships, invitations, and JWT auth
+- **`backend/users/`**: User authentication, profile management, and password reset functionality
+- **`backend/organizations/`**: Organizations, memberships, and invitation system
 - **`backend/health/`**: Simple health check endpoint
-- Apps use **modular structure**: `models/`, `views/`, `tests/` subdirectories instead of single files (see [organizations/](backend/organizations/))
+- Apps use **modular structure**: `models/`, `views/`, `serializers/`, `tests/` subdirectories instead of single files
 
-### Multi-Organization Domain Model
+### Domain Model
 
-Critical relationships (see [organizations/models/\_\_init\_\_.py](backend/organizations/models/__init__.py)):
+Critical relationships:
 
-1. **User** (custom model) → replaces Django's default, uses email for authentication
-2. **Organization** → has Status workflow (PENDING/APPROVED/REJECTED/SUSPENDED)
-3. **OrganizationMembership** → many-to-many with Role (ORG_ADMIN/MEMBER)
-4. **OrganizationInvitation** → token-based with 7-day expiration
-5. **Address** → optional foreign key on Organization
+**Users App** (see [users/models.py](backend/users/models.py)):
+
+1. **User** (custom model) → replaces Django's default, uses email for authentication (`AbstractUser` with UUID primary key)
+2. **PasswordResetToken** → secure 24-hour tokens for password resets
+
+**Organizations App** (see [organizations/models/\_\_init\_\_.py](backend/organizations/models/__init__.py)):
+
+1. **Organization** → has Status workflow (PENDING/APPROVED/REJECTED/SUSPENDED)
+2. **OrganizationMembership** → many-to-many with Role (ORG_ADMIN/MEMBER), links User to Organization
+3. **OrganizationInvitation** → token-based with 7-day expiration
+4. **Address** → optional foreign key on Organization
 
 **Key Constraints**:
 
@@ -31,6 +38,32 @@ Critical relationships (see [organizations/models/\_\_init\_\_.py](backend/organ
 - Only APPROVED organizations can send invitations
 - Organizations auto-approve when created via API (not via Django admin)
 - Invitations are single-use with email validation
+- Password reset tokens expire in 24 hours and are single-use
+
+### API Routing Structure
+
+URL organization (see [app/urls.py](backend/app/urls.py)):
+
+```python
+path("api/users/", include("users.urls"))      # User auth, profile, password reset
+path("api/", include("organizations.urls"))     # Organizations, memberships, invitations
+```
+
+**Users App Endpoints** (`/api/users/`):
+
+- `POST /auth/register/` - User registration (optional invitation token)
+- `POST /auth/login/` - Email-based login (returns JWT tokens)
+- `POST /auth/token/refresh/` - Refresh JWT token
+- `GET /profile/` - Get current user profile
+- `PUT|PATCH /profile/update/` - Update profile (username, first_name, last_name)
+- `POST /password-reset/` - Request password reset email
+- `POST /password-reset/confirm/` - Confirm reset with token
+
+**Organizations App Endpoints** (`/api/`):
+
+- Organizations: `/organizations/`, `/organizations/create/`, `/organizations/<uuid:org_id>/`
+- Members: `/organizations/<uuid:org_id>/members/`, leave/remove operations
+- Invitations: `/organizations/<uuid:org_id>/invitations/`, accept/validate operations
 
 ### Permission System
 
@@ -48,10 +81,11 @@ Helper functions in [models/helpers.py](backend/organizations/models/helpers.py)
 ### Configuration Management
 
 - Environment variables loaded via `python-dotenv` in [app/settings.py](backend/app/settings.py#L17)
-- **Custom User Model**: `AUTH_USER_MODEL = "organizations.User"` (L54)
-- **JWT Configuration**: Uses `rest_framework_simplejwt` with 1-hour access tokens, 7-day refresh (L156-169)
-- **Email SMTP**: Gmail via TLS on port 587, requires app password (L146-151)
-- **APPEND_SLASH = False**: URLs must match exactly without trailing slashes (L36)
+- **Custom User Model**: `AUTH_USER_MODEL = "users.User"` (L56) - moved from organizations to users app
+- **JWT Configuration**: Uses `rest_framework_simplejwt` with 1-hour access tokens, 7-day refresh (L159-172)
+- **Email SMTP**: Gmail via TLS on port 587, requires app password (L149-154)
+- **APPEND_SLASH = False**: URLs must match exactly without trailing slashes (L38)
+- **FRONTEND_URL**: Required for password reset and invitation email links (default: `http://localhost:3000`)
 
 ### Database
 
@@ -90,13 +124,26 @@ Common commands:
 
 ### Testing Strategy
 
-Tests organized by domain (see [organizations/tests/README.md](backend/organizations/tests/README.md)):
+Tests organized by domain:
+
+**Organizations App** (see [organizations/tests/README.md](backend/organizations/tests/README.md)):
 
 - `test_authentication.py` - User registration & JWT login (5 tests)
 - `test_organizations.py` - Org creation, membership, permissions (18 tests)
 - `test_invitations.py` - Email invitations, validation, acceptance (37 tests)
 
-Run specific test modules: `uv run python manage.py test organizations.tests.test_invitations`
+**Users App** (see [users/tests/README.md](backend/users/tests/README.md)):
+
+- `test_authentication.py` - User registration with/without invitation tokens
+- `test_profile.py` - Profile retrieval and updates (full/partial)
+- `test_password_reset.py` - Password reset request and token confirmation
+
+Run specific test modules:
+
+```bash
+uv run python manage.py test organizations.tests.test_invitations
+uv run python manage.py test users.tests.test_password_reset
+```
 
 ### Database Management
 
@@ -135,12 +182,34 @@ def create_invitation(request, org_id):
 
 ### Authentication Pattern
 
-Email-based JWT auth (see [organizations/authentication.py](backend/organizations/authentication.py)):
+Email-based JWT auth split across two apps:
+
+**Users App** (see [users/authentication.py](backend/users/authentication.py)):
 
 - Custom serializer: `EmailTokenObtainPairSerializer` uses email instead of username
-- Login endpoint: `POST /api/auth/login/` with `{"email": "...", "password": "..."}`
+- Login endpoint: `POST /api/users/auth/login/` with `{"email": "...", "password": "..."}`
 - Returns `access` (1h) and `refresh` (7d) tokens
 - Use in headers: `Authorization: Bearer <access_token>`
+
+**Organizations App** (see [organizations/authentication.py](backend/organizations/authentication.py)):
+
+- Legacy authentication module (maintained for backward compatibility)
+- New authentication endpoints use users app
+
+### Password Reset Flow
+
+Secure token-based password reset (see [users/views/password_reset.py](backend/users/views/password_reset.py)):
+
+1. User requests reset: `POST /api/users/password-reset/` with email
+2. Email sent with secure token (24-hour expiration)
+3. Frontend redirects to: `{FRONTEND_URL}/password-reset/{token}/`
+4. User confirms: `POST /api/users/password-reset/confirm/` with token and new password
+
+Critical validations:
+
+- Token is single-use (checked via `used_at` field)
+- Tokens expire in 24 hours
+- Response doesn't reveal if email exists (security best practice)
 
 ### Invitation Flow
 
@@ -148,7 +217,7 @@ Complete workflow documented in [INVITATION_FLOW.md](backend/INVITATION_FLOW.md)
 
 1. Admin creates invitation: `POST /api/organizations/{org_id}/invitations/`
 2. Email sent with secure token (7-day expiration)
-3. **New users**: Register with token: `POST /api/register/` (auto-joins org)
+3. **New users**: Register with token: `POST /api/users/auth/register/` (auto-joins org)
 4. **Existing users**: Accept invitation: `POST /api/invitations/accept/`
 
 Critical validations:
@@ -182,7 +251,8 @@ Critical validations:
 URL includes pattern (see [app/urls.py](backend/app/urls.py#L35)):
 
 ```python
-path("api/", include("organizations.urls"))  # Organizations handles auth + org endpoints
+path("api/users/", include("users.urls"))       # User auth & profile management
+path("api/", include("organizations.urls"))     # Organizations, memberships, invitations
 ```
 
 ## Tech Stack
