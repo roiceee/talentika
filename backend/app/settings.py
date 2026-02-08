@@ -51,6 +51,7 @@ INSTALLED_APPS = [
     "organizations",
     "users",
     "job_profile",
+    "job_applications",
     "drf_yasg",
 ]
 
