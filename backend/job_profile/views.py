@@ -1,6 +1,6 @@
 from django.shortcuts import get_object_or_404
 from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
 from rest_framework import status
 from drf_yasg.utils import swagger_auto_schema
@@ -191,10 +191,10 @@ def list_organization_job_profiles(request, org_id):
 @swagger_auto_schema(
     method="get",
     operation_description="""
-    Get detailed information about a specific job profile.
+    Get detailed information about a specific job profile (PUBLIC endpoint).
     
-    Returns complete job profile information including description, requirements, skills, and AI screening configuration.
-    User must be a member of the organization that owns the job profile.
+    Returns complete job profile information including description, requirements, skills, questions, and AI screening configuration.
+    No authentication required - this is a public endpoint for job seekers.
     """,
     manual_parameters=[
         openapi.Parameter(
@@ -207,17 +207,17 @@ def list_organization_job_profiles(request, org_id):
     ],
     responses={
         200: JobProfileDetailSerializer,
-        403: "User is not a member of the organization",
         404: "Job profile not found",
     },
+    security=[],  # No authentication required
     tags=["Job Profiles"],
 )
 @api_view(["GET"])
-@permission_classes([IsAuthenticated])
+@permission_classes([AllowAny])
 def get_job_profile(request, job_id):
     """
     Get detailed information about a specific job profile.
-    User must be a member of the organization that owns the job.
+    Public endpoint - no authentication required.
     """
     job_profile = get_object_or_404(
         JobProfile.objects.select_related(
@@ -226,19 +226,9 @@ def get_job_profile(request, job_id):
             "organization",
             "created_by",
             "ai_screening_configuration",
-        ),
+        ).prefetch_related("questions"),
         id=job_id,
     )
-
-    # Check if user is a member of the organization (or superuser)
-    if not request.user.is_superuser:
-        if not job_profile.organization.memberships.filter(user=request.user).exists():
-            return Response(
-                {
-                    "error": "You are not a member of the organization that owns this job profile."
-                },
-                status=status.HTTP_403_FORBIDDEN,
-            )
 
     serializer = JobProfileDetailSerializer(job_profile)
     return Response(serializer.data)
