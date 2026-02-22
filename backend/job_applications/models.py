@@ -135,9 +135,9 @@ class ApplicationAttachment(models.Model):
         related_name="attachments",
         help_text="Job application this attachment belongs to",
     )
-    file = models.FileField(
-        upload_to="job_applications/%Y/%m/%d/",
-        help_text="Uploaded file",
+    file = models.CharField(
+        max_length=500,
+        help_text="Storage path / S3 key of the uploaded file",
     )
     file_name = models.CharField(max_length=255, help_text="Original filename")
     file_type = models.CharField(
@@ -157,3 +157,31 @@ class ApplicationAttachment(models.Model):
 
     def __str__(self):
         return f"{self.file_name} ({self.file_type}) - {self.job_application}"
+
+
+class TemporaryFileUpload(models.Model):
+    """
+    Temporarily stores an uploaded file (e.g. resume) in S3 before a job
+    application is fully submitted.  The consumer receives the UUID ``id``
+    as a ``file_id`` and passes it back when submitting the application.
+    Records can be cleaned up after a configurable TTL.
+    """
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    storage_path = models.CharField(
+        max_length=500,
+        help_text="Path / key in the storage backend (S3 key or local path)",
+    )
+    file_name = models.CharField(max_length=255, help_text="Original filename")
+    file_size = models.PositiveIntegerField(help_text="File size in bytes")
+    content_type = models.CharField(
+        max_length=100, blank=True, help_text="MIME type of the file"
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "temporary_file_uploads"
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"{self.file_name} ({self.id})"

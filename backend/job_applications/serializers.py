@@ -4,8 +4,11 @@ from .models import (
     ApplicantAddress,
     QuestionAnswer,
     ApplicationAttachment,
+    TemporaryFileUpload,
 )
 from job_profile.models import Question
+from django.core.files.uploadedfile import InMemoryUploadedFile
+from .storage import get_storage
 
 
 class ApplicantAddressSerializer(serializers.ModelSerializer):
@@ -52,16 +55,18 @@ class QuestionAnswerSerializer(serializers.ModelSerializer):
         answer_text = attrs.get("answer_text", "")
         selected_choices = attrs.get("selected_choices", [])
 
+        is_mcq = question.question_type in (
+            Question.QuestionType.MCQ,
+            Question.QuestionType.MCQ_SINGLE,
+        )
+
         # Check if required question is answered
         if question.is_required:
             if question.question_type == Question.QuestionType.TEXT and not answer_text:
                 raise serializers.ValidationError(
                     {"answer_text": f"Answer is required for question: {question.text}"}
                 )
-            if (
-                question.question_type == Question.QuestionType.MCQ
-                and not selected_choices
-            ):
+            if is_mcq and not selected_choices:
                 raise serializers.ValidationError(
                     {
                         "selected_choices": f"Answer is required for question: {question.text}"
@@ -76,7 +81,7 @@ class QuestionAnswerSerializer(serializers.ModelSerializer):
                         "selected_choices": "Text questions should not have selected choices."
                     }
                 )
-        elif question.question_type == Question.QuestionType.MCQ:
+        elif is_mcq:
             if answer_text:
                 raise serializers.ValidationError(
                     {
@@ -93,6 +98,16 @@ class QuestionAnswerSerializer(serializers.ModelSerializer):
                                 "selected_choices": f"'{choice}' is not a valid choice for this question."
                             }
                         )
+            # Single-select: only one choice allowed
+            if (
+                question.question_type == Question.QuestionType.MCQ_SINGLE
+                and len(selected_choices) > 1
+            ):
+                raise serializers.ValidationError(
+                    {
+                        "selected_choices": "This question only allows one selected choice."
+                    }
+                )
 
         return attrs
 
@@ -100,27 +115,32 @@ class QuestionAnswerSerializer(serializers.ModelSerializer):
 class ApplicationAttachmentSerializer(serializers.ModelSerializer):
     """Serializer for application attachments"""
 
+    file_url = serializers.SerializerMethodField()
+
     class Meta:
         model = ApplicationAttachment
-        fields = ["file", "file_name", "file_type"]
-        read_only_fields = ["file_size"]
+        fields = ["file_url", "file_name", "file_type", "file_size", "uploaded_at"]
+        read_only_fields = ["file_url", "file_size", "uploaded_at"]
 
-    def validate_file(self, value):
-        """Validate file size (max 10MB)"""
-        max_size = 10 * 1024 * 1024  # 10MB
-        if value.size > max_size:
-            raise serializers.ValidationError(
-                f"File size cannot exceed 10MB. Current size: {value.size / (1024 * 1024):.2f}MB"
-            )
-        return value
+    def get_file_url(self, obj):
+        if not obj.file:
+            return None
+        try:
+            return get_storage().get_url(obj.file)
+        except Exception:
+            return None
 
 
 class JobApplicationCreateSerializer(serializers.ModelSerializer):
     """Serializer for creating job applications"""
 
     address = ApplicantAddressSerializer(required=True)
-    answers = QuestionAnswerSerializer(many=True, required=True)
-    attachments = ApplicationAttachmentSerializer(many=True, required=False)
+    answers = QuestionAnswerSerializer(many=True, required=False)
+    resume_id = serializers.UUIDField(
+        required=False,
+        write_only=True,
+        help_text="File ID returned by the resume upload endpoint (POST /api/applications/submit/upload/resume/)",
+    )
 
     class Meta:
         model = JobApplication
@@ -132,8 +152,22 @@ class JobApplicationCreateSerializer(serializers.ModelSerializer):
             "phone",
             "address",
             "answers",
-            "attachments",
+            "resume_id",
         ]
+
+    def validate_email(self, value):
+        """Validate that email has not already been used to apply for this job profile"""
+        job_profile = self.initial_data.get("job_profile")
+        if (
+            job_profile
+            and JobApplication.objects.filter(
+                job_profile_id=job_profile, email=value
+            ).exists()
+        ):
+            raise serializers.ValidationError(
+                "You have already applied for this job with this email address."
+            )
+        return value
 
     def validate_job_profile(self, value):
         """Validate job profile is active"""
@@ -143,17 +177,65 @@ class JobApplicationCreateSerializer(serializers.ModelSerializer):
             )
         return value
 
-    def validate_answers(self, value):
-        """Validate all required questions are answered"""
-        if not value:
-            raise serializers.ValidationError("At least one answer is required.")
+    def validate(self, attrs):
+        """Validate answers based on job profile questions"""
+        job_profile = attrs.get("job_profile")
+        answers = attrs.get("answers", [])
+
+        # Get all questions for this job profile
+        questions = job_profile.questions.all()
+
+        # If job profile has no questions, answers should be empty
+        if not questions.exists():
+            if answers:
+                raise serializers.ValidationError(
+                    {"answers": "This job posting does not have any questions."}
+                )
+            return attrs
+
+        # If job profile has questions, validate all required questions are answered
+        answered_question_ids = {answer["question"].id for answer in answers}
+        required_questions = questions.filter(is_required=True)
+
+        missing_questions = []
+        for question in required_questions:
+            if question.id not in answered_question_ids:
+                missing_questions.append(question.text)
+
+        if missing_questions:
+            raise serializers.ValidationError(
+                {
+                    "answers": f"Missing required answers for questions: {', '.join(missing_questions[:3])}{'...' if len(missing_questions) > 3 else ''}"
+                }
+            )
+
+        # Validate that all answered questions belong to this job profile
+        valid_question_ids = {q.id for q in questions}
+        for answer in answers:
+            if answer["question"].id not in valid_question_ids:
+                raise serializers.ValidationError(
+                    {
+                        "answers": f"Question '{answer['question'].text}' does not belong to this job profile."
+                    }
+                )
+
+        return attrs
+
+    def validate_resume_id(self, value):
+        """Validate that the resume_id references an existing temporary upload."""
+        try:
+            TemporaryFileUpload.objects.get(id=value)
+        except TemporaryFileUpload.DoesNotExist:
+            raise serializers.ValidationError(
+                "Invalid resume_id: no uploaded file found with this ID."
+            )
         return value
 
     def create(self, validated_data):
         """Create job application with related models"""
         address_data = validated_data.pop("address")
-        answers_data = validated_data.pop("answers")
-        attachments_data = validated_data.pop("attachments", [])
+        answers_data = validated_data.pop("answers", [])
+        resume_id = validated_data.pop("resume_id", None)
 
         # Create job application
         job_application = JobApplication.objects.create(**validated_data)
@@ -167,14 +249,21 @@ class JobApplicationCreateSerializer(serializers.ModelSerializer):
                 job_application=job_application, **answer_data
             )
 
-        # Create attachments
-        for attachment_data in attachments_data:
-            file = attachment_data.get("file")
-            ApplicationAttachment.objects.create(
-                job_application=job_application,
-                file_size=file.size,
-                **attachment_data,
-            )
+        # Attach the pre-uploaded resume if a resume_id was supplied
+        if resume_id:
+            try:
+                temp_upload = TemporaryFileUpload.objects.get(id=resume_id)
+                ApplicationAttachment.objects.create(
+                    job_application=job_application,
+                    file=temp_upload.storage_path,
+                    file_name=temp_upload.file_name,
+                    file_type=ApplicationAttachment.FileType.RESUME,
+                    file_size=temp_upload.file_size,
+                )
+                # Clean up the temporary record
+                temp_upload.delete()
+            except TemporaryFileUpload.DoesNotExist:
+                pass  # Already validated; silently skip if race condition
 
         return job_application
 
