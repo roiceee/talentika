@@ -146,6 +146,12 @@ class ApplicationAttachment(models.Model):
         default=FileType.OTHER,
     )
     file_size = models.PositiveIntegerField(help_text="File size in bytes")
+    sha256_hash = models.CharField(
+        max_length=64,
+        blank=True,
+        db_index=True,
+        help_text="SHA-256 hex digest of the file contents for deduplication",
+    )
     uploaded_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -176,6 +182,12 @@ class TemporaryFileUpload(models.Model):
     file_size = models.PositiveIntegerField(help_text="File size in bytes")
     content_type = models.CharField(
         max_length=100, blank=True, help_text="MIME type of the file"
+    )
+    sha256_hash = models.CharField(
+        max_length=64,
+        blank=True,
+        db_index=True,
+        help_text="SHA-256 hex digest computed at upload time",
     )
     created_at = models.DateTimeField(auto_now_add=True)
 

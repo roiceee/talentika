@@ -10,6 +10,7 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 
 from .emails import send_application_confirmation_email
+from .duplicate_detection import compute_sha256
 from .models import JobApplication, TemporaryFileUpload
 from .serializers import JobApplicationCreateSerializer, JobApplicationDetailSerializer
 from .storage import get_storage
@@ -139,6 +140,7 @@ def upload_resume(request):
         )
 
     storage = get_storage()
+    sha256_hash = compute_sha256(uploaded_file)
     storage_path, _ = storage.save(
         file=uploaded_file,
         filename=uploaded_file.name,
@@ -151,6 +153,7 @@ def upload_resume(request):
         file_name=uploaded_file.name,
         file_size=uploaded_file.size,
         content_type=uploaded_file.content_type or "",
+        sha256_hash=sha256_hash,
     )
 
     return Response(

@@ -9,6 +9,7 @@ from .models import (
 from job_profile.models import Question
 from django.core.files.uploadedfile import InMemoryUploadedFile
 from .storage import get_storage
+from .duplicate_detection import find_duplicates, DUPLICATE_THRESHOLD
 
 
 class ApplicantAddressSerializer(serializers.ModelSerializer):
@@ -177,6 +178,38 @@ class JobApplicationCreateSerializer(serializers.ModelSerializer):
             )
         return value
 
+    def _check_duplicates(self, attrs):
+        """Run duplicate detection and raise if a duplicate is found."""
+        job_profile = attrs.get("job_profile")
+        resume_id = attrs.get("resume_id")
+        sha256_hash = None
+        if resume_id:
+            try:
+                temp = TemporaryFileUpload.objects.get(id=resume_id)
+                sha256_hash = temp.sha256_hash or None
+            except TemporaryFileUpload.DoesNotExist:
+                pass
+
+        duplicates = find_duplicates(
+            job_profile=job_profile,
+            first_name=attrs.get("first_name", ""),
+            last_name=attrs.get("last_name", ""),
+            phone=attrs.get("phone", ""),
+            sha256_hash=sha256_hash,
+            threshold=DUPLICATE_THRESHOLD,
+        )
+        if duplicates:
+            top = duplicates[0]
+            raise serializers.ValidationError(
+                {
+                    "non_field_errors": (
+                        f"A similar application already exists "
+                        f"(duplicate score: {top.duplicate_score:.0%}). "
+                        "Duplicate submissions are not allowed."
+                    )
+                }
+            )
+
     def validate(self, attrs):
         """Validate answers based on job profile questions"""
         job_profile = attrs.get("job_profile")
@@ -191,6 +224,7 @@ class JobApplicationCreateSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError(
                     {"answers": "This job posting does not have any questions."}
                 )
+            self._check_duplicates(attrs)
             return attrs
 
         # If job profile has questions, validate all required questions are answered
@@ -219,6 +253,7 @@ class JobApplicationCreateSerializer(serializers.ModelSerializer):
                     }
                 )
 
+        self._check_duplicates(attrs)
         return attrs
 
     def validate_resume_id(self, value):
@@ -259,6 +294,7 @@ class JobApplicationCreateSerializer(serializers.ModelSerializer):
                     file_name=temp_upload.file_name,
                     file_type=ApplicationAttachment.FileType.RESUME,
                     file_size=temp_upload.file_size,
+                    sha256_hash=temp_upload.sha256_hash or "",
                 )
                 # Clean up the temporary record
                 temp_upload.delete()

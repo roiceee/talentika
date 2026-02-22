@@ -13,4 +13,5 @@ dependencies = [
     "drf-yasg[validation]>=1.21.14",
     "psycopg2-binary>=2.9.10",
     "python-dotenv>=1.0.0",
+    "rapidfuzz>=3.14.3",
 ]
