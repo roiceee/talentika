@@ -145,7 +145,8 @@ class Question(models.Model):
 
     class QuestionType(models.TextChoices):
         TEXT = "text", "Text"
-        MCQ = "mcq", "Multiple Choice"
+        MCQ = "mcq", "Multiple Choice (Multi-Select)"
+        MCQ_SINGLE = "mcq_single", "Multiple Choice (Single Select)"
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     job_profile = models.ForeignKey(
@@ -163,7 +164,8 @@ class Question(models.Model):
     order = models.PositiveIntegerField(
         default=0, help_text="Display order of the question"
     )
-    choices = models.JSONField(
+    choices = ArrayField(
+        models.TextField(),
         default=list,
         blank=True,
         help_text="Array of choice strings for multiple choice questions",

@@ -72,7 +72,14 @@ class QuestionSerializer(serializers.ModelSerializer):
         )
         choices = attrs.get("choices", getattr(self.instance, "choices", []))
 
-        if question_type == Question.QuestionType.MCQ and not choices:
+        if (
+            question_type
+            in (
+                Question.QuestionType.MCQ,
+                Question.QuestionType.MCQ_SINGLE,
+            )
+            and not choices
+        ):
             raise serializers.ValidationError(
                 {"choices": "Multiple choice questions must have at least one choice."}
             )
