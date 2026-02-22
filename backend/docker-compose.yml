@@ -9,7 +9,7 @@ services:
     ports:
       - "5438:5432"
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - talentika_postgres_data:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U talentika_user -d talentika_dev"]
       interval: 10s
@@ -17,4 +17,4 @@ services:
       retries: 5
 
 volumes:
-  postgres_data:
+  talentika_postgres_data:
