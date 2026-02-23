@@ -12,7 +12,11 @@ from rest_framework.response import Response
 from .emails import send_application_confirmation_email
 from .duplicate_detection import compute_sha256
 from .models import JobApplication, TemporaryFileUpload
-from .serializers import JobApplicationCreateSerializer, JobApplicationDetailSerializer
+from .serializers import (
+    JobApplicationCreateSerializer,
+    JobApplicationDetailSerializer,
+    JobApplicationDetailWithAnalysisSerializer,
+)
 from .storage import get_storage
 
 import logging
@@ -273,4 +277,82 @@ def list_job_applications(request, org_id, job_profile_id):
     )
 
     serializer = JobApplicationDetailSerializer(applications, many=True)
+    return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+@swagger_auto_schema(
+    method="get",
+    operation_description="""
+    Retrieve a specific job application for an organization and job profile.
+
+    - The requesting user must be a member of the organization.
+    - The job profile must belong to the organization.
+    - The job application must belong to the job profile.
+    """,
+    manual_parameters=[
+        openapi.Parameter(
+            "org_id",
+            openapi.IN_PATH,
+            description="Organization UUID",
+            type=openapi.TYPE_STRING,
+            format="uuid",
+            required=True,
+        ),
+        openapi.Parameter(
+            "job_profile_id",
+            openapi.IN_PATH,
+            description="Job profile UUID (must belong to the organization)",
+            type=openapi.TYPE_STRING,
+            format="uuid",
+            required=True,
+        ),
+        openapi.Parameter(
+            "job_application_id",
+            openapi.IN_PATH,
+            description="Job application UUID",
+            type=openapi.TYPE_STRING,
+            format="uuid",
+            required=True,
+        ),
+    ],
+    responses={
+        200: JobApplicationDetailWithAnalysisSerializer(),
+        403: "Forbidden - user is not a member of the organization",
+        404: "Organization, job profile, or job application not found",
+    },
+    tags=["Job Applications"],
+)
+@api_view(["GET"])
+@permission_classes([IsAuthenticated, IsOrganizationMember])
+def get_job_application(request, org_id, job_profile_id, job_application_id):
+    """
+    Return a specific job application for the given organization and job profile.
+    """
+    try:
+        organization = Organization.objects.get(id=org_id)
+    except Organization.DoesNotExist:
+        return Response(
+            {"detail": "Organization not found."},
+            status=status.HTTP_404_NOT_FOUND,
+        )
+
+    try:
+        job_profile = JobProfile.objects.get(
+            id=job_profile_id, organization=organization
+        )
+    except JobProfile.DoesNotExist:
+        return Response(
+            {"detail": "Job profile not found in this organization."},
+            status=status.HTTP_404_NOT_FOUND,
+        )
+    try:
+        job_application = JobApplication.objects.get(
+            id=job_application_id, job_profile=job_profile
+        )
+    except JobApplication.DoesNotExist:
+        return Response(
+            {"detail": "Job application not found in this job profile."},
+            status=status.HTTP_404_NOT_FOUND,
+        )
+    serializer = JobApplicationDetailWithAnalysisSerializer(job_application)
     return Response(serializer.data, status=status.HTTP_200_OK)

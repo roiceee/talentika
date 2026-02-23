@@ -41,7 +41,30 @@ class ApplicationAnalysisStatusSerializer(serializers.ModelSerializer):
         read_only_fields = fields
 
 
-class ApplicationAnalysisListItemSerializer(serializers.ModelSerializer):
+class BaseApplicationAnalysisSerializer(serializers.ModelSerializer):
+    """
+    Base serializer with ONLY ApplicationAnalysis fields.
+    No JobApplication or JobProfile flattening.
+    """
+
+    class Meta:
+        model = ApplicationAnalysis
+        fields = [
+            "id",
+            "status",
+            "score",
+            "ai_analysis_summary",
+            "notable_traits",
+            "key_skills",
+            "detailed_analysis",
+            "error_message",
+            "created_at",
+            "updated_at",
+        ]
+        read_only_fields = fields
+
+
+class ApplicationAnalysisListItemSerializer(BaseApplicationAnalysisSerializer):
     """
     Serializer for the org-level list endpoint.
 
@@ -49,7 +72,7 @@ class ApplicationAnalysisListItemSerializer(serializers.ModelSerializer):
     secondary requests.
     """
 
-    # Applicant fields (from the related JobApplication)
+    # Applicant fields
     applicant_id = serializers.UUIDField(source="job_application.id", read_only=True)
     applicant_first_name = serializers.CharField(
         source="job_application.first_name", read_only=True
@@ -80,10 +103,8 @@ class ApplicationAnalysisListItemSerializer(serializers.ModelSerializer):
         source="job_application.id", read_only=True
     )
 
-    class Meta:
-        model = ApplicationAnalysis
-        fields = [
-            "id",
+    class Meta(BaseApplicationAnalysisSerializer.Meta):
+        fields = BaseApplicationAnalysisSerializer.Meta.fields + [
             "applicant_id",
             "applicant_first_name",
             "applicant_last_name",
@@ -93,13 +114,4 @@ class ApplicationAnalysisListItemSerializer(serializers.ModelSerializer):
             "job_profile_id",
             "job_profile_title",
             "job_application_id",
-            "status",
-            "score",
-            "ai_analysis_summary",
-            "notable_traits",
-            "key_skills",
-            "error_message",
-            "created_at",
-            "updated_at",
         ]
-        read_only_fields = fields

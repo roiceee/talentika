@@ -347,3 +347,23 @@ class JobApplicationDetailSerializer(serializers.ModelSerializer):
             "created_at",
             "updated_at",
         ]
+
+
+class JobApplicationDetailWithAnalysisSerializer(JobApplicationDetailSerializer):
+    """Serializer for viewing job application details with related analysis"""
+
+    analysis = serializers.SerializerMethodField()
+
+    class Meta(JobApplicationDetailSerializer.Meta):
+        fields = JobApplicationDetailSerializer.Meta.fields + ["analysis"]
+
+    def get_analysis(self, obj):
+        from job_application_analysis.models import ApplicationAnalysis
+        from job_application_analysis.serializers import (
+            BaseApplicationAnalysisSerializer,
+        )
+
+        try:
+            return BaseApplicationAnalysisSerializer(obj.analysis).data
+        except ApplicationAnalysis.DoesNotExist:
+            return None
