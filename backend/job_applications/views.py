@@ -15,6 +15,45 @@ from .models import JobApplication, TemporaryFileUpload
 from .serializers import JobApplicationCreateSerializer, JobApplicationDetailSerializer
 from .storage import get_storage
 
+import logging
+
+logger = logging.getLogger(__name__)
+
+
+def _trigger_analysis_pipeline(job_application):
+    """Create an ApplicationAnalysis row and enqueue OCR processing.
+
+    Fails silently so that the submission response is never blocked by
+    analysis infrastructure issues (Redis down, etc.).
+    """
+    try:
+        from job_application_analysis.models import ApplicationAnalysis
+        from job_application_analysis.workers import enqueue_ocr
+
+        # Only trigger if application has a resume attachment
+        has_resume = job_application.attachments.filter(file_type="resume").exists()
+        if not has_resume:
+            logger.info(
+                "Skipping analysis for application %s — no resume attached.",
+                job_application.id,
+            )
+            return
+
+        analysis, created = ApplicationAnalysis.objects.get_or_create(
+            job_application=job_application,
+        )
+        if created:
+            enqueue_ocr(str(analysis.id))
+            logger.info(
+                "Analysis pipeline triggered for application %s",
+                job_application.id,
+            )
+    except Exception:
+        logger.exception(
+            "Failed to trigger analysis pipeline for application %s",
+            job_application.id,
+        )
+
 
 @swagger_auto_schema(
     method="post",
@@ -58,6 +97,10 @@ def submit_job_application(request):
     if serializer.is_valid():
         job_application = serializer.save()
         send_application_confirmation_email(job_application)
+
+        # Kick off the OCR → AI analysis pipeline
+        _trigger_analysis_pipeline(job_application)
+
         detail_serializer = JobApplicationDetailSerializer(job_application)
         return Response(detail_serializer.data, status=status.HTTP_201_CREATED)
 

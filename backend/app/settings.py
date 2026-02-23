@@ -52,6 +52,7 @@ INSTALLED_APPS = [
     "users",
     "job_profile",
     "job_applications",
+    "job_application_analysis",
     "drf_yasg",
 ]
 
@@ -138,6 +139,21 @@ AWS_ACCESS_KEY_ID = os.getenv("AWS_ACCESS_KEY_ID", "")
 AWS_SECRET_ACCESS_KEY = os.getenv("AWS_SECRET_ACCESS_KEY", "")
 AWS_STORAGE_BUCKET_NAME = os.getenv("AWS_STORAGE_BUCKET_NAME", "")
 AWS_S3_REGION_NAME = os.getenv("AWS_S3_REGION_NAME", "us-east-1")
+
+# Redis Configuration (used by RQ workers for the analysis pipeline)
+REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379/0")
+
+# AI Provider Configuration
+# Set AI_PROVIDER to 'openai' or 'gemini' to choose the LLM backend
+AI_PROVIDER = os.getenv("AI_PROVIDER", "openai")
+
+# OpenAI Configuration (used when AI_PROVIDER=openai)
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
+OPENAI_MODEL = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
+
+# Google Gemini Configuration (used when AI_PROVIDER=gemini)
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
+GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.0-flash")
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/6.0/ref/settings/#default-auto-field
