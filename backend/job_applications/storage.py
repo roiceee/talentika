@@ -80,6 +80,19 @@ class FileStorageBackend(ABC):
         """
         pass
 
+    @abstractmethod
+    def get_file_bytes(self, storage_path: str) -> bytes:
+        """
+        Download / read the raw bytes of a file from storage.
+
+        Args:
+            storage_path: Path to the file in storage
+
+        Returns:
+            File contents as bytes
+        """
+        pass
+
     def generate_unique_filename(self, original_filename: str) -> str:
         """
         Generate a unique filename to prevent collisions.
@@ -209,6 +222,11 @@ class LocalFileStorage(FileStorageBackend):
         """
         return self.storage.exists(storage_path)
 
+    def get_file_bytes(self, storage_path: str) -> bytes:
+        """Read raw bytes from local filesystem."""
+        full_path = Path(settings.MEDIA_ROOT) / storage_path
+        return full_path.read_bytes()
+
 
 class S3FileStorage(FileStorageBackend):
     """
@@ -294,6 +312,11 @@ class S3FileStorage(FileStorageBackend):
             return True
         except ClientError:
             return False
+
+    def get_file_bytes(self, storage_path: str) -> bytes:
+        """Download raw bytes from S3."""
+        response = self.client.get_object(Bucket=self.bucket_name, Key=storage_path)
+        return response["Body"].read()
 
 
 # Storage backend factory

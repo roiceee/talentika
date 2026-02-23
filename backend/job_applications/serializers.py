@@ -36,7 +36,7 @@ class ApplicantAddressSerializer(serializers.ModelSerializer):
 
 
 class QuestionAnswerSerializer(serializers.ModelSerializer):
-    """Serializer for question answers"""
+    """Serializer for question answers (write path — create only)"""
 
     class Meta:
         model = QuestionAnswer
@@ -316,7 +316,7 @@ class JobApplicationDetailSerializer(serializers.ModelSerializer):
     """Serializer for viewing job application details"""
 
     address = ApplicantAddressSerializer(read_only=True)
-    answers = QuestionAnswerSerializer(many=True, read_only=True)
+    answers = serializers.SerializerMethodField()
     attachments = ApplicationAttachmentSerializer(many=True, read_only=True)
     job_profile_title = serializers.CharField(
         source="job_profile.title", read_only=True
@@ -346,6 +346,22 @@ class JobApplicationDetailSerializer(serializers.ModelSerializer):
             "submitted_at",
             "created_at",
             "updated_at",
+        ]
+
+    def get_answers(self, obj):
+        """Return answers with their related question details."""
+        answers = obj.answers.select_related("question").all()
+        return [
+            {
+                "question_id": str(a.question_id),
+                "question_text": a.question.text,
+                "question_type": a.question.question_type,
+                "choices": a.question.choices,
+                "is_required": a.question.is_required,
+                "answer_text": a.answer_text,
+                "selected_choices": a.selected_choices,
+            }
+            for a in answers
         ]
 
 

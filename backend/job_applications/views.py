@@ -11,7 +11,7 @@ from rest_framework.response import Response
 
 from .emails import send_application_confirmation_email
 from .duplicate_detection import compute_sha256
-from .models import JobApplication, TemporaryFileUpload
+from .models import JobApplication, ApplicationAttachment, TemporaryFileUpload
 from .serializers import (
     JobApplicationCreateSerializer,
     JobApplicationDetailSerializer,
@@ -356,3 +356,375 @@ def get_job_application(request, org_id, job_profile_id, job_application_id):
         )
     serializer = JobApplicationDetailWithAnalysisSerializer(job_application)
     return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+# ---------------------------------------------------------------------------
+# Resume download
+# ---------------------------------------------------------------------------
+
+
+@swagger_auto_schema(
+    method="get",
+    operation_description="""
+    Download the resume attachment for a specific job application.
+
+    Returns the raw file bytes with appropriate Content-Type and
+    Content-Disposition headers so the browser triggers a download.
+    """,
+    manual_parameters=[
+        openapi.Parameter(
+            "org_id",
+            openapi.IN_PATH,
+            description="Organization UUID",
+            type=openapi.TYPE_STRING,
+            format="uuid",
+            required=True,
+        ),
+        openapi.Parameter(
+            "job_profile_id",
+            openapi.IN_PATH,
+            description="Job profile UUID (must belong to the organization)",
+            type=openapi.TYPE_STRING,
+            format="uuid",
+            required=True,
+        ),
+        openapi.Parameter(
+            "job_application_id",
+            openapi.IN_PATH,
+            description="Job application UUID",
+            type=openapi.TYPE_STRING,
+            format="uuid",
+            required=True,
+        ),
+    ],
+    responses={
+        200: "File download",
+        404: "Resume not found",
+    },
+    tags=["Job Applications"],
+)
+@api_view(["GET"])
+@permission_classes([IsAuthenticated, IsOrganizationMember])
+def download_resume(request, org_id, job_profile_id, job_application_id):
+    """Stream the resume file for the given application."""
+    from django.http import HttpResponse
+
+    try:
+        organization = Organization.objects.get(id=org_id)
+    except Organization.DoesNotExist:
+        return Response(
+            {"detail": "Organization not found."},
+            status=status.HTTP_404_NOT_FOUND,
+        )
+
+    try:
+        job_profile = JobProfile.objects.get(
+            id=job_profile_id, organization=organization
+        )
+    except JobProfile.DoesNotExist:
+        return Response(
+            {"detail": "Job profile not found in this organization."},
+            status=status.HTTP_404_NOT_FOUND,
+        )
+
+    try:
+        job_application = JobApplication.objects.get(
+            id=job_application_id, job_profile=job_profile
+        )
+    except JobApplication.DoesNotExist:
+        return Response(
+            {"detail": "Job application not found in this job profile."},
+            status=status.HTTP_404_NOT_FOUND,
+        )
+
+    attachment = ApplicationAttachment.objects.filter(
+        job_application=job_application,
+        file_type=ApplicationAttachment.FileType.RESUME,
+    ).first()
+
+    if attachment is None:
+        return Response(
+            {"detail": "No resume found for this application."},
+            status=status.HTTP_404_NOT_FOUND,
+        )
+
+    storage = get_storage()
+    try:
+        file_bytes = storage.get_file_bytes(attachment.file)
+    except Exception:
+        logger.exception(
+            "Failed to download resume for application %s", job_application_id
+        )
+        return Response(
+            {"detail": "Failed to retrieve the resume file."},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        )
+
+    # Guess content type from extension
+    import mimetypes
+
+    content_type, _ = mimetypes.guess_type(attachment.file_name)
+    content_type = content_type or "application/octet-stream"
+
+    response = HttpResponse(file_bytes, content_type=content_type)
+    response["Content-Disposition"] = f'attachment; filename="{attachment.file_name}"'
+    return response
+
+
+# ---------------------------------------------------------------------------
+# Shortlist / update application status
+# ---------------------------------------------------------------------------
+
+
+@swagger_auto_schema(
+    method="patch",
+    operation_description="""
+    Update the status of a job application.
+
+    Allowed status transitions:
+    - submitted → under_review, shortlisted, rejected
+    - under_review → shortlisted, rejected
+    - shortlisted → rejected
+    - rejected → under_review, shortlisted
+    """,
+    manual_parameters=[
+        openapi.Parameter(
+            "org_id",
+            openapi.IN_PATH,
+            description="Organization UUID",
+            type=openapi.TYPE_STRING,
+            format="uuid",
+            required=True,
+        ),
+        openapi.Parameter(
+            "job_profile_id",
+            openapi.IN_PATH,
+            description="Job profile UUID",
+            type=openapi.TYPE_STRING,
+            format="uuid",
+            required=True,
+        ),
+        openapi.Parameter(
+            "job_application_id",
+            openapi.IN_PATH,
+            description="Job application UUID",
+            type=openapi.TYPE_STRING,
+            format="uuid",
+            required=True,
+        ),
+    ],
+    request_body=openapi.Schema(
+        type=openapi.TYPE_OBJECT,
+        required=["status"],
+        properties={
+            "status": openapi.Schema(
+                type=openapi.TYPE_STRING,
+                enum=["under_review", "shortlisted", "rejected"],
+            ),
+        },
+    ),
+    responses={
+        200: JobApplicationDetailSerializer(),
+        400: "Invalid status transition",
+        404: "Not found",
+    },
+    tags=["Job Applications"],
+)
+@api_view(["PATCH"])
+@permission_classes([IsAuthenticated, IsOrganizationMember])
+def update_application_status(request, org_id, job_profile_id, job_application_id):
+    """Update the status of a job application (shortlist, reject, etc.)."""
+    try:
+        organization = Organization.objects.get(id=org_id)
+    except Organization.DoesNotExist:
+        return Response(
+            {"detail": "Organization not found."},
+            status=status.HTTP_404_NOT_FOUND,
+        )
+
+    try:
+        job_profile = JobProfile.objects.get(
+            id=job_profile_id, organization=organization
+        )
+    except JobProfile.DoesNotExist:
+        return Response(
+            {"detail": "Job profile not found in this organization."},
+            status=status.HTTP_404_NOT_FOUND,
+        )
+
+    try:
+        job_application = JobApplication.objects.get(
+            id=job_application_id, job_profile=job_profile
+        )
+    except JobApplication.DoesNotExist:
+        return Response(
+            {"detail": "Job application not found in this job profile."},
+            status=status.HTTP_404_NOT_FOUND,
+        )
+
+    new_status = request.data.get("status")
+    valid_statuses = {c[0] for c in JobApplication.Status.choices}
+
+    if new_status not in valid_statuses:
+        return Response(
+            {
+                "detail": f"Invalid status. Must be one of: {', '.join(sorted(valid_statuses))}"
+            },
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    # Prevent setting back to 'submitted' via API
+    if new_status == JobApplication.Status.SUBMITTED:
+        return Response(
+            {"detail": "Cannot set status back to 'submitted'."},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    job_application.status = new_status
+    job_application.save(update_fields=["status", "updated_at"])
+
+    serializer = JobApplicationDetailSerializer(job_application)
+    return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+# ---------------------------------------------------------------------------
+# Analytics per job profile
+# ---------------------------------------------------------------------------
+
+
+@swagger_auto_schema(
+    method="get",
+    operation_description="""
+    Get analytics / statistics for a specific job profile.
+
+    Returns:
+    - **total_applications**: Total number of applications
+    - **status_breakdown**: Count per application status
+    - **score_distribution**: Histogram of AI match scores in buckets
+      (0-20, 21-40, 41-60, 61-80, 81-100)
+    - **average_score**: Mean AI score across analysed applications
+    - **top_skills**: Most frequently identified skills (top 15)
+    - **top_traits**: Most frequently identified notable traits (top 10)
+    - **applications_over_time**: Daily application counts (last 30 days)
+    """,
+    manual_parameters=[
+        openapi.Parameter(
+            "org_id",
+            openapi.IN_PATH,
+            description="Organization UUID",
+            type=openapi.TYPE_STRING,
+            format="uuid",
+            required=True,
+        ),
+        openapi.Parameter(
+            "job_profile_id",
+            openapi.IN_PATH,
+            description="Job profile UUID",
+            type=openapi.TYPE_STRING,
+            format="uuid",
+            required=True,
+        ),
+    ],
+    responses={200: "Analytics object"},
+    tags=["Job Applications"],
+)
+@api_view(["GET"])
+@permission_classes([IsAuthenticated, IsOrganizationMember])
+def job_profile_analytics(request, org_id, job_profile_id):
+    """Return aggregate analytics for a job profile."""
+    from collections import Counter
+    from datetime import timedelta
+    from django.db.models import Avg, Count, Q
+    from django.utils import timezone
+
+    try:
+        organization = Organization.objects.get(id=org_id)
+    except Organization.DoesNotExist:
+        return Response(
+            {"detail": "Organization not found."},
+            status=status.HTTP_404_NOT_FOUND,
+        )
+
+    try:
+        job_profile = JobProfile.objects.get(
+            id=job_profile_id, organization=organization
+        )
+    except JobProfile.DoesNotExist:
+        return Response(
+            {"detail": "Job profile not found in this organization."},
+            status=status.HTTP_404_NOT_FOUND,
+        )
+
+    applications = JobApplication.objects.filter(job_profile=job_profile)
+    total = applications.count()
+
+    # --- Status breakdown ---
+    status_breakdown = dict(
+        applications.values_list("status")
+        .annotate(count=Count("id"))
+        .values_list("status", "count")
+    )
+
+    # --- AI analysis stats ---
+    from job_application_analysis.models import ApplicationAnalysis
+
+    analyses = ApplicationAnalysis.objects.filter(
+        job_application__job_profile=job_profile,
+        status=ApplicationAnalysis.Status.DONE,
+    )
+
+    # Score distribution buckets
+    score_distribution = {
+        "0-20": analyses.filter(score__gte=0, score__lte=20).count(),
+        "21-40": analyses.filter(score__gte=21, score__lte=40).count(),
+        "41-60": analyses.filter(score__gte=41, score__lte=60).count(),
+        "61-80": analyses.filter(score__gte=61, score__lte=80).count(),
+        "81-100": analyses.filter(score__gte=81, score__lte=100).count(),
+    }
+
+    avg_score = analyses.aggregate(avg=Avg("score"))["avg"]
+
+    # Top skills & traits
+    skill_counter = Counter()
+    trait_counter = Counter()
+    for a in analyses.values_list("key_skills", "notable_traits"):
+        skills, traits = a
+        if skills:
+            skill_counter.update(skills)
+        if traits:
+            trait_counter.update(traits)
+
+    top_skills = [
+        {"skill": skill, "count": count}
+        for skill, count in skill_counter.most_common(15)
+    ]
+    top_traits = [
+        {"trait": trait, "count": count}
+        for trait, count in trait_counter.most_common(10)
+    ]
+
+    # --- Applications over time (last 30 days) ---
+    thirty_days_ago = timezone.now() - timedelta(days=30)
+    daily_counts = (
+        applications.filter(submitted_at__gte=thirty_days_ago)
+        .extra(select={"day": "DATE(submitted_at)"})
+        .values("day")
+        .annotate(count=Count("id"))
+        .order_by("day")
+    )
+    applications_over_time = [
+        {"date": str(row["day"]), "count": row["count"]} for row in daily_counts
+    ]
+
+    return Response(
+        {
+            "total_applications": total,
+            "status_breakdown": status_breakdown,
+            "score_distribution": score_distribution,
+            "average_score": round(avg_score, 1) if avg_score is not None else None,
+            "top_skills": top_skills,
+            "top_traits": top_traits,
+            "applications_over_time": applications_over_time,
+        },
+        status=status.HTTP_200_OK,
+    )
