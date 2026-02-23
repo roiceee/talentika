@@ -272,6 +272,14 @@ class JobApplicationCreateSerializer(serializers.ModelSerializer):
         answers_data = validated_data.pop("answers", [])
         resume_id = validated_data.pop("resume_id", None)
 
+        # if resume_id is not present, throw error since resume is required
+        if not resume_id:
+            raise serializers.ValidationError(
+                {
+                    "resume_id": "Resume file is required. Please upload your resume and provide the resume_id."
+                }
+            )
+
         # Create job application
         job_application = JobApplication.objects.create(**validated_data)
 
