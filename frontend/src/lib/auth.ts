@@ -1,4 +1,4 @@
-import axios, { type AxiosError } from "axios";
+import axios, { type AxiosError, type InternalAxiosRequestConfig } from "axios";
 import type { UserProfile } from "@/types";
 
 /**
@@ -54,6 +54,38 @@ bffClient.interceptors.request.use((config) => {
   }
   return config;
 });
+
+// On 401, attempt a token refresh and retry the original request once.
+// The refresh endpoint itself is excluded to prevent infinite loops.
+bffClient.interceptors.response.use(
+  (response) => response,
+  async (error: AxiosError) => {
+    const originalRequest = error.config as InternalAxiosRequestConfig & {
+      _retry?: boolean;
+    };
+
+    const isRefreshEndpoint =
+      originalRequest?.url?.endsWith("/api/auth/refresh");
+
+    if (
+      error.response?.status === 401 &&
+      !originalRequest?._retry &&
+      !isRefreshEndpoint
+    ) {
+      originalRequest._retry = true;
+      try {
+        await bffClient.post("/api/auth/refresh");
+        return bffClient(originalRequest);
+      } catch {
+        console.warn("[AUTH REFRESH] Token refresh failed — propagating 401");
+        // Refresh failed — propagate the original 401 so callers can handle it
+        return Promise.reject(error);
+      }
+    }
+
+    return Promise.reject(error);
+  },
+);
 
 /**
  * Ensure a CSRF token cookie exists by calling the CSRF endpoint.

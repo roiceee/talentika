@@ -38,20 +38,31 @@ export async function refreshAccessToken(): Promise<string | null> {
   }
 
   try {
+    console.log("[AUTH REFRESH][server] Calling Django token refresh endpoint");
     const response = await apiUsersAuthTokenRefreshCreate({
       client,
       body: { refresh: refreshToken },
     });
 
-    if (response.data?.access && response.data?.refresh) {
-      await setTokens(response.data.access, response.data.refresh);
+    if (response.data?.access) {
+      // Use the new refresh token if the backend rotated it; otherwise keep the existing one.
+      const newRefresh = response.data.refresh ?? refreshToken;
+      await setTokens(response.data.access, newRefresh);
+      console.log(
+        "[AUTH REFRESH][server] New access token obtained. Refresh token rotated:",
+        !!response.data.refresh,
+      );
       return response.data.access;
     }
 
     // If refresh failed, clear stale tokens
+    console.warn(
+      "[AUTH REFRESH][server] No access token in response — clearing tokens",
+    );
     await clearTokens();
     return null;
-  } catch {
+  } catch (err) {
+    console.error("[AUTH REFRESH][server] Django refresh request failed:", err);
     await clearTokens();
     return null;
   }
