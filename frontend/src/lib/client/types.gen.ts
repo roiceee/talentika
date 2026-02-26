@@ -273,6 +273,24 @@ export type AiScreeningConfiguration = {
     readonly description?: string;
 };
 
+/**
+ * List of required/optional skills for this job profile
+ */
+export type SkillItem = {
+    /**
+     * Skill
+     *
+     * Name of the skill, e.g. 'Python', 'Django'
+     */
+    skill: string;
+    /**
+     * Is required
+     *
+     * True if the skill is mandatory; False if nice-to-have
+     */
+    is_required: boolean;
+};
+
 export type Question = {
     /**
      * Id
@@ -343,6 +361,10 @@ export type JobProfileCreate = {
      * List of job requirements
      */
     requirements?: Array<string>;
+    /**
+     * List of required/optional skills for this job profile
+     */
+    skills?: Array<SkillItem>;
     /**
      * Ai screening configuration
      *
@@ -527,6 +549,7 @@ export type JobProfileDetail = {
      * List of job requirements
      */
     requirements?: Array<string>;
+    readonly skills?: Array<SkillItem>;
     ai_screening_configuration?: AiScreeningConfiguration;
     readonly questions?: Array<Question>;
     /**
@@ -983,6 +1006,10 @@ export type JobProfileCreateWritable = {
      * List of job requirements
      */
     requirements?: Array<string>;
+    /**
+     * List of required/optional skills for this job profile
+     */
+    skills?: Array<SkillItem>;
     /**
      * Ai screening configuration
      *

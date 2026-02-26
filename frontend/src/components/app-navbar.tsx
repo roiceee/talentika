@@ -5,22 +5,47 @@ import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/auth-context";
 import { toast } from "sonner";
+import { useEffect, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Building2, Briefcase, LogOut, User } from "lucide-react";
+import {
+  Building2,
+  Briefcase,
+  LogOut,
+  User,
+  ChevronsUpDown,
+  Check,
+  Settings,
+} from "lucide-react";
+import { listOrganizations, setDefaultOrganization } from "@/lib/api";
+import type { OrganizationListItem } from "@/types";
 
 export function AppNavbar() {
-  const { user, logout } = useAuth();
+  const { user, logout, refreshUser } = useAuth();
   const pathname = usePathname();
   const router = useRouter();
+
+  const [orgs, setOrgs] = useState<OrganizationListItem[]>([]);
+  const [orgDropdownOpen, setOrgDropdownOpen] = useState(false);
+  const [switchingOrgId, setSwitchingOrgId] = useState<string | null>(null);
+
+  // Load orgs once on mount
+  useEffect(() => {
+    listOrganizations()
+      .then(setOrgs)
+      .catch(() => {});
+  }, []);
+
+  const currentOrg = orgs.find((o) => o.id === user?.default_organization);
 
   const initials = user
     ? `${user.first_name?.[0] || ""}${user.last_name?.[0] || ""}`.toUpperCase() ||
@@ -38,33 +63,30 @@ export function AppNavbar() {
     }
   }
 
-  const jobProfilesHref = user?.default_organization
-    ? `/organizations/${user.default_organization}/job-profiles`
-    : "/dashboard";
+  async function handleSwitchOrg(orgId: string) {
+    if (orgId === user?.default_organization) return;
+    setSwitchingOrgId(orgId);
+    try {
+      await setDefaultOrganization(orgId);
+      await refreshUser();
+      setOrgDropdownOpen(false);
+      // Reload job profiles for the new org
+      router.push("/job-profiles");
+      router.refresh();
+      toast.success("Switched organization");
+    } catch {
+      toast.error("Failed to switch organization");
+    } finally {
+      setSwitchingOrgId(null);
+    }
+  }
 
-  const jobProfilesActive =
-    /^\/organizations\/[^/]+\/job-profiles/.test(pathname) ||
-    pathname === "/dashboard";
-
-  const navLinks = [
-    {
-      href: jobProfilesHref,
-      label: "Job Profiles",
-      icon: Briefcase,
-      isActive: jobProfilesActive,
-    },
-    {
-      href: "/organizations",
-      label: "Organizations",
-      icon: Building2,
-      isActive: pathname.startsWith("/organizations") && !jobProfilesActive,
-    },
-  ];
+  const jobProfilesActive = pathname.startsWith("/job-profiles");
 
   return (
     <header className="sticky top-0 z-50 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="container flex h-14 items-center justify-between px-6">
-        <div className="flex items-center gap-6">
+      <div className="mx-auto w-full max-w-5xl flex h-14 items-center justify-between px-6">
+        <div className="flex items-center gap-4">
           <Link href="/dashboard" className="flex items-center">
             <Image
               src="/icon.png"
@@ -74,22 +96,84 @@ export function AppNavbar() {
               priority
             />
           </Link>
+
+          {/* Main nav links */}
           <nav className="hidden items-center gap-1 md:flex">
-            {navLinks.map((link) => (
-              <Link key={link.label} href={link.href}>
-                <Button
-                  variant={link.isActive ? "secondary" : "ghost"}
-                  size="sm"
-                  className="gap-2"
-                >
-                  <link.icon className="h-4 w-4" />
-                  {link.label}
-                </Button>
-              </Link>
-            ))}
+            <Link href="/job-profiles">
+              <Button
+                variant={jobProfilesActive ? "secondary" : "ghost"}
+                size="sm"
+                className="gap-2"
+              >
+                <Briefcase className="h-4 w-4" />
+                Job Profiles
+              </Button>
+            </Link>
           </nav>
+
+          {/* Organization switcher */}
+          <DropdownMenu
+            open={orgDropdownOpen}
+            onOpenChange={setOrgDropdownOpen}
+          >
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm" className="gap-2 max-w-48">
+                <Building2 className="h-4 w-4 shrink-0" />
+                <span className="truncate">
+                  {currentOrg?.name ?? "Select org"}
+                </span>
+                <ChevronsUpDown className="ml-auto h-3.5 w-3.5 shrink-0 opacity-50" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="w-56">
+              <DropdownMenuLabel className="text-xs text-muted-foreground font-normal">
+                Your organizations
+              </DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              {orgs.length === 0 && (
+                <DropdownMenuItem disabled>No organizations</DropdownMenuItem>
+              )}
+              {[...orgs]
+                .sort((a, b) =>
+                  a.id === user?.default_organization
+                    ? -1
+                    : b.id === user?.default_organization
+                      ? 1
+                      : 0,
+                )
+                .map((org) => {
+                  const isActive = org.id === user?.default_organization;
+                  const isSwitching = switchingOrgId === org.id;
+                  return (
+                    <DropdownMenuItem
+                      key={org.id}
+                      onClick={() => handleSwitchOrg(org.id!)}
+                      disabled={isSwitching}
+                      className="gap-2"
+                    >
+                      <Check
+                        className={`h-4 w-4 shrink-0 ${isActive ? "opacity-100" : "opacity-0"}`}
+                      />
+                      <span className="truncate">{org.name}</span>
+                    </DropdownMenuItem>
+                  );
+                })}
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                onClick={() => {
+                  setOrgDropdownOpen(false);
+                  router.push("/organizations");
+                }}
+                className="gap-2"
+              >
+                <Settings className="h-4 w-4" />
+                Manage organizations
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
 
+        {/* User dropdown */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" className="relative h-9 w-9 rounded-full">

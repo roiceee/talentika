@@ -3,15 +3,13 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/auth-context";
-import { listOrganizations } from "@/lib/api";
 import { Skeleton } from "@/components/ui/skeleton";
 
 /**
  * Dashboard page — smart landing page after login.
  *
- * - If the user has a default organization → redirect to its job profiles.
- * - If no default organization → pick the first org in the list and redirect there.
- * - If the user has no organizations at all → redirect to /organizations.
+ * - If the user has a default organization → redirect to job profiles.
+ * - Otherwise → redirect to organizations page to pick one.
  */
 export default function DashboardPage() {
   const { user, isLoading, isAuthenticated } = useAuth();
@@ -26,25 +24,11 @@ export default function DashboardPage() {
     }
 
     if (user?.default_organization) {
-      router.replace(
-        `/organizations/${user.default_organization}/job-profiles`,
-      );
+      router.replace("/job-profiles");
       return;
     }
 
-    // No default — use the first org the user belongs to.
-    listOrganizations()
-      .then((orgs) => {
-        const first = orgs?.[0];
-        if (first) {
-          router.replace(`/organizations/${first.id}/job-profiles`);
-        } else {
-          router.replace("/organizations");
-        }
-      })
-      .catch(() => {
-        router.replace("/organizations");
-      });
+    router.replace("/organizations");
   }, [user, isLoading, isAuthenticated, router]);
 
   return (

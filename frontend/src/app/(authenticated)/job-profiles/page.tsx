@@ -1,12 +1,13 @@
 "use client";
 
-import { useEffect, useState, useCallback, use } from "react";
+import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { AxiosError } from "axios";
+import { useAuth } from "@/contexts/auth-context";
 import type { JobProfileList } from "@/lib/client";
-import { listJobProfiles, getOrganization } from "@/lib/api";
+import { listJobProfiles } from "@/lib/api";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -17,27 +18,21 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ArrowLeft, Briefcase, Plus } from "lucide-react";
+import { Briefcase, Plus } from "lucide-react";
 
-export default function OrgJobProfilesPage({
-  params,
-}: {
-  params: Promise<{ orgId: string }>;
-}) {
-  const { orgId } = use(params);
+export default function JobProfilesPage() {
+  const { user } = useAuth();
   const router = useRouter();
   const [jobProfiles, setJobProfiles] = useState<JobProfileList[]>([]);
-  const [orgName, setOrgName] = useState<string>("");
   const [isLoading, setIsLoading] = useState(true);
 
+  const orgId = user?.default_organization;
+
   const fetchData = useCallback(async () => {
+    if (!orgId) return;
     try {
-      const [profiles, org] = await Promise.all([
-        listJobProfiles(orgId),
-        getOrganization(orgId),
-      ]);
+      const profiles = await listJobProfiles(orgId);
       setJobProfiles(profiles ?? []);
-      setOrgName(org?.name ?? "");
     } catch (error) {
       if (error instanceof AxiosError) {
         if (error.response?.status === 403 || error.response?.status === 404) {
@@ -53,8 +48,13 @@ export default function OrgJobProfilesPage({
   }, [orgId, router]);
 
   useEffect(() => {
+    if (!orgId) {
+      // No default org — send to organizations page to pick one
+      router.replace("/organizations");
+      return;
+    }
     fetchData();
-  }, [fetchData]);
+  }, [orgId, fetchData, router]);
 
   const employmentTypeLabels: Record<string, string> = {
     full_time: "Full Time",
@@ -65,9 +65,9 @@ export default function OrgJobProfilesPage({
     not_applicable: "N/A",
   };
 
-  if (isLoading) {
+  if (!orgId || isLoading) {
     return (
-      <div className="container max-w-4xl px-6 py-8 space-y-6">
+      <div className="mx-auto w-full max-w-4xl px-6 py-8 space-y-6">
         <Skeleton className="h-8 w-48" />
         <div className="space-y-4">
           {[...Array(3)].map((_, i) => (
@@ -79,30 +79,19 @@ export default function OrgJobProfilesPage({
   }
 
   return (
-    <div className="container max-w-4xl px-6 py-8">
+    <div className="mx-auto w-full max-w-4xl px-6 py-8">
       <div className="mb-6">
-        <Link
-          href={`/organizations/${orgId}`}
-          className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground mb-4"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          {orgName || "Organization"}
-        </Link>
         <div className="flex items-center justify-between">
           <div>
             <h1 className="font-heading text-2xl font-semibold">
               Job Profiles
             </h1>
             <p className="text-muted-foreground">
-              Manage job profiles for {orgName}
+              Manage your organization&apos;s job profiles
             </p>
           </div>
           <div className="flex items-center gap-2">
-            <Button
-              onClick={() =>
-                router.push(`/organizations/${orgId}/job-profiles/create`)
-              }
-            >
+            <Button onClick={() => router.push("/job-profiles/create")}>
               <Plus className="mr-2 h-4 w-4" />
               New job profile
             </Button>
@@ -121,11 +110,7 @@ export default function OrgJobProfilesPage({
               Create your first job profile to start receiving and managing
               applications.
             </p>
-            <Button
-              onClick={() =>
-                router.push(`/organizations/${orgId}/job-profiles/create`)
-              }
-            >
+            <Button onClick={() => router.push("/job-profiles/create")}>
               <Plus className="mr-2 h-4 w-4" />
               Create job profile
             </Button>
@@ -136,7 +121,7 @@ export default function OrgJobProfilesPage({
           {jobProfiles.map((profile) => (
             <Link
               key={profile.id}
-              href={`/organizations/${orgId}/job-profiles/${profile.id}`}
+              href={`/job-profiles/${profile.id}`}
               className="block"
             >
               <Card className="transition-colors hover:bg-muted/50">

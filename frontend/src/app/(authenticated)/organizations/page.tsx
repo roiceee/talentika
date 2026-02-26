@@ -110,7 +110,7 @@ export default function OrganizationsPage() {
   }
 
   return (
-    <div className="container max-w-4xl px-6 py-8">
+    <div className="mx-auto w-full max-w-4xl px-6 py-8">
       <div className="mb-8 flex items-center justify-between">
         <div>
           <h1 className="font-heading text-2xl font-semibold">Organizations</h1>

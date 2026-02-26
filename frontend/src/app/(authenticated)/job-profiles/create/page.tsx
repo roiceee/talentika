@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useState, use } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { AxiosError } from "axios";
+import { useAuth } from "@/contexts/auth-context";
 import {
   listJobCategories,
   listExperienceLevels,
@@ -23,13 +24,10 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { ArrowLeft } from "lucide-react";
 
-export default function CreateJobProfilePage({
-  params,
-}: {
-  params: Promise<{ orgId: string }>;
-}) {
-  const { orgId } = use(params);
+export default function CreateJobProfilePage() {
+  const { user } = useAuth();
   const router = useRouter();
+  const orgId = user?.default_organization;
 
   const [categories, setCategories] = useState<JobCategory[]>([]);
   const [experienceLevels, setExperienceLevels] = useState<ExperienceLevel[]>(
@@ -42,6 +40,10 @@ export default function CreateJobProfilePage({
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
+    if (!orgId) {
+      router.replace("/organizations");
+      return;
+    }
     Promise.all([
       listJobCategories(),
       listExperienceLevels(),
@@ -54,32 +56,31 @@ export default function CreateJobProfilePage({
       })
       .catch(() => toast.error("Failed to load reference data"))
       .finally(() => setIsLoadingRef(false));
-  }, []);
+  }, [orgId, router]);
 
   async function handleSubmit(values: JobProfileFormValues) {
+    if (!orgId) return;
     setIsSubmitting(true);
     try {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const payload: any = {
         ...values,
         organization: orgId,
-        // Filter out blank requirements
         requirements: values.requirements.filter((r) => r.trim()),
-        // Normalize questions
         questions: values.questions.map((q, i) => ({
           ...q,
           order: i,
           choices: q.choices.filter((c) => c.trim()),
         })),
       };
-      delete payload.is_active; // not sent on create
+      delete payload.is_active;
 
       const created = await createJobProfile(payload);
       toast.success("Job profile created successfully");
       if (created?.id) {
-        router.push(`/organizations/${orgId}/job-profiles/${created.id}`);
+        router.push(`/job-profiles/${created.id}`);
       } else {
-        router.push(`/organizations/${orgId}/job-profiles`);
+        router.push("/job-profiles");
       }
     } catch (error) {
       if (error instanceof AxiosError) {
@@ -103,11 +104,13 @@ export default function CreateJobProfilePage({
     }
   }
 
+  if (!orgId) return null;
+
   return (
-    <div className="container max-w-3xl px-6 py-8">
+    <div className="mx-auto w-full max-w-3xl px-6 py-8">
       <div className="mb-6">
         <Link
-          href={`/organizations/${orgId}/job-profiles`}
+          href="/job-profiles"
           className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground mb-4"
         >
           <ArrowLeft className="h-4 w-4" />

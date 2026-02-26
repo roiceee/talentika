@@ -35,11 +35,33 @@ import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Plus, Trash2, GripVertical, Loader2 } from "lucide-react";
+import {
+  Plus,
+  Trash2,
+  GripVertical,
+  Loader2,
+  ChevronsUpDown,
+  Check,
+} from "lucide-react";
+import { cn } from "@/lib/utils";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
 import type {
   JobCategory,
   ExperienceLevel,
   AiScreeningConfiguration,
+  SkillItem,
 } from "@/lib/client";
 
 // ---------------------------------------------------------------------------
@@ -70,6 +92,7 @@ export interface JobProfileFormValues {
   experience_level: string;
   description: string;
   requirements: string[];
+  skills: SkillItem[];
   ai_screening_configuration: string | null;
   questions: QuestionFormData[];
   is_active?: boolean;
@@ -101,6 +124,7 @@ const DEFAULT_VALUES: JobProfileFormValues = {
   experience_level: "",
   description: "",
   requirements: [],
+  skills: [],
   ai_screening_configuration: null,
   questions: [],
   is_active: true,
@@ -326,6 +350,8 @@ export function JobProfileForm({
     };
   });
   const [newRequirement, setNewRequirement] = useState("");
+  const [newSkillName, setNewSkillName] = useState("");
+  const [categoryOpen, setCategoryOpen] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const sensors = useSensors(
@@ -389,6 +415,36 @@ export function JobProfileForm({
     };
 
     await onSubmit(normalized);
+  }
+
+  // -------------------------------------------------------------------------
+  // Skills
+  // -------------------------------------------------------------------------
+
+  function addSkill() {
+    const name = newSkillName.trim();
+    if (!name) return;
+    if (
+      values.skills.some((s) => s.skill.toLowerCase() === name.toLowerCase())
+    ) {
+      setNewSkillName("");
+      return;
+    }
+    set("skills", [...values.skills, { skill: name, is_required: false }]);
+    setNewSkillName("");
+  }
+
+  function removeSkill(index: number) {
+    set(
+      "skills",
+      values.skills.filter((_, i) => i !== index),
+    );
+  }
+
+  function toggleSkillRequired(index: number, required: boolean) {
+    const updated = [...values.skills];
+    updated[index] = { ...updated[index], is_required: required };
+    set("skills", updated);
   }
 
   // -------------------------------------------------------------------------
@@ -519,21 +575,55 @@ export function JobProfileForm({
               <Label>
                 Category <span className="text-destructive">*</span>
               </Label>
-              <Select
-                value={values.category}
-                onValueChange={(v) => set("category", v)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select category" />
-                </SelectTrigger>
-                <SelectContent>
-                  {categories.map((c) => (
-                    <SelectItem key={c.id} value={c.id!}>
-                      {c.title}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Popover open={categoryOpen} onOpenChange={setCategoryOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={categoryOpen}
+                    className="w-full justify-between font-normal"
+                  >
+                    {values.category
+                      ? (categories.find((c) => c.id === values.category)
+                          ?.title ?? "Select category")
+                      : "Select category"}
+                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent
+                  className="w-[--radix-popover-trigger-width] p-0"
+                  align="start"
+                >
+                  <Command>
+                    <CommandInput placeholder="Search category…" />
+                    <CommandList>
+                      <CommandEmpty>No category found.</CommandEmpty>
+                      <CommandGroup>
+                        {categories.map((c) => (
+                          <CommandItem
+                            key={c.id}
+                            value={c.title ?? ""}
+                            onSelect={() => {
+                              set("category", c.id!);
+                              setCategoryOpen(false);
+                            }}
+                          >
+                            <Check
+                              className={cn(
+                                "mr-2 h-4 w-4",
+                                values.category === c.id
+                                  ? "opacity-100"
+                                  : "opacity-0",
+                              )}
+                            />
+                            {c.title}
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
               {errors.category && (
                 <p className="text-xs text-destructive">{errors.category}</p>
               )}
@@ -713,7 +803,80 @@ export function JobProfileForm({
           </div>
         </CardContent>
       </Card>
+      {/* ─── Skills ─────────────────────────────────────────────────────────── */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">
+            Skills
+            {values.skills.length > 0 && (
+              <Badge variant="secondary" className="ml-2 text-xs font-normal">
+                {values.skills.length}
+              </Badge>
+            )}
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          {values.skills.length === 0 && (
+            <p className="text-sm text-muted-foreground">
+              No skills added yet.
+            </p>
+          )}
 
+          {values.skills.map((s, i) => (
+            <div key={i} className="flex items-center gap-3">
+              <Checkbox
+                id={`skill_${i}_required`}
+                checked={s.is_required}
+                onCheckedChange={(v: boolean | "indeterminate") =>
+                  toggleSkillRequired(i, v === true)
+                }
+              />
+              <Label htmlFor={`skill_${i}_required`} className="sr-only">
+                Required
+              </Label>
+              <span className="flex-1 text-sm">{s.skill}</span>
+              <Badge
+                variant={s.is_required ? "default" : "outline"}
+                className="text-xs"
+              >
+                {s.is_required ? "Required" : "Nice to have"}
+              </Badge>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="h-7 w-7 shrink-0 text-destructive hover:text-destructive"
+                onClick={() => removeSkill(i)}
+              >
+                <Trash2 className="h-3 w-3" />
+              </Button>
+            </div>
+          ))}
+
+          <div className="flex gap-2">
+            <Input
+              value={newSkillName}
+              onChange={(e) => setNewSkillName(e.target.value)}
+              placeholder="e.g. Python, Django, PostgreSQL…"
+              className="flex-1"
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  addSkill();
+                }
+              }}
+            />
+            <Button type="button" variant="outline" onClick={addSkill}>
+              <Plus className="mr-1 h-4 w-4" />
+              Add
+            </Button>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            Check the checkbox to mark a skill as required; unchecked means nice
+            to have.
+          </p>
+        </CardContent>
+      </Card>
       {/* ─── Questions ──────────────────────────────────────────────────── */}
       <Card>
         <CardHeader>

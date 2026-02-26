@@ -56,9 +56,9 @@ const QUESTION_TYPE_LABELS: Record<string, string> = {
 export default function JobProfileDetailPage({
   params,
 }: {
-  params: Promise<{ orgId: string; jobId: string }>;
+  params: Promise<{ jobId: string }>;
 }) {
-  const { orgId, jobId } = use(params);
+  const { jobId } = use(params);
   const router = useRouter();
 
   const [profile, setProfile] = useState<JobProfileDetail | null>(null);
@@ -89,7 +89,7 @@ export default function JobProfileDetailPage({
       if (error instanceof AxiosError) {
         if (error.response?.status === 403 || error.response?.status === 404) {
           toast.error("Job profile not found");
-          router.push(`/organizations/${orgId}/job-profiles`);
+          router.push("/job-profiles");
           return;
         }
       }
@@ -97,7 +97,7 @@ export default function JobProfileDetailPage({
     } finally {
       setIsLoading(false);
     }
-  }, [jobId, orgId, router]);
+  }, [jobId, router]);
 
   useEffect(() => {
     fetchAll();
@@ -114,6 +114,7 @@ export default function JobProfileDetailPage({
         experience_level: values.experience_level,
         description: values.description,
         requirements: values.requirements.filter((r) => r.trim()),
+        skills: values.skills,
         ai_screening_configuration: values.ai_screening_configuration,
         is_active: values.is_active,
         questions: values.questions.map((q, i) => ({
@@ -152,7 +153,6 @@ export default function JobProfileDetailPage({
     }
   }
 
-  // Build initial form values from the loaded profile
   function buildInitialValues(p: JobProfileDetail): JobProfileFormValues {
     return {
       title: p.title ?? "",
@@ -163,6 +163,10 @@ export default function JobProfileDetailPage({
       experience_level: (p.experience_level as { id?: string })?.id ?? "",
       description: p.description ?? "",
       requirements: p.requirements ?? [],
+      skills: (p.skills ?? []).map((s) => ({
+        skill: (s as { skill?: string }).skill ?? "",
+        is_required: (s as { is_required?: boolean }).is_required ?? false,
+      })),
       ai_screening_configuration:
         (p.ai_screening_configuration as { id?: string })?.id ?? null,
       is_active: p.is_active ?? true,
@@ -180,7 +184,7 @@ export default function JobProfileDetailPage({
   // ─── Loading skeleton ────────────────────────────────────────────────────
   if (isLoading) {
     return (
-      <div className="container max-w-3xl px-6 py-8 space-y-6">
+      <div className="mx-auto w-full max-w-3xl px-6 py-8 space-y-6">
         <Skeleton className="h-8 w-48" />
         <Skeleton className="h-64 w-full rounded-lg" />
         <Skeleton className="h-40 w-full rounded-lg" />
@@ -195,7 +199,7 @@ export default function JobProfileDetailPage({
   // ─── Edit mode ───────────────────────────────────────────────────────────
   if (isEditMode) {
     return (
-      <div className="container max-w-3xl px-6 py-8">
+      <div className="mx-auto w-full max-w-3xl px-6 py-8">
         <div className="mb-6">
           <button
             onClick={() => setIsEditMode(false)}
@@ -226,11 +230,11 @@ export default function JobProfileDetailPage({
 
   // ─── View mode ───────────────────────────────────────────────────────────
   return (
-    <div className="container max-w-3xl px-6 py-8">
+    <div className="mx-auto w-full max-w-3xl px-6 py-8">
       {/* Header */}
       <div className="mb-6">
         <Link
-          href={`/organizations/${orgId}/job-profiles`}
+          href="/job-profiles"
           className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground mb-4"
         >
           <ArrowLeft className="h-4 w-4" />
@@ -330,6 +334,33 @@ export default function JobProfileDetailPage({
                 </li>
               ))}
             </ul>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Skills */}
+      {profile.skills && profile.skills.length > 0 && (
+        <Card className="mb-4">
+          <CardHeader>
+            <CardTitle className="text-base">Skills</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-wrap gap-2">
+              {(
+                profile.skills as Array<{ skill: string; is_required: boolean }>
+              ).map((s, i) => (
+                <Badge
+                  key={i}
+                  variant={s.is_required ? "default" : "outline"}
+                  className="text-xs"
+                >
+                  {s.skill}
+                  {!s.is_required && (
+                    <span className="ml-1 opacity-60">optional</span>
+                  )}
+                </Badge>
+              ))}
+            </div>
           </CardContent>
         </Card>
       )}

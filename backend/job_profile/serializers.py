@@ -39,8 +39,18 @@ class ExperienceLevelSerializer(serializers.ModelSerializer):
         read_only_fields = ["id", "title"]
 
 
+class SkillItemSerializer(serializers.Serializer):
+    """Represents a single skill entry in a job profile."""
+
+    skill = serializers.CharField(
+        help_text="Name of the skill, e.g. 'Python', 'Django'"
+    )
+    is_required = serializers.BooleanField(
+        help_text="True if the skill is mandatory; False if nice-to-have"
+    )
+
+
 class QuestionSerializer(serializers.ModelSerializer):
-    """Serializer for Question"""
 
     class Meta:
         model = Question
@@ -134,6 +144,7 @@ class JobProfileDetailSerializer(serializers.ModelSerializer):
     ai_screening_configuration = AIScreeningConfigurationSerializer(read_only=True)
     created_by = UserSerializer(read_only=True)
     questions = QuestionSerializer(many=True, read_only=True)
+    skills = SkillItemSerializer(many=True, read_only=True)
 
     class Meta:
         model = JobProfile
@@ -165,6 +176,12 @@ class JobProfileCreateSerializer(serializers.ModelSerializer):
     """Serializer for creating/updating job profiles"""
 
     questions = QuestionSerializer(many=True, required=False)
+    skills = SkillItemSerializer(
+        many=True,
+        required=False,
+        default=list,
+        help_text="List of required/optional skills for this job profile",
+    )
 
     class Meta:
         model = JobProfile
@@ -259,27 +276,6 @@ class JobProfileCreateSerializer(serializers.ModelSerializer):
                     Question.objects.create(job_profile=instance, **question_data)
 
         return instance
-
-    def validate_skills(self, value):
-        """Validate skills array structure"""
-        if not isinstance(value, list):
-            raise serializers.ValidationError("Skills must be an array.")
-
-        for skill in value:
-            if not isinstance(skill, dict):
-                raise serializers.ValidationError(
-                    "Each skill must be an object with 'skill' and 'is_required' fields."
-                )
-            if "skill" not in skill or "is_required" not in skill:
-                raise serializers.ValidationError(
-                    "Each skill must have 'skill' and 'is_required' fields."
-                )
-            if not isinstance(skill["skill"], str):
-                raise serializers.ValidationError("Skill name must be a string.")
-            if not isinstance(skill["is_required"], bool):
-                raise serializers.ValidationError("is_required must be a boolean.")
-
-        return value
 
     def validate_requirements(self, value):
         """Validate requirements array"""
