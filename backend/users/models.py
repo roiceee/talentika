@@ -15,6 +15,14 @@ class User(AbstractUser):
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     email = models.EmailField(unique=True, blank=False)
+    default_organization = models.ForeignKey(
+        "organizations.Organization",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="default_users",
+        help_text="The user's default organization (used for login redirect)",
+    )
     # first_name, last_name, password are inherited from AbstractUser
     # is_superuser is also inherited for app owner/super admin access
 

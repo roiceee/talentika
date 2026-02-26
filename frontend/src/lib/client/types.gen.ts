@@ -846,6 +846,12 @@ export type UserProfile = {
      */
     last_name?: string;
     /**
+     * Default organization
+     *
+     * The user's default organization (used for login redirect)
+     */
+    default_organization?: string | null;
+    /**
      * Date joined
      */
     readonly date_joined?: string;
@@ -870,6 +876,12 @@ export type UserUpdate = {
      * Last name
      */
     last_name?: string;
+    /**
+     * Default organization
+     *
+     * The user's default organization (used for login redirect)
+     */
+    default_organization?: string | null;
 };
 
 export type ApplicationAttachmentWritable = {
@@ -1237,6 +1249,12 @@ export type UserProfileWritable = {
      * Last name
      */
     last_name?: string;
+    /**
+     * Default organization
+     *
+     * The user's default organization (used for login redirect)
+     */
+    default_organization?: string | null;
 };
 
 export type UserUpdateWritable = {
@@ -1254,6 +1272,12 @@ export type UserUpdateWritable = {
      * Last name
      */
     last_name?: string;
+    /**
+     * Default organization
+     *
+     * The user's default organization (used for login redirect)
+     */
+    default_organization?: string | null;
 };
 
 export type ApiApplicationsSubmitCreateData = {
@@ -2318,6 +2342,38 @@ export type ApiUsersProfileListResponses = {
 };
 
 export type ApiUsersProfileListResponse = ApiUsersProfileListResponses[keyof ApiUsersProfileListResponses];
+
+export type ApiUsersProfileDefaultOrganizationPartialUpdateData = {
+    body: {
+        /**
+         * Organization UUID to set as default, or null to clear
+         */
+        default_organization: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/api/users/profile/default-organization/';
+};
+
+export type ApiUsersProfileDefaultOrganizationPartialUpdateErrors = {
+    /**
+     * Validation error (e.g., not a member of the organization)
+     */
+    400: unknown;
+    /**
+     * Not authenticated
+     */
+    401: unknown;
+};
+
+export type ApiUsersProfileDefaultOrganizationPartialUpdateResponses = {
+    /**
+     * Default organization updated
+     */
+    200: UserProfile;
+};
+
+export type ApiUsersProfileDefaultOrganizationPartialUpdateResponse = ApiUsersProfileDefaultOrganizationPartialUpdateResponses[keyof ApiUsersProfileDefaultOrganizationPartialUpdateResponses];
 
 export type ApiUsersProfileUpdatePartialUpdateData = {
     body: UserUpdateWritable;

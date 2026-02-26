@@ -15,7 +15,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Building2, LogOut, User } from "lucide-react";
+import { Building2, Briefcase, LogOut, User } from "lucide-react";
 
 export function AppNavbar() {
   const { user, logout } = useAuth();
@@ -38,15 +38,34 @@ export function AppNavbar() {
     }
   }
 
+  const jobProfilesHref = user?.default_organization
+    ? `/organizations/${user.default_organization}/job-profiles`
+    : "/dashboard";
+
+  const jobProfilesActive =
+    /^\/organizations\/[^/]+\/job-profiles/.test(pathname) ||
+    pathname === "/dashboard";
+
   const navLinks = [
-    { href: "/organizations", label: "Organizations", icon: Building2 },
+    {
+      href: jobProfilesHref,
+      label: "Job Profiles",
+      icon: Briefcase,
+      isActive: jobProfilesActive,
+    },
+    {
+      href: "/organizations",
+      label: "Organizations",
+      icon: Building2,
+      isActive: pathname.startsWith("/organizations") && !jobProfilesActive,
+    },
   ];
 
   return (
     <header className="sticky top-0 z-50 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-14 items-center justify-between px-6">
         <div className="flex items-center gap-6">
-          <Link href="/organizations" className="flex items-center">
+          <Link href="/dashboard" className="flex items-center">
             <Image
               src="/icon.png"
               alt="Talentika"
@@ -56,21 +75,18 @@ export function AppNavbar() {
             />
           </Link>
           <nav className="hidden items-center gap-1 md:flex">
-            {navLinks.map((link) => {
-              const isActive = pathname.startsWith(link.href);
-              return (
-                <Link key={link.href} href={link.href}>
-                  <Button
-                    variant={isActive ? "secondary" : "ghost"}
-                    size="sm"
-                    className="gap-2"
-                  >
-                    <link.icon className="h-4 w-4" />
-                    {link.label}
-                  </Button>
-                </Link>
-              );
-            })}
+            {navLinks.map((link) => (
+              <Link key={link.label} href={link.href}>
+                <Button
+                  variant={link.isActive ? "secondary" : "ghost"}
+                  size="sm"
+                  className="gap-2"
+                >
+                  <link.icon className="h-4 w-4" />
+                  {link.label}
+                </Button>
+              </Link>
+            ))}
           </nav>
         </div>
 

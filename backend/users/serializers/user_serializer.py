@@ -104,8 +104,22 @@ class UserUpdateSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ["id", "username", "first_name", "last_name"]
+        fields = ["id", "username", "first_name", "last_name", "default_organization"]
         read_only_fields = ["id"]
+
+    def validate_default_organization(self, value):
+        """Ensure user is a member of the default organization"""
+        if value is not None:
+            from organizations.models import OrganizationMembership
+
+            user = self.instance
+            if not OrganizationMembership.objects.filter(
+                user=user, organization=value
+            ).exists():
+                raise serializers.ValidationError(
+                    "You must be a member of this organization to set it as default."
+                )
+        return value
 
     def validate_username(self, value):
         """Ensure username is unique if changed"""
@@ -120,7 +134,15 @@ class UserProfileSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ["id", "email", "username", "first_name", "last_name", "date_joined"]
+        fields = [
+            "id",
+            "email",
+            "username",
+            "first_name",
+            "last_name",
+            "default_organization",
+            "date_joined",
+        ]
         read_only_fields = ["id", "email", "date_joined"]
 
 

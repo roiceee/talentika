@@ -31,7 +31,7 @@ export default function LoginPage() {
   // Redirect already-authenticated users away from login
   useEffect(() => {
     if (!isLoading && isAuthenticated) {
-      router.replace("/organizations");
+      router.replace("/dashboard");
     }
   }, [isLoading, isAuthenticated, router]);
 
@@ -47,7 +47,7 @@ export default function LoginPage() {
     try {
       await login({ email, password });
       toast.success("Logged in successfully");
-      router.push("/organizations");
+      router.push("/dashboard");
     } catch (error) {
       if (error instanceof AxiosError) {
         const detail =

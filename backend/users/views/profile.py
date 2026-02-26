@@ -68,3 +68,52 @@ def update_user_profile(request):
         return Response(response_serializer.data, status=status.HTTP_200_OK)
 
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+@swagger_auto_schema(
+    method="patch",
+    operation_description="""
+    Set the authenticated user's default organization.
+    
+    The user must be a member of the specified organization.
+    Pass null to clear the default organization.
+    """,
+    request_body=openapi.Schema(
+        type=openapi.TYPE_OBJECT,
+        required=["default_organization"],
+        properties={
+            "default_organization": openapi.Schema(
+                type=openapi.TYPE_STRING,
+                format="uuid",
+                description="Organization UUID to set as default, or null to clear",
+                x_nullable=True,
+            ),
+        },
+    ),
+    responses={
+        200: openapi.Response("Default organization updated", UserProfileSerializer),
+        400: "Validation error (e.g., not a member of the organization)",
+        401: "Not authenticated",
+    },
+    tags=["Users"],
+)
+@api_view(["PATCH"])
+@permission_classes([IsAuthenticated])
+def set_default_organization(request):
+    """
+    Set or clear the user's default organization.
+
+    The user must be a member of the target organization.
+    """
+    serializer = UserUpdateSerializer(
+        request.user,
+        data={"default_organization": request.data.get("default_organization")},
+        partial=True,
+    )
+
+    if serializer.is_valid():
+        serializer.save()
+        response_serializer = UserProfileSerializer(request.user)
+        return Response(response_serializer.data, status=status.HTTP_200_OK)
+
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

@@ -5,6 +5,8 @@ import Link from "next/link";
 import { toast } from "sonner";
 import type { OrganizationListItem, OrganizationCreateData } from "@/types";
 import { listOrganizations, createOrganization } from "@/lib/api";
+import { useAuth } from "@/contexts/auth-context";
+import { setDefaultOrganization } from "@/lib/api";
 import { AxiosError } from "axios";
 
 import { Button } from "@/components/ui/button";
@@ -29,9 +31,11 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Building2, Plus, Users, Loader2 } from "lucide-react";
+import { Building2, Plus, Users, Loader2, Star } from "lucide-react";
 
 export default function OrganizationsPage() {
+  const { user, refreshUser } = useAuth();
+  const [settingDefaultId, setSettingDefaultId] = useState<string | null>(null);
   const [orgs, setOrgs] = useState<OrganizationListItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -61,6 +65,26 @@ export default function OrganizationsPage() {
     fetchOrgs();
   }, []);
 
+  async function handleSetDefault(e: React.MouseEvent, orgId: string) {
+    e.preventDefault();
+    e.stopPropagation();
+    setSettingDefaultId(orgId);
+    try {
+      const isAlreadyDefault = user?.default_organization === orgId;
+      await setDefaultOrganization(isAlreadyDefault ? null : orgId);
+      await refreshUser();
+      toast.success(
+        isAlreadyDefault
+          ? "Default organization cleared"
+          : "Default organization updated",
+      );
+    } catch {
+      toast.error("Failed to update default organization");
+    } finally {
+      setSettingDefaultId(null);
+    }
+  }
+
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault();
     setIsCreating(true);
@@ -84,13 +108,6 @@ export default function OrganizationsPage() {
       setIsCreating(false);
     }
   }
-
-  const statusColor: Record<string, string> = {
-    APPROVED: "bg-green-100 text-green-800",
-    PENDING: "bg-yellow-100 text-yellow-800",
-    REJECTED: "bg-red-100 text-red-800",
-    SUSPENDED: "bg-gray-100 text-gray-800",
-  };
 
   return (
     <div className="container max-w-4xl px-6 py-8">
@@ -178,9 +195,10 @@ export default function OrganizationsPage() {
             <h3 className="mb-2 font-heading text-lg font-semibold">
               No organizations yet
             </h3>
-            <p className="mb-4 text-sm text-muted-foreground">
-              Create your first organization or accept an invitation to get
-              started.
+            <p className="mb-4 text-sm text-muted-foreground text-center max-w-md">
+              Create your first organization to get started. You need an
+              organization before you can create job profiles and manage
+              applications.
             </p>
             <Button onClick={() => setDialogOpen(true)}>
               <Plus className="mr-2 h-4 w-4" />
@@ -200,12 +218,41 @@ export default function OrganizationsPage() {
                 <CardHeader className="pb-2">
                   <div className="flex items-center justify-between">
                     <CardTitle className="text-lg">{org.name}</CardTitle>
-                    <Badge
-                      variant="outline"
-                      className={statusColor[org.status ?? ""] || ""}
-                    >
-                      {org.status}
-                    </Badge>
+                    <div className="flex items-center gap-2">
+                      {user?.default_organization === org.id && (
+                        <Badge
+                          variant="outline"
+                          className="bg-yellow-50 text-yellow-700 border-yellow-300"
+                        >
+                          <Star className="mr-1 h-3 w-3 fill-yellow-400" />
+                          Default
+                        </Badge>
+                      )}
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 px-2"
+                        onClick={(e) => handleSetDefault(e, org.id!)}
+                        disabled={settingDefaultId === org.id}
+                        title={
+                          user?.default_organization === org.id
+                            ? "Clear default"
+                            : "Set as default"
+                        }
+                      >
+                        {settingDefaultId === org.id ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <Star
+                            className={`h-4 w-4 ${
+                              user?.default_organization === org.id
+                                ? "fill-yellow-400 text-yellow-400"
+                                : "text-muted-foreground"
+                            }`}
+                          />
+                        )}
+                      </Button>
+                    </div>
                   </div>
                   {org.description && (
                     <CardDescription className="line-clamp-2">

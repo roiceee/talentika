@@ -17,6 +17,12 @@ export type {
   Address,
   PasswordResetRequest,
   PasswordResetConfirm,
+  JobProfileList,
+  JobProfileDetail,
+  JobProfileCreate,
+  JobCategory,
+  ExperienceLevel,
+  AiScreeningConfiguration,
 } from "@/lib/client";
 
 export type { InvitationValidationResult } from "@/lib/api";

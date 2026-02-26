@@ -7,6 +7,7 @@ from .views import (
     register_user,
     get_user_profile,
     update_user_profile,
+    set_default_organization,
     password_reset_request,
     password_reset_confirm,
 )
@@ -60,6 +61,11 @@ urlpatterns = [
     # User profile endpoints
     path("profile/", get_user_profile, name="user_profile"),
     path("profile/update/", update_user_profile, name="user_profile_update"),
+    path(
+        "profile/default-organization/",
+        set_default_organization,
+        name="set_default_organization",
+    ),
     # Password reset endpoints
     path("password-reset/", password_reset_request, name="password_reset_request"),
     path(

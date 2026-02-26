@@ -11,9 +11,7 @@ import { errorResponse } from "@/lib/server/errors";
  */
 export async function DELETE(
   _request: NextRequest,
-  {
-    params,
-  }: { params: Promise<{ orgId: string; membershipId: string }> },
+  { params }: { params: Promise<{ orgId: string; membershipId: string }> },
 ) {
   try {
     const { orgId, membershipId } = await params;

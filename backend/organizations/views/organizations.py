@@ -82,6 +82,11 @@ def create_organization(request):
             role=OrganizationMembership.Role.ORG_ADMIN,
         )
 
+        # Auto-set as default if the user has no default organization yet
+        if request.user.default_organization is None:
+            request.user.default_organization = organization
+            request.user.save(update_fields=["default_organization"])
+
         # Return full organization details
         response_serializer = OrganizationSerializer(organization)
         return Response(response_serializer.data, status=status.HTTP_201_CREATED)

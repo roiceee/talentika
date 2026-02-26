@@ -3,6 +3,13 @@ import type {
   Organization,
   OrganizationMembership,
   OrganizationInvitation,
+  JobProfileList,
+  JobProfileDetail,
+  JobProfileCreate,
+  JobCategory,
+  ExperienceLevel,
+  AiScreeningConfiguration,
+  UserProfile,
 } from "@/lib/client";
 import { bffClient } from "@/lib/auth";
 
@@ -49,9 +56,8 @@ export async function updateUserProfile(data: {
 // ---------------------------------------------------------------------------
 
 export async function listOrganizations(): Promise<OrganizationList[]> {
-  const response = await bffClient.get<OrganizationList[]>(
-    "/api/organizations",
-  );
+  const response =
+    await bffClient.get<OrganizationList[]>("/api/organizations");
   return response.data;
 }
 
@@ -74,10 +80,7 @@ export async function updateOrganization(
   orgId: string,
   data: { name?: string; description?: string },
 ): Promise<unknown> {
-  const response = await bffClient.patch(
-    `/api/organizations/${orgId}`,
-    data,
-  );
+  const response = await bffClient.patch(`/api/organizations/${orgId}`, data);
   return response.data;
 }
 
@@ -105,9 +108,7 @@ export async function removeMember(
 }
 
 export async function leaveOrganization(orgId: string): Promise<unknown> {
-  const response = await bffClient.delete(
-    `/api/organizations/${orgId}/leave`,
-  );
+  const response = await bffClient.delete(`/api/organizations/${orgId}/leave`);
   return response.data;
 }
 
@@ -176,6 +177,78 @@ export async function confirmPasswordReset(
       new_password: newPassword,
       new_password_confirm: confirmPassword,
     },
+  );
+  return response.data;
+}
+
+// ---------------------------------------------------------------------------
+// Job Profiles
+// ---------------------------------------------------------------------------
+
+export async function listJobProfiles(
+  orgId: string,
+): Promise<JobProfileList[]> {
+  const response = await bffClient.get<JobProfileList[]>(
+    `/api/organizations/${orgId}/job-profiles`,
+  );
+  return response.data;
+}
+
+export async function getJobProfile(jobId: string): Promise<JobProfileDetail> {
+  const response = await bffClient.get<JobProfileDetail>(
+    `/api/job-profiles/${jobId}`,
+  );
+  return response.data;
+}
+
+export async function createJobProfile(
+  data: JobProfileCreate,
+): Promise<unknown> {
+  const response = await bffClient.post("/api/job-profiles", data);
+  return response.data;
+}
+
+export async function updateJobProfile(
+  jobId: string,
+  data: Partial<JobProfileCreate>,
+): Promise<unknown> {
+  const response = await bffClient.patch(`/api/job-profiles/${jobId}`, data);
+  return response.data;
+}
+
+export async function listJobCategories(): Promise<JobCategory[]> {
+  const response = await bffClient.get<JobCategory[]>(
+    "/api/job-profiles?type=categories",
+  );
+  return response.data;
+}
+
+export async function listExperienceLevels(): Promise<ExperienceLevel[]> {
+  const response = await bffClient.get<ExperienceLevel[]>(
+    "/api/job-profiles?type=experience-levels",
+  );
+  return response.data;
+}
+
+export async function listAiScreeningConfigs(): Promise<
+  AiScreeningConfiguration[]
+> {
+  const response = await bffClient.get<AiScreeningConfiguration[]>(
+    "/api/job-profiles?type=ai-screening-configs",
+  );
+  return response.data;
+}
+
+// ---------------------------------------------------------------------------
+// Default Organization
+// ---------------------------------------------------------------------------
+
+export async function setDefaultOrganization(
+  orgId: string | null,
+): Promise<UserProfile> {
+  const response = await bffClient.patch<UserProfile>(
+    "/api/users/profile/default-organization",
+    { default_organization: orgId },
   );
   return response.data;
 }
