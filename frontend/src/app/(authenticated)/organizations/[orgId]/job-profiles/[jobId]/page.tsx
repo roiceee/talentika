@@ -1,0 +1,419 @@
+"use client";
+
+import { useEffect, useState, useCallback, use } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
+import { AxiosError } from "axios";
+import {
+  getJobProfile,
+  updateJobProfile,
+  listJobCategories,
+  listExperienceLevels,
+  listAiScreeningConfigs,
+} from "@/lib/api";
+import type {
+  JobProfileDetail,
+  JobCategory,
+  ExperienceLevel,
+  AiScreeningConfiguration,
+} from "@/lib/client";
+import {
+  JobProfileForm,
+  type JobProfileFormValues,
+} from "@/components/job-profile-form";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Separator } from "@/components/ui/separator";
+import {
+  ArrowLeft,
+  Pencil,
+  X,
+  CheckCircle2,
+  XCircle,
+  List,
+  MessageSquare,
+  ChevronRight,
+} from "lucide-react";
+
+const EMPLOYMENT_TYPE_LABELS: Record<string, string> = {
+  full_time: "Full Time",
+  part_time: "Part Time",
+  contract: "Contract",
+  internship: "Internship",
+  freelance: "Freelance",
+  not_applicable: "Not Applicable",
+};
+
+const QUESTION_TYPE_LABELS: Record<string, string> = {
+  text: "Text",
+  mcq: "Multiple Choice (multi)",
+  mcq_single: "Multiple Choice (single)",
+};
+
+export default function JobProfileDetailPage({
+  params,
+}: {
+  params: Promise<{ orgId: string; jobId: string }>;
+}) {
+  const { orgId, jobId } = use(params);
+  const router = useRouter();
+
+  const [profile, setProfile] = useState<JobProfileDetail | null>(null);
+  const [categories, setCategories] = useState<JobCategory[]>([]);
+  const [experienceLevels, setExperienceLevels] = useState<ExperienceLevel[]>(
+    [],
+  );
+  const [aiScreeningConfigs, setAiScreeningConfigs] = useState<
+    AiScreeningConfiguration[]
+  >([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const fetchAll = useCallback(async () => {
+    try {
+      const [prof, cats, levels, configs] = await Promise.all([
+        getJobProfile(jobId),
+        listJobCategories(),
+        listExperienceLevels(),
+        listAiScreeningConfigs(),
+      ]);
+      setProfile(prof);
+      setCategories(cats ?? []);
+      setExperienceLevels(levels ?? []);
+      setAiScreeningConfigs(configs ?? []);
+    } catch (error) {
+      if (error instanceof AxiosError) {
+        if (error.response?.status === 403 || error.response?.status === 404) {
+          toast.error("Job profile not found");
+          router.push(`/organizations/${orgId}/job-profiles`);
+          return;
+        }
+      }
+      toast.error("Failed to load job profile");
+    } finally {
+      setIsLoading(false);
+    }
+  }, [jobId, orgId, router]);
+
+  useEffect(() => {
+    fetchAll();
+  }, [fetchAll]);
+
+  async function handleUpdate(values: JobProfileFormValues) {
+    setIsSubmitting(true);
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const payload: any = {
+        title: values.title,
+        category: values.category,
+        employment_type: values.employment_type,
+        experience_level: values.experience_level,
+        description: values.description,
+        requirements: values.requirements.filter((r) => r.trim()),
+        ai_screening_configuration: values.ai_screening_configuration,
+        is_active: values.is_active,
+        questions: values.questions.map((q, i) => ({
+          ...(q.id ? { id: q.id } : {}),
+          text: q.text,
+          question_type: q.question_type,
+          order: i,
+          choices: q.choices.filter((c) => c.trim()),
+          is_required: q.is_required,
+        })),
+      };
+
+      const updated = await updateJobProfile(jobId, payload);
+      setProfile(updated);
+      toast.success("Job profile updated");
+      setIsEditMode(false);
+    } catch (error) {
+      if (error instanceof AxiosError) {
+        const data = error.response?.data;
+        if (typeof data === "object" && data !== null) {
+          const messages = Object.entries(data)
+            .map(
+              ([key, val]) =>
+                `${key}: ${Array.isArray(val) ? val.join(", ") : val}`,
+            )
+            .join("; ");
+          toast.error(messages || "Failed to update job profile");
+        } else {
+          toast.error("Failed to update job profile");
+        }
+      } else {
+        toast.error("Failed to update job profile");
+      }
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
+
+  // Build initial form values from the loaded profile
+  function buildInitialValues(p: JobProfileDetail): JobProfileFormValues {
+    return {
+      title: p.title ?? "",
+      category: (p.category as { id?: string })?.id ?? "",
+      employment_type:
+        (p.employment_type as JobProfileFormValues["employment_type"]) ??
+        "full_time",
+      experience_level: (p.experience_level as { id?: string })?.id ?? "",
+      description: p.description ?? "",
+      requirements: p.requirements ?? [],
+      ai_screening_configuration:
+        (p.ai_screening_configuration as { id?: string })?.id ?? null,
+      is_active: p.is_active ?? true,
+      questions: (p.questions ?? []).map((q) => ({
+        id: q.id,
+        text: q.text,
+        question_type: q.question_type ?? "text",
+        order: q.order ?? 0,
+        choices: q.choices ?? [],
+        is_required: q.is_required ?? true,
+      })),
+    };
+  }
+
+  // ─── Loading skeleton ────────────────────────────────────────────────────
+  if (isLoading) {
+    return (
+      <div className="container max-w-3xl px-6 py-8 space-y-6">
+        <Skeleton className="h-8 w-48" />
+        <Skeleton className="h-64 w-full rounded-lg" />
+        <Skeleton className="h-40 w-full rounded-lg" />
+      </div>
+    );
+  }
+
+  if (!profile) return null;
+
+  const isActive = profile.is_active ?? true;
+
+  // ─── Edit mode ───────────────────────────────────────────────────────────
+  if (isEditMode) {
+    return (
+      <div className="container max-w-3xl px-6 py-8">
+        <div className="mb-6">
+          <button
+            onClick={() => setIsEditMode(false)}
+            className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground mb-4"
+          >
+            <X className="h-4 w-4" />
+            Cancel editing
+          </button>
+          <h1 className="font-heading text-2xl font-semibold">
+            Edit Job Profile
+          </h1>
+          <p className="text-muted-foreground">{profile.title}</p>
+        </div>
+
+        <JobProfileForm
+          categories={categories}
+          experienceLevels={experienceLevels}
+          aiScreeningConfigs={aiScreeningConfigs}
+          initialValues={buildInitialValues(profile)}
+          onSubmit={handleUpdate}
+          submitLabel="Save Changes"
+          isSubmitting={isSubmitting}
+          showIsActive
+        />
+      </div>
+    );
+  }
+
+  // ─── View mode ───────────────────────────────────────────────────────────
+  return (
+    <div className="container max-w-3xl px-6 py-8">
+      {/* Header */}
+      <div className="mb-6">
+        <Link
+          href={`/organizations/${orgId}/job-profiles`}
+          className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground mb-4"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Back to Job Profiles
+        </Link>
+
+        <div className="flex items-start justify-between gap-4">
+          <div className="space-y-1">
+            <div className="flex items-center gap-2 flex-wrap">
+              <h1 className="font-heading text-2xl font-semibold">
+                {profile.title}
+              </h1>
+              {isActive ? (
+                <Badge variant="secondary" className="flex items-center gap-1">
+                  <CheckCircle2 className="h-3 w-3" />
+                  Active
+                </Badge>
+              ) : (
+                <Badge
+                  variant="outline"
+                  className="flex items-center gap-1 text-muted-foreground"
+                >
+                  <XCircle className="h-3 w-3" />
+                  Inactive
+                </Badge>
+              )}
+            </div>
+            <p className="text-muted-foreground text-sm">
+              {(profile.organization as { name?: string })?.name}
+            </p>
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setIsEditMode(true)}
+            className="shrink-0"
+          >
+            <Pencil className="mr-2 h-4 w-4" />
+            Edit
+          </Button>
+        </div>
+      </div>
+
+      {/* Meta badges */}
+      <div className="mb-6 flex flex-wrap gap-2">
+        {profile.category && (
+          <Badge variant="secondary">
+            {(profile.category as { title?: string })?.title}
+          </Badge>
+        )}
+        {profile.experience_level && (
+          <Badge variant="outline">
+            {(profile.experience_level as { title?: string })?.title}
+          </Badge>
+        )}
+        {profile.employment_type && (
+          <Badge variant="outline">
+            {EMPLOYMENT_TYPE_LABELS[profile.employment_type] ??
+              profile.employment_type}
+          </Badge>
+        )}
+        {profile.ai_screening_configuration && (
+          <Badge variant="secondary" className="text-xs">
+            AI:{" "}
+            {(profile.ai_screening_configuration as { title?: string })?.title}
+          </Badge>
+        )}
+      </div>
+
+      {/* Description */}
+      <Card className="mb-4">
+        <CardHeader>
+          <CardTitle className="text-base">Description</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-sm whitespace-pre-wrap text-muted-foreground leading-relaxed">
+            {profile.description}
+          </p>
+        </CardContent>
+      </Card>
+
+      {/* Requirements */}
+      {profile.requirements && profile.requirements.length > 0 && (
+        <Card className="mb-4">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-base">
+              <List className="h-4 w-4" />
+              Requirements
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ul className="space-y-2">
+              {profile.requirements.map((req, i) => (
+                <li key={i} className="flex items-start gap-2 text-sm">
+                  <ChevronRight className="h-4 w-4 mt-0.5 shrink-0 text-muted-foreground" />
+                  <span>{req}</span>
+                </li>
+              ))}
+            </ul>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Questions */}
+      {profile.questions && profile.questions.length > 0 && (
+        <Card className="mb-4">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-base">
+              <MessageSquare className="h-4 w-4" />
+              Application Questions
+              <Badge variant="secondary" className="text-xs font-normal">
+                {profile.questions.length}
+              </Badge>
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {profile.questions.map((q, i) => (
+              <div key={q.id ?? i}>
+                {i > 0 && <Separator className="mb-4" />}
+                <div className="space-y-2">
+                  <div className="flex items-start gap-2">
+                    <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-medium shrink-0">
+                      {i + 1}
+                    </span>
+                    <p className="text-sm font-medium">{q.text}</p>
+                  </div>
+                  <div className="ml-8 flex flex-wrap items-center gap-2">
+                    <Badge variant="outline" className="text-xs">
+                      {QUESTION_TYPE_LABELS[q.question_type ?? "text"] ??
+                        q.question_type}
+                    </Badge>
+                    {q.is_required ? (
+                      <Badge
+                        variant="secondary"
+                        className="text-xs text-destructive"
+                      >
+                        Required
+                      </Badge>
+                    ) : (
+                      <Badge variant="outline" className="text-xs">
+                        Optional
+                      </Badge>
+                    )}
+                  </div>
+                  {q.choices && q.choices.length > 0 && (
+                    <ul className="ml-8 mt-1 space-y-1">
+                      {q.choices.map((c, ci) => (
+                        <li
+                          key={ci}
+                          className="flex items-center gap-2 text-sm text-muted-foreground"
+                        >
+                          <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground shrink-0" />
+                          {c}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Footer meta */}
+      <div className="mt-6 text-xs text-muted-foreground space-y-1">
+        {profile.created_at && (
+          <p>
+            Created {new Date(profile.created_at).toLocaleDateString()}{" "}
+            {profile.created_by && (
+              <>
+                by {(profile.created_by as { first_name?: string })?.first_name}{" "}
+                {(profile.created_by as { last_name?: string })?.last_name}
+              </>
+            )}
+          </p>
+        )}
+        {profile.updated_at && (
+          <p>
+            Last updated {new Date(profile.updated_at).toLocaleDateString()}
+          </p>
+        )}
+      </div>
+    </div>
+  );
+}

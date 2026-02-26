@@ -23,6 +23,7 @@ export type {
   JobCategory,
   ExperienceLevel,
   AiScreeningConfiguration,
+  Question,
 } from "@/lib/client";
 
 export type { InvitationValidationResult } from "@/lib/api";

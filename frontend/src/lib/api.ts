@@ -203,16 +203,22 @@ export async function getJobProfile(jobId: string): Promise<JobProfileDetail> {
 
 export async function createJobProfile(
   data: JobProfileCreate,
-): Promise<unknown> {
-  const response = await bffClient.post("/api/job-profiles", data);
+): Promise<JobProfileDetail> {
+  const response = await bffClient.post<JobProfileDetail>(
+    "/api/job-profiles",
+    data,
+  );
   return response.data;
 }
 
 export async function updateJobProfile(
   jobId: string,
   data: Partial<JobProfileCreate>,
-): Promise<unknown> {
-  const response = await bffClient.patch(`/api/job-profiles/${jobId}`, data);
+): Promise<JobProfileDetail> {
+  const response = await bffClient.patch<JobProfileDetail>(
+    `/api/job-profiles/${jobId}`,
+    data,
+  );
   return response.data;
 }
 
