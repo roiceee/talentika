@@ -37,7 +37,7 @@ export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends 
  * - Job profile must be active to accept applications
  *
  */
-export const apiApplicationsSubmitCreate = <ThrowOnError extends boolean = false>(options: Options<ApiApplicationsSubmitCreateData, ThrowOnError>) => (options.client ?? client).post<ApiApplicationsSubmitCreateResponses, ApiApplicationsSubmitCreateErrors, ThrowOnError>({
+export const apiApplicationsSubmitCreate = <ThrowOnError extends boolean = true>(options: Options<ApiApplicationsSubmitCreateData, ThrowOnError>) => (options.client ?? client).post<ApiApplicationsSubmitCreateResponses, ApiApplicationsSubmitCreateErrors, ThrowOnError>({
     responseType: 'json',
     url: '/api/applications/submit/',
     ...options,
@@ -62,7 +62,7 @@ export const apiApplicationsSubmitCreate = <ThrowOnError extends boolean = false
  * File size limit: 10 MB.
  *
  */
-export const apiApplicationsSubmitUploadResumeCreate = <ThrowOnError extends boolean = false>(options: Options<ApiApplicationsSubmitUploadResumeCreateData, ThrowOnError>) => (options.client ?? client).post<ApiApplicationsSubmitUploadResumeCreateResponses, ApiApplicationsSubmitUploadResumeCreateErrors, ThrowOnError>({
+export const apiApplicationsSubmitUploadResumeCreate = <ThrowOnError extends boolean = true>(options: Options<ApiApplicationsSubmitUploadResumeCreateData, ThrowOnError>) => (options.client ?? client).post<ApiApplicationsSubmitUploadResumeCreateResponses, ApiApplicationsSubmitUploadResumeCreateErrors, ThrowOnError>({
     ...formDataBodySerializer,
     responseType: 'json',
     url: '/api/applications/submit/upload/resume/',
@@ -76,7 +76,7 @@ export const apiApplicationsSubmitUploadResumeCreate = <ThrowOnError extends boo
 /**
  * Retrieve the analysis result for a specific job application.  The requesting user must be a member of the application's organization.
  */
-export const apiApplicationsAnalysisList = <ThrowOnError extends boolean = false>(options: Options<ApiApplicationsAnalysisListData, ThrowOnError>) => (options.client ?? client).get<ApiApplicationsAnalysisListResponses, ApiApplicationsAnalysisListErrors, ThrowOnError>({
+export const apiApplicationsAnalysisList = <ThrowOnError extends boolean = true>(options: Options<ApiApplicationsAnalysisListData, ThrowOnError>) => (options.client ?? client).get<ApiApplicationsAnalysisListResponses, ApiApplicationsAnalysisListErrors, ThrowOnError>({
     responseType: 'json',
     security: [{ name: 'Authorization', type: 'apiKey' }],
     url: '/api/applications/{application_id}/analysis/',
@@ -86,7 +86,7 @@ export const apiApplicationsAnalysisList = <ThrowOnError extends boolean = false
 /**
  * Re-trigger the analysis pipeline for a FAILED application analysis.  Resets the status to UPLOADED and re-enqueues the OCR task.
  */
-export const apiApplicationsAnalysisRetryCreate = <ThrowOnError extends boolean = false>(options: Options<ApiApplicationsAnalysisRetryCreateData, ThrowOnError>) => (options.client ?? client).post<ApiApplicationsAnalysisRetryCreateResponses, ApiApplicationsAnalysisRetryCreateErrors, ThrowOnError>({
+export const apiApplicationsAnalysisRetryCreate = <ThrowOnError extends boolean = true>(options: Options<ApiApplicationsAnalysisRetryCreateData, ThrowOnError>) => (options.client ?? client).post<ApiApplicationsAnalysisRetryCreateResponses, ApiApplicationsAnalysisRetryCreateErrors, ThrowOnError>({
     responseType: 'json',
     security: [{ name: 'Authorization', type: 'apiKey' }],
     url: '/api/applications/{application_id}/analysis/retry/',
@@ -109,7 +109,7 @@ export const apiApplicationsAnalysisRetryCreate = <ThrowOnError extends boolean 
  * - Returns success response with membership details
  *
  */
-export const apiInvitationsAcceptCreate = <ThrowOnError extends boolean = false>(options: Options<ApiInvitationsAcceptCreateData, ThrowOnError>) => (options.client ?? client).post<ApiInvitationsAcceptCreateResponses, ApiInvitationsAcceptCreateErrors, ThrowOnError>({
+export const apiInvitationsAcceptCreate = <ThrowOnError extends boolean = true>(options: Options<ApiInvitationsAcceptCreateData, ThrowOnError>) => (options.client ?? client).post<ApiInvitationsAcceptCreateResponses, ApiInvitationsAcceptCreateErrors, ThrowOnError>({
     responseType: 'json',
     security: [{ name: 'Authorization', type: 'apiKey' }],
     url: '/api/invitations/accept/',
@@ -129,7 +129,7 @@ export const apiInvitationsAcceptCreate = <ThrowOnError extends boolean = false>
  * Returns organization info, role, and invitation status.
  *
  */
-export const apiInvitationsValidateCreate = <ThrowOnError extends boolean = false>(options: Options<ApiInvitationsValidateCreateData, ThrowOnError>) => (options.client ?? client).post<ApiInvitationsValidateCreateResponses, ApiInvitationsValidateCreateErrors, ThrowOnError>({
+export const apiInvitationsValidateCreate = <ThrowOnError extends boolean = true>(options: Options<ApiInvitationsValidateCreateData, ThrowOnError>) => (options.client ?? client).post<ApiInvitationsValidateCreateResponses, ApiInvitationsValidateCreateErrors, ThrowOnError>({
     responseType: 'json',
     security: [{ name: 'Authorization', type: 'apiKey' }],
     url: '/api/invitations/validate/',
@@ -143,7 +143,7 @@ export const apiInvitationsValidateCreate = <ThrowOnError extends boolean = fals
 /**
  * Get all AI screening configurations. Used for populating AI screening dropdown when creating job profiles.
  */
-export const apiJobProfilesAiScreeningConfigsList = <ThrowOnError extends boolean = false>(options?: Options<ApiJobProfilesAiScreeningConfigsListData, ThrowOnError>) => (options?.client ?? client).get<ApiJobProfilesAiScreeningConfigsListResponses, unknown, ThrowOnError>({
+export const apiJobProfilesAiScreeningConfigsList = <ThrowOnError extends boolean = true>(options?: Options<ApiJobProfilesAiScreeningConfigsListData, ThrowOnError>) => (options?.client ?? client).get<ApiJobProfilesAiScreeningConfigsListResponses, unknown, ThrowOnError>({
     responseType: 'json',
     security: [{ name: 'Authorization', type: 'apiKey' }],
     url: '/api/job-profiles/ai-screening-configs/',
@@ -158,7 +158,7 @@ export const apiJobProfilesAiScreeningConfigsList = <ThrowOnError extends boolea
  * The authenticated user will be set as the creator.
  *
  */
-export const apiJobProfilesCreateCreate = <ThrowOnError extends boolean = false>(options: Options<ApiJobProfilesCreateCreateData, ThrowOnError>) => (options.client ?? client).post<ApiJobProfilesCreateCreateResponses, ApiJobProfilesCreateCreateErrors, ThrowOnError>({
+export const apiJobProfilesCreateCreate = <ThrowOnError extends boolean = true>(options: Options<ApiJobProfilesCreateCreateData, ThrowOnError>) => (options.client ?? client).post<ApiJobProfilesCreateCreateResponses, ApiJobProfilesCreateCreateErrors, ThrowOnError>({
     responseType: 'json',
     security: [{ name: 'Authorization', type: 'apiKey' }],
     url: '/api/job-profiles/create/',
@@ -172,7 +172,7 @@ export const apiJobProfilesCreateCreate = <ThrowOnError extends boolean = false>
 /**
  * Get all experience levels. Used for populating experience level dropdown when creating job profiles.
  */
-export const apiJobProfilesExperienceLevelsList = <ThrowOnError extends boolean = false>(options?: Options<ApiJobProfilesExperienceLevelsListData, ThrowOnError>) => (options?.client ?? client).get<ApiJobProfilesExperienceLevelsListResponses, unknown, ThrowOnError>({
+export const apiJobProfilesExperienceLevelsList = <ThrowOnError extends boolean = true>(options?: Options<ApiJobProfilesExperienceLevelsListData, ThrowOnError>) => (options?.client ?? client).get<ApiJobProfilesExperienceLevelsListResponses, unknown, ThrowOnError>({
     responseType: 'json',
     security: [{ name: 'Authorization', type: 'apiKey' }],
     url: '/api/job-profiles/experience-levels/',
@@ -182,7 +182,7 @@ export const apiJobProfilesExperienceLevelsList = <ThrowOnError extends boolean 
 /**
  * Get all job categories. Used for populating category dropdown when creating job profiles.
  */
-export const apiJobProfilesJobCategoriesList = <ThrowOnError extends boolean = false>(options?: Options<ApiJobProfilesJobCategoriesListData, ThrowOnError>) => (options?.client ?? client).get<ApiJobProfilesJobCategoriesListResponses, unknown, ThrowOnError>({
+export const apiJobProfilesJobCategoriesList = <ThrowOnError extends boolean = true>(options?: Options<ApiJobProfilesJobCategoriesListData, ThrowOnError>) => (options?.client ?? client).get<ApiJobProfilesJobCategoriesListResponses, unknown, ThrowOnError>({
     responseType: 'json',
     security: [{ name: 'Authorization', type: 'apiKey' }],
     url: '/api/job-profiles/job-categories/',
@@ -197,7 +197,7 @@ export const apiJobProfilesJobCategoriesList = <ThrowOnError extends boolean = f
  * No authentication required - this is a public endpoint for job seekers.
  *
  */
-export const apiJobProfilesRead = <ThrowOnError extends boolean = false>(options: Options<ApiJobProfilesReadData, ThrowOnError>) => (options.client ?? client).get<ApiJobProfilesReadResponses, ApiJobProfilesReadErrors, ThrowOnError>({
+export const apiJobProfilesRead = <ThrowOnError extends boolean = true>(options: Options<ApiJobProfilesReadData, ThrowOnError>) => (options.client ?? client).get<ApiJobProfilesReadResponses, ApiJobProfilesReadErrors, ThrowOnError>({
     responseType: 'json',
     url: '/api/job-profiles/{job_id}/',
     ...options
@@ -211,7 +211,7 @@ export const apiJobProfilesRead = <ThrowOnError extends boolean = false>(options
  * Partial updates are supported - only include fields you want to change.
  *
  */
-export const apiJobProfilesUpdatePartialUpdate = <ThrowOnError extends boolean = false>(options: Options<ApiJobProfilesUpdatePartialUpdateData, ThrowOnError>) => (options.client ?? client).patch<ApiJobProfilesUpdatePartialUpdateResponses, ApiJobProfilesUpdatePartialUpdateErrors, ThrowOnError>({
+export const apiJobProfilesUpdatePartialUpdate = <ThrowOnError extends boolean = true>(options: Options<ApiJobProfilesUpdatePartialUpdateData, ThrowOnError>) => (options.client ?? client).patch<ApiJobProfilesUpdatePartialUpdateResponses, ApiJobProfilesUpdatePartialUpdateErrors, ThrowOnError>({
     responseType: 'json',
     security: [{ name: 'Authorization', type: 'apiKey' }],
     url: '/api/job-profiles/{job_id}/update/',
@@ -225,7 +225,7 @@ export const apiJobProfilesUpdatePartialUpdate = <ThrowOnError extends boolean =
 /**
  * Get all organizations the authenticated user belongs to. Users can belong to multiple organizations.
  */
-export const apiOrganizationsList = <ThrowOnError extends boolean = false>(options?: Options<ApiOrganizationsListData, ThrowOnError>) => (options?.client ?? client).get<ApiOrganizationsListResponses, ApiOrganizationsListErrors, ThrowOnError>({
+export const apiOrganizationsList = <ThrowOnError extends boolean = true>(options?: Options<ApiOrganizationsListData, ThrowOnError>) => (options?.client ?? client).get<ApiOrganizationsListResponses, ApiOrganizationsListErrors, ThrowOnError>({
     responseType: 'json',
     security: [{ name: 'Authorization', type: 'apiKey' }],
     url: '/api/organizations/',
@@ -238,7 +238,7 @@ export const apiOrganizationsList = <ThrowOnError extends boolean = false>(optio
  * Organization is automatically approved upon creation.
  *
  */
-export const apiOrganizationsCreateCreate = <ThrowOnError extends boolean = false>(options: Options<ApiOrganizationsCreateCreateData, ThrowOnError>) => (options.client ?? client).post<ApiOrganizationsCreateCreateResponses, ApiOrganizationsCreateCreateErrors, ThrowOnError>({
+export const apiOrganizationsCreateCreate = <ThrowOnError extends boolean = true>(options: Options<ApiOrganizationsCreateCreateData, ThrowOnError>) => (options.client ?? client).post<ApiOrganizationsCreateCreateResponses, ApiOrganizationsCreateCreateErrors, ThrowOnError>({
     responseType: 'json',
     security: [{ name: 'Authorization', type: 'apiKey' }],
     url: '/api/organizations/create/',
@@ -252,7 +252,7 @@ export const apiOrganizationsCreateCreate = <ThrowOnError extends boolean = fals
 /**
  * Get detailed information about a specific organization.
  */
-export const apiOrganizationsRead = <ThrowOnError extends boolean = false>(options: Options<ApiOrganizationsReadData, ThrowOnError>) => (options.client ?? client).get<ApiOrganizationsReadResponses, ApiOrganizationsReadErrors, ThrowOnError>({
+export const apiOrganizationsRead = <ThrowOnError extends boolean = true>(options: Options<ApiOrganizationsReadData, ThrowOnError>) => (options.client ?? client).get<ApiOrganizationsReadResponses, ApiOrganizationsReadErrors, ThrowOnError>({
     responseType: 'json',
     security: [{ name: 'Authorization', type: 'apiKey' }],
     url: '/api/organizations/{org_id}/',
@@ -269,7 +269,7 @@ export const apiOrganizationsRead = <ThrowOnError extends boolean = false>(optio
  * The link points to the frontend application which handles the acceptance flow.
  *
  */
-export const apiOrganizationsInvitationsCreate = <ThrowOnError extends boolean = false>(options: Options<ApiOrganizationsInvitationsCreateData, ThrowOnError>) => (options.client ?? client).post<ApiOrganizationsInvitationsCreateResponses, ApiOrganizationsInvitationsCreateErrors, ThrowOnError>({
+export const apiOrganizationsInvitationsCreate = <ThrowOnError extends boolean = true>(options: Options<ApiOrganizationsInvitationsCreateData, ThrowOnError>) => (options.client ?? client).post<ApiOrganizationsInvitationsCreateResponses, ApiOrganizationsInvitationsCreateErrors, ThrowOnError>({
     responseType: 'json',
     security: [{ name: 'Authorization', type: 'apiKey' }],
     url: '/api/organizations/{org_id}/invitations/',
@@ -287,7 +287,7 @@ export const apiOrganizationsInvitationsCreate = <ThrowOnError extends boolean =
  * Only organization members can view invitations.
  *
  */
-export const apiOrganizationsInvitationsListList = <ThrowOnError extends boolean = false>(options: Options<ApiOrganizationsInvitationsListListData, ThrowOnError>) => (options.client ?? client).get<ApiOrganizationsInvitationsListListResponses, ApiOrganizationsInvitationsListListErrors, ThrowOnError>({
+export const apiOrganizationsInvitationsListList = <ThrowOnError extends boolean = true>(options: Options<ApiOrganizationsInvitationsListListData, ThrowOnError>) => (options.client ?? client).get<ApiOrganizationsInvitationsListListResponses, ApiOrganizationsInvitationsListListErrors, ThrowOnError>({
     responseType: 'json',
     security: [{ name: 'Authorization', type: 'apiKey' }],
     url: '/api/organizations/{org_id}/invitations/list/',
@@ -302,7 +302,7 @@ export const apiOrganizationsInvitationsListList = <ThrowOnError extends boolean
  * User must be a member of the organization to view its job profiles.
  *
  */
-export const apiOrganizationsJobProfilesList = <ThrowOnError extends boolean = false>(options: Options<ApiOrganizationsJobProfilesListData, ThrowOnError>) => (options.client ?? client).get<ApiOrganizationsJobProfilesListResponses, ApiOrganizationsJobProfilesListErrors, ThrowOnError>({
+export const apiOrganizationsJobProfilesList = <ThrowOnError extends boolean = true>(options: Options<ApiOrganizationsJobProfilesListData, ThrowOnError>) => (options.client ?? client).get<ApiOrganizationsJobProfilesListResponses, ApiOrganizationsJobProfilesListErrors, ThrowOnError>({
     responseType: 'json',
     security: [{ name: 'Authorization', type: 'apiKey' }],
     url: '/api/organizations/{org_id}/job-profiles/',
@@ -325,7 +325,7 @@ export const apiOrganizationsJobProfilesList = <ThrowOnError extends boolean = f
  * - `page_size` — results per page, max 100 (default: 20)
  *
  */
-export const apiOrganizationsJobProfilesAnalysesList = <ThrowOnError extends boolean = false>(options: Options<ApiOrganizationsJobProfilesAnalysesListData, ThrowOnError>) => (options.client ?? client).get<ApiOrganizationsJobProfilesAnalysesListResponses, ApiOrganizationsJobProfilesAnalysesListErrors, ThrowOnError>({
+export const apiOrganizationsJobProfilesAnalysesList = <ThrowOnError extends boolean = true>(options: Options<ApiOrganizationsJobProfilesAnalysesListData, ThrowOnError>) => (options.client ?? client).get<ApiOrganizationsJobProfilesAnalysesListResponses, ApiOrganizationsJobProfilesAnalysesListErrors, ThrowOnError>({
     responseType: 'json',
     security: [{ name: 'Authorization', type: 'apiKey' }],
     url: '/api/organizations/{org_id}/job-profiles/{job_profile_id}/analyses/',
@@ -347,7 +347,7 @@ export const apiOrganizationsJobProfilesAnalysesList = <ThrowOnError extends boo
  * - **applications_over_time**: Daily application counts (last 30 days)
  *
  */
-export const apiOrganizationsJobProfilesAnalyticsList = <ThrowOnError extends boolean = false>(options: Options<ApiOrganizationsJobProfilesAnalyticsListData, ThrowOnError>) => (options.client ?? client).get<ApiOrganizationsJobProfilesAnalyticsListResponses, unknown, ThrowOnError>({
+export const apiOrganizationsJobProfilesAnalyticsList = <ThrowOnError extends boolean = true>(options: Options<ApiOrganizationsJobProfilesAnalyticsListData, ThrowOnError>) => (options.client ?? client).get<ApiOrganizationsJobProfilesAnalyticsListResponses, unknown, ThrowOnError>({
     responseType: 'json',
     security: [{ name: 'Authorization', type: 'apiKey' }],
     url: '/api/organizations/{org_id}/job-profiles/{job_profile_id}/analytics/',
@@ -363,7 +363,7 @@ export const apiOrganizationsJobProfilesAnalyticsList = <ThrowOnError extends bo
  * - The requesting user must be a member of the organization.
  *
  */
-export const apiOrganizationsJobProfilesApplicationsList = <ThrowOnError extends boolean = false>(options: Options<ApiOrganizationsJobProfilesApplicationsListData, ThrowOnError>) => (options.client ?? client).get<ApiOrganizationsJobProfilesApplicationsListResponses, ApiOrganizationsJobProfilesApplicationsListErrors, ThrowOnError>({
+export const apiOrganizationsJobProfilesApplicationsList = <ThrowOnError extends boolean = true>(options: Options<ApiOrganizationsJobProfilesApplicationsListData, ThrowOnError>) => (options.client ?? client).get<ApiOrganizationsJobProfilesApplicationsListResponses, ApiOrganizationsJobProfilesApplicationsListErrors, ThrowOnError>({
     responseType: 'json',
     security: [{ name: 'Authorization', type: 'apiKey' }],
     url: '/api/organizations/{org_id}/job-profiles/{job_profile_id}/applications/',
@@ -379,7 +379,7 @@ export const apiOrganizationsJobProfilesApplicationsList = <ThrowOnError extends
  * - The job application must belong to the job profile.
  *
  */
-export const apiOrganizationsJobProfilesApplicationsRead = <ThrowOnError extends boolean = false>(options: Options<ApiOrganizationsJobProfilesApplicationsReadData, ThrowOnError>) => (options.client ?? client).get<ApiOrganizationsJobProfilesApplicationsReadResponses, ApiOrganizationsJobProfilesApplicationsReadErrors, ThrowOnError>({
+export const apiOrganizationsJobProfilesApplicationsRead = <ThrowOnError extends boolean = true>(options: Options<ApiOrganizationsJobProfilesApplicationsReadData, ThrowOnError>) => (options.client ?? client).get<ApiOrganizationsJobProfilesApplicationsReadResponses, ApiOrganizationsJobProfilesApplicationsReadErrors, ThrowOnError>({
     responseType: 'json',
     security: [{ name: 'Authorization', type: 'apiKey' }],
     url: '/api/organizations/{org_id}/job-profiles/{job_profile_id}/applications/{job_application_id}/',
@@ -394,7 +394,7 @@ export const apiOrganizationsJobProfilesApplicationsRead = <ThrowOnError extends
  * Content-Disposition headers so the browser triggers a download.
  *
  */
-export const apiOrganizationsJobProfilesApplicationsDownloadList = <ThrowOnError extends boolean = false>(options: Options<ApiOrganizationsJobProfilesApplicationsDownloadListData, ThrowOnError>) => (options.client ?? client).get<ApiOrganizationsJobProfilesApplicationsDownloadListResponses, ApiOrganizationsJobProfilesApplicationsDownloadListErrors, ThrowOnError>({
+export const apiOrganizationsJobProfilesApplicationsDownloadList = <ThrowOnError extends boolean = true>(options: Options<ApiOrganizationsJobProfilesApplicationsDownloadListData, ThrowOnError>) => (options.client ?? client).get<ApiOrganizationsJobProfilesApplicationsDownloadListResponses, ApiOrganizationsJobProfilesApplicationsDownloadListErrors, ThrowOnError>({
     responseType: 'json',
     security: [{ name: 'Authorization', type: 'apiKey' }],
     url: '/api/organizations/{org_id}/job-profiles/{job_profile_id}/applications/{job_application_id}/download/',
@@ -412,7 +412,7 @@ export const apiOrganizationsJobProfilesApplicationsDownloadList = <ThrowOnError
  * - rejected → under_review, shortlisted
  *
  */
-export const apiOrganizationsJobProfilesApplicationsStatusPartialUpdate = <ThrowOnError extends boolean = false>(options: Options<ApiOrganizationsJobProfilesApplicationsStatusPartialUpdateData, ThrowOnError>) => (options.client ?? client).patch<ApiOrganizationsJobProfilesApplicationsStatusPartialUpdateResponses, ApiOrganizationsJobProfilesApplicationsStatusPartialUpdateErrors, ThrowOnError>({
+export const apiOrganizationsJobProfilesApplicationsStatusPartialUpdate = <ThrowOnError extends boolean = true>(options: Options<ApiOrganizationsJobProfilesApplicationsStatusPartialUpdateData, ThrowOnError>) => (options.client ?? client).patch<ApiOrganizationsJobProfilesApplicationsStatusPartialUpdateResponses, ApiOrganizationsJobProfilesApplicationsStatusPartialUpdateErrors, ThrowOnError>({
     responseType: 'json',
     security: [{ name: 'Authorization', type: 'apiKey' }],
     url: '/api/organizations/{org_id}/job-profiles/{job_profile_id}/applications/{job_application_id}/status/',
@@ -430,7 +430,7 @@ export const apiOrganizationsJobProfilesApplicationsStatusPartialUpdate = <Throw
  * Admins can only leave if there is at least one other admin.
  *
  */
-export const apiOrganizationsLeaveDelete = <ThrowOnError extends boolean = false>(options: Options<ApiOrganizationsLeaveDeleteData, ThrowOnError>) => (options.client ?? client).delete<ApiOrganizationsLeaveDeleteResponses, ApiOrganizationsLeaveDeleteErrors, ThrowOnError>({
+export const apiOrganizationsLeaveDelete = <ThrowOnError extends boolean = true>(options: Options<ApiOrganizationsLeaveDeleteData, ThrowOnError>) => (options.client ?? client).delete<ApiOrganizationsLeaveDeleteResponses, ApiOrganizationsLeaveDeleteErrors, ThrowOnError>({
     responseType: 'json',
     security: [{ name: 'Authorization', type: 'apiKey' }],
     url: '/api/organizations/{org_id}/leave/',
@@ -440,7 +440,7 @@ export const apiOrganizationsLeaveDelete = <ThrowOnError extends boolean = false
 /**
  * List all members of an organization.
  */
-export const apiOrganizationsMembersList = <ThrowOnError extends boolean = false>(options: Options<ApiOrganizationsMembersListData, ThrowOnError>) => (options.client ?? client).get<ApiOrganizationsMembersListResponses, ApiOrganizationsMembersListErrors, ThrowOnError>({
+export const apiOrganizationsMembersList = <ThrowOnError extends boolean = true>(options: Options<ApiOrganizationsMembersListData, ThrowOnError>) => (options.client ?? client).get<ApiOrganizationsMembersListResponses, ApiOrganizationsMembersListErrors, ThrowOnError>({
     responseType: 'json',
     security: [{ name: 'Authorization', type: 'apiKey' }],
     url: '/api/organizations/{org_id}/members/',
@@ -454,7 +454,7 @@ export const apiOrganizationsMembersList = <ThrowOnError extends boolean = false
  * Cannot remove the last admin from the organization.
  *
  */
-export const apiOrganizationsMembersDelete = <ThrowOnError extends boolean = false>(options: Options<ApiOrganizationsMembersDeleteData, ThrowOnError>) => (options.client ?? client).delete<ApiOrganizationsMembersDeleteResponses, ApiOrganizationsMembersDeleteErrors, ThrowOnError>({
+export const apiOrganizationsMembersDelete = <ThrowOnError extends boolean = true>(options: Options<ApiOrganizationsMembersDeleteData, ThrowOnError>) => (options.client ?? client).delete<ApiOrganizationsMembersDeleteResponses, ApiOrganizationsMembersDeleteErrors, ThrowOnError>({
     responseType: 'json',
     security: [{ name: 'Authorization', type: 'apiKey' }],
     url: '/api/organizations/{org_id}/members/{membership_id}/',
@@ -464,7 +464,7 @@ export const apiOrganizationsMembersDelete = <ThrowOnError extends boolean = fal
 /**
  * Update organization details. Only organization admins can update.
  */
-export const apiOrganizationsUpdatePartialUpdate = <ThrowOnError extends boolean = false>(options: Options<ApiOrganizationsUpdatePartialUpdateData, ThrowOnError>) => (options.client ?? client).patch<ApiOrganizationsUpdatePartialUpdateResponses, ApiOrganizationsUpdatePartialUpdateErrors, ThrowOnError>({
+export const apiOrganizationsUpdatePartialUpdate = <ThrowOnError extends boolean = true>(options: Options<ApiOrganizationsUpdatePartialUpdateData, ThrowOnError>) => (options.client ?? client).patch<ApiOrganizationsUpdatePartialUpdateResponses, ApiOrganizationsUpdatePartialUpdateErrors, ThrowOnError>({
     responseType: 'json',
     security: [{ name: 'Authorization', type: 'apiKey' }],
     url: '/api/organizations/{org_id}/update/',
@@ -478,7 +478,7 @@ export const apiOrganizationsUpdatePartialUpdate = <ThrowOnError extends boolean
 /**
  * **Test endpoint** — upload a PDF file and get the OCR-extracted text back immediately.  Does NOT create any database records or trigger the analysis pipeline.  Useful for verifying doctr is working.
  */
-export const apiTestResumeExtractionCreate = <ThrowOnError extends boolean = false>(options: Options<ApiTestResumeExtractionCreateData, ThrowOnError>) => (options.client ?? client).post<ApiTestResumeExtractionCreateResponses, ApiTestResumeExtractionCreateErrors, ThrowOnError>({
+export const apiTestResumeExtractionCreate = <ThrowOnError extends boolean = true>(options: Options<ApiTestResumeExtractionCreateData, ThrowOnError>) => (options.client ?? client).post<ApiTestResumeExtractionCreateResponses, ApiTestResumeExtractionCreateErrors, ThrowOnError>({
     ...formDataBodySerializer,
     responseType: 'json',
     url: '/api/test-resume-extraction/',
@@ -500,7 +500,7 @@ export const apiTestResumeExtractionCreate = <ThrowOnError extends boolean = fal
  * Authorization: Bearer <access_token>
  *
  */
-export const apiUsersAuthLoginCreate = <ThrowOnError extends boolean = false>(options: Options<ApiUsersAuthLoginCreateData, ThrowOnError>) => (options.client ?? client).post<ApiUsersAuthLoginCreateResponses, ApiUsersAuthLoginCreateErrors, ThrowOnError>({
+export const apiUsersAuthLoginCreate = <ThrowOnError extends boolean = true>(options: Options<ApiUsersAuthLoginCreateData, ThrowOnError>) => (options.client ?? client).post<ApiUsersAuthLoginCreateResponses, ApiUsersAuthLoginCreateErrors, ThrowOnError>({
     responseType: 'json',
     security: [{ name: 'Authorization', type: 'apiKey' }],
     url: '/api/users/auth/login/',
@@ -521,7 +521,7 @@ export const apiUsersAuthLoginCreate = <ThrowOnError extends boolean = false>(op
  * - Invitation must not be expired or already accepted
  *
  */
-export const apiUsersAuthRegisterCreate = <ThrowOnError extends boolean = false>(options: Options<ApiUsersAuthRegisterCreateData, ThrowOnError>) => (options.client ?? client).post<ApiUsersAuthRegisterCreateResponses, ApiUsersAuthRegisterCreateErrors, ThrowOnError>({
+export const apiUsersAuthRegisterCreate = <ThrowOnError extends boolean = true>(options: Options<ApiUsersAuthRegisterCreateData, ThrowOnError>) => (options.client ?? client).post<ApiUsersAuthRegisterCreateResponses, ApiUsersAuthRegisterCreateErrors, ThrowOnError>({
     responseType: 'json',
     security: [{ name: 'Authorization', type: 'apiKey' }],
     url: '/api/users/auth/register/',
@@ -539,7 +539,7 @@ export const apiUsersAuthRegisterCreate = <ThrowOnError extends boolean = false>
  * to obtain a new access token without requiring the user to log in again.
  *
  */
-export const apiUsersAuthTokenRefreshCreate = <ThrowOnError extends boolean = false>(options: Options<ApiUsersAuthTokenRefreshCreateData, ThrowOnError>) => (options.client ?? client).post<ApiUsersAuthTokenRefreshCreateResponses, ApiUsersAuthTokenRefreshCreateErrors, ThrowOnError>({
+export const apiUsersAuthTokenRefreshCreate = <ThrowOnError extends boolean = true>(options: Options<ApiUsersAuthTokenRefreshCreateData, ThrowOnError>) => (options.client ?? client).post<ApiUsersAuthTokenRefreshCreateResponses, ApiUsersAuthTokenRefreshCreateErrors, ThrowOnError>({
     responseType: 'json',
     url: '/api/users/auth/token/refresh/',
     ...options,
@@ -560,7 +560,7 @@ export const apiUsersAuthTokenRefreshCreate = <ThrowOnError extends boolean = fa
  * For security, the response is the same whether the email exists or not.
  *
  */
-export const apiUsersPasswordResetCreate = <ThrowOnError extends boolean = false>(options: Options<ApiUsersPasswordResetCreateData, ThrowOnError>) => (options.client ?? client).post<ApiUsersPasswordResetCreateResponses, ApiUsersPasswordResetCreateErrors, ThrowOnError>({
+export const apiUsersPasswordResetCreate = <ThrowOnError extends boolean = true>(options: Options<ApiUsersPasswordResetCreateData, ThrowOnError>) => (options.client ?? client).post<ApiUsersPasswordResetCreateResponses, ApiUsersPasswordResetCreateErrors, ThrowOnError>({
     responseType: 'json',
     security: [{ name: 'Authorization', type: 'apiKey' }],
     url: '/api/users/password-reset/',
@@ -584,7 +584,7 @@ export const apiUsersPasswordResetCreate = <ThrowOnError extends boolean = false
  * - new_password_confirm: Confirmation of the new password
  *
  */
-export const apiUsersPasswordResetConfirmCreate = <ThrowOnError extends boolean = false>(options: Options<ApiUsersPasswordResetConfirmCreateData, ThrowOnError>) => (options.client ?? client).post<ApiUsersPasswordResetConfirmCreateResponses, ApiUsersPasswordResetConfirmCreateErrors, ThrowOnError>({
+export const apiUsersPasswordResetConfirmCreate = <ThrowOnError extends boolean = true>(options: Options<ApiUsersPasswordResetConfirmCreateData, ThrowOnError>) => (options.client ?? client).post<ApiUsersPasswordResetConfirmCreateResponses, ApiUsersPasswordResetConfirmCreateErrors, ThrowOnError>({
     responseType: 'json',
     security: [{ name: 'Authorization', type: 'apiKey' }],
     url: '/api/users/password-reset/confirm/',
@@ -598,7 +598,7 @@ export const apiUsersPasswordResetConfirmCreate = <ThrowOnError extends boolean 
 /**
  * Get the authenticated user's profile information
  */
-export const apiUsersProfileList = <ThrowOnError extends boolean = false>(options?: Options<ApiUsersProfileListData, ThrowOnError>) => (options?.client ?? client).get<ApiUsersProfileListResponses, ApiUsersProfileListErrors, ThrowOnError>({
+export const apiUsersProfileList = <ThrowOnError extends boolean = true>(options?: Options<ApiUsersProfileListData, ThrowOnError>) => (options?.client ?? client).get<ApiUsersProfileListResponses, ApiUsersProfileListErrors, ThrowOnError>({
     responseType: 'json',
     security: [{ name: 'Authorization', type: 'apiKey' }],
     url: '/api/users/profile/',
@@ -617,7 +617,7 @@ export const apiUsersProfileList = <ThrowOnError extends boolean = false>(option
  * Email cannot be changed through this endpoint.
  *
  */
-export const apiUsersProfileUpdatePartialUpdate = <ThrowOnError extends boolean = false>(options: Options<ApiUsersProfileUpdatePartialUpdateData, ThrowOnError>) => (options.client ?? client).patch<ApiUsersProfileUpdatePartialUpdateResponses, ApiUsersProfileUpdatePartialUpdateErrors, ThrowOnError>({
+export const apiUsersProfileUpdatePartialUpdate = <ThrowOnError extends boolean = true>(options: Options<ApiUsersProfileUpdatePartialUpdateData, ThrowOnError>) => (options.client ?? client).patch<ApiUsersProfileUpdatePartialUpdateResponses, ApiUsersProfileUpdatePartialUpdateErrors, ThrowOnError>({
     responseType: 'json',
     security: [{ name: 'Authorization', type: 'apiKey' }],
     url: '/api/users/profile/update/',
@@ -631,7 +631,7 @@ export const apiUsersProfileUpdatePartialUpdate = <ThrowOnError extends boolean 
 /**
  * Health check endpoint that returns the status of the application.
  */
-export const healthList = <ThrowOnError extends boolean = false>(options?: Options<HealthListData, ThrowOnError>) => (options?.client ?? client).get<HealthListResponses, unknown, ThrowOnError>({
+export const healthList = <ThrowOnError extends boolean = true>(options?: Options<HealthListData, ThrowOnError>) => (options?.client ?? client).get<HealthListResponses, unknown, ThrowOnError>({
     responseType: 'json',
     security: [{ name: 'Authorization', type: 'apiKey' }],
     url: '/health/',

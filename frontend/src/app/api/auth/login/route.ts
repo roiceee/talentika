@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { apiUsersAuthLoginCreate } from "@/lib/client";
 import { client } from "@/lib/client/client.gen";
 import { setTokens } from "@/lib/server/tokens";
+import { errorResponse } from "@/lib/server/errors";
 
 /**
  * POST /api/auth/login
@@ -10,7 +11,7 @@ import { setTokens } from "@/lib/server/tokens";
  * the returned JWT tokens in httpOnly cookies.
  *
  * Request body: { email: string, password: string }
- * Response: { success: true } on success, or error details.
+ * Response: { success: true } on success, or Django error details.
  */
 export async function POST(request: NextRequest) {
   try {
@@ -29,33 +30,16 @@ export async function POST(request: NextRequest) {
       body: { email, password },
     });
 
-    if (response.data?.access && response.data?.refresh) {
-      await setTokens(response.data.access, response.data.refresh);
-      return NextResponse.json({ success: true });
+    const { access, refresh } = response.data ?? {};
+    if (!access || !refresh) {
+      return NextResponse.json(
+        { error: "Invalid credentials" },
+        { status: 401 },
+      );
     }
-
-    return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
+    await setTokens(access, refresh);
+    return NextResponse.json({ success: true });
   } catch (error: unknown) {
-    if (
-      error &&
-      typeof error === "object" &&
-      "response" in error &&
-      error.response &&
-      typeof error.response === "object" &&
-      "status" in error.response &&
-      "data" in error.response
-    ) {
-      const axiosError = error as {
-        response: { status: number; data: unknown };
-      };
-      return NextResponse.json(axiosError.response.data, {
-        status: axiosError.response.status,
-      });
-    }
-
-    return NextResponse.json(
-      { error: "An unexpected error occurred" },
-      { status: 500 },
-    );
+    return errorResponse(error);
   }
 }
