@@ -103,7 +103,7 @@ export async function getAuthenticatedUser() {
 /**
  * Check if an error is a 401 Unauthorized error (from Axios).
  */
-function isUnauthorizedError(error: unknown): boolean {
+export function isUnauthorizedError(error: unknown): boolean {
   if (
     error &&
     typeof error === "object" &&
@@ -115,4 +115,49 @@ function isUnauthorizedError(error: unknown): boolean {
     return error.response.status === 401;
   }
   return false;
+}
+
+/**
+ * Execute an authenticated SDK call with automatic 401 token refresh & retry.
+ *
+ * @param sdkCall  A function that receives `{ client, headers }` and returns
+ *                 the SDK response. The caller should invoke the desired SDK
+ *                 function inside.
+ *
+ * @example
+ * ```ts
+ * const response = await authenticatedSdkCall((opts) =>
+ *   apiOrganizationsList({ ...opts }),
+ * );
+ * ```
+ */
+export async function authenticatedSdkCall<T>(
+  sdkCall: (opts: {
+    client: typeof client;
+    headers: Record<string, string>;
+  }) => Promise<T>,
+): Promise<T> {
+  const accessToken = await getAccessToken();
+  if (!accessToken) {
+    throw new Error("Not authenticated");
+  }
+
+  try {
+    return await sdkCall({
+      client,
+      headers: getAuthHeaders(accessToken),
+    });
+  } catch (error: unknown) {
+    if (isUnauthorizedError(error)) {
+      const newAccessToken = await refreshAccessToken();
+      if (!newAccessToken) {
+        throw error; // re-throw original – let the route's errorResponse handle it
+      }
+      return await sdkCall({
+        client,
+        headers: getAuthHeaders(newAccessToken),
+      });
+    }
+    throw error;
+  }
 }

@@ -9,9 +9,9 @@ import { bffClient } from "@/lib/auth";
 /**
  * Client-side API helpers and types.
  *
- * These provide convenience wrappers around the BFF proxy for
+ * These provide convenience wrappers around the BFF routes for
  * common API operations. All requests go through the Next.js
- * server-side proxy which handles authentication.
+ * server-side routes which handle authentication via httpOnly cookies.
  */
 
 // ---------------------------------------------------------------------------
@@ -40,10 +40,8 @@ export async function updateUserProfile(data: {
   first_name?: string;
   last_name?: string;
 }): Promise<unknown> {
-  // TODO: dedicated BFF route needed
-  throw new Error(
-    `updateUserProfile not yet implemented via BFF: ${JSON.stringify(data)}`,
-  );
+  const response = await bffClient.patch("/api/users/profile", data);
+  return response.data;
 }
 
 // ---------------------------------------------------------------------------
@@ -51,33 +49,36 @@ export async function updateUserProfile(data: {
 // ---------------------------------------------------------------------------
 
 export async function listOrganizations(): Promise<OrganizationList[]> {
-  // TODO: dedicated BFF route needed
-  throw new Error("listOrganizations not yet implemented via BFF");
+  const response = await bffClient.get<OrganizationList[]>(
+    "/api/organizations",
+  );
+  return response.data;
 }
 
 export async function createOrganization(data: {
   name: string;
   description?: string | null;
 }): Promise<unknown> {
-  // TODO: dedicated BFF route needed
-  throw new Error(
-    `createOrganization not yet implemented via BFF: ${JSON.stringify(data)}`,
-  );
+  const response = await bffClient.post("/api/organizations", data);
+  return response.data;
 }
 
 export async function getOrganization(orgId: string): Promise<Organization> {
-  // TODO: dedicated BFF route needed
-  throw new Error(`getOrganization not yet implemented via BFF: ${orgId}`);
+  const response = await bffClient.get<Organization>(
+    `/api/organizations/${orgId}`,
+  );
+  return response.data;
 }
 
 export async function updateOrganization(
   orgId: string,
   data: { name?: string; description?: string },
 ): Promise<unknown> {
-  // TODO: dedicated BFF route needed
-  throw new Error(
-    `updateOrganization not yet implemented via BFF: ${orgId}, ${JSON.stringify(data)}`,
+  const response = await bffClient.patch(
+    `/api/organizations/${orgId}`,
+    data,
   );
+  return response.data;
 }
 
 // ---------------------------------------------------------------------------
@@ -87,23 +88,27 @@ export async function updateOrganization(
 export async function listMembers(
   orgId: string,
 ): Promise<OrganizationMembership[]> {
-  // TODO: dedicated BFF route needed
-  throw new Error(`listMembers not yet implemented via BFF: ${orgId}`);
+  const response = await bffClient.get<OrganizationMembership[]>(
+    `/api/organizations/${orgId}/members`,
+  );
+  return response.data;
 }
 
 export async function removeMember(
   orgId: string,
   membershipId: string,
 ): Promise<unknown> {
-  // TODO: dedicated BFF route needed
-  throw new Error(
-    `removeMember not yet implemented via BFF: ${orgId}, ${membershipId}`,
+  const response = await bffClient.delete(
+    `/api/organizations/${orgId}/members/${membershipId}`,
   );
+  return response.data;
 }
 
 export async function leaveOrganization(orgId: string): Promise<unknown> {
-  // TODO: dedicated BFF route needed
-  throw new Error(`leaveOrganization not yet implemented via BFF: ${orgId}`);
+  const response = await bffClient.delete(
+    `/api/organizations/${orgId}/leave`,
+  );
+  return response.data;
 }
 
 // ---------------------------------------------------------------------------
@@ -113,30 +118,36 @@ export async function leaveOrganization(orgId: string): Promise<unknown> {
 export async function listInvitations(
   orgId: string,
 ): Promise<OrganizationInvitation[]> {
-  // TODO: dedicated BFF route needed
-  throw new Error(`listInvitations not yet implemented via BFF: ${orgId}`);
+  const response = await bffClient.get<OrganizationInvitation[]>(
+    `/api/organizations/${orgId}/invitations`,
+  );
+  return response.data;
 }
 
 export async function createInvitation(
   orgId: string,
   data: { email: string; role: string },
 ): Promise<{ email_sent?: boolean }> {
-  // TODO: dedicated BFF route needed
-  throw new Error(
-    `createInvitation not yet implemented via BFF: ${orgId}, ${JSON.stringify(data)}`,
+  const response = await bffClient.post<{ email_sent?: boolean }>(
+    `/api/organizations/${orgId}/invitations`,
+    data,
   );
+  return response.data;
 }
 
 export async function validateInvitation(
   token: string,
 ): Promise<InvitationValidationResult> {
-  // TODO: dedicated BFF route needed
-  throw new Error(`validateInvitation not yet implemented via BFF: ${token}`);
+  const response = await bffClient.post<InvitationValidationResult>(
+    "/api/invitations/validate",
+    { token },
+  );
+  return response.data;
 }
 
 export async function acceptInvitation(token: string): Promise<unknown> {
-  // TODO: dedicated BFF route needed
-  throw new Error(`acceptInvitation not yet implemented via BFF: ${token}`);
+  const response = await bffClient.post("/api/invitations/accept", { token });
+  return response.data;
 }
 
 // ---------------------------------------------------------------------------
