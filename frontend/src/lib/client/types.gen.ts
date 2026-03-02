@@ -47,13 +47,9 @@ export type QuestionAnswer = {
      */
     answer_text?: string | null;
     /**
-     * Selected choices
-     *
      * Selected choices for MCQ questions (array of strings)
      */
-    selected_choices?: {
-        [key: string]: unknown;
-    };
+    selected_choices?: Array<string>;
 };
 
 export type JobApplicationCreate = {
@@ -1422,6 +1418,76 @@ export type ApiApplicationsAnalysisRetryCreateResponses = {
      */
     200: unknown;
 };
+
+export type ApiGeoCountriesListData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/geo/countries/';
+};
+
+export type ApiGeoCountriesListResponses = {
+    /**
+     * List of countries
+     */
+    200: Array<{
+        iso2?: string;
+        name?: string;
+    }>;
+};
+
+export type ApiGeoCountriesListResponse = ApiGeoCountriesListResponses[keyof ApiGeoCountriesListResponses];
+
+export type ApiGeoCountriesStatesListData = {
+    body?: never;
+    path: {
+        /**
+         * ISO-2 country code (e.g. US)
+         */
+        country_code: string;
+    };
+    query?: never;
+    url: '/api/geo/countries/{country_code}/states/';
+};
+
+export type ApiGeoCountriesStatesListResponses = {
+    /**
+     * List of states
+     */
+    200: Array<{
+        iso2?: string;
+        name?: string;
+    }>;
+};
+
+export type ApiGeoCountriesStatesListResponse = ApiGeoCountriesStatesListResponses[keyof ApiGeoCountriesStatesListResponses];
+
+export type ApiGeoCountriesStatesCitiesListData = {
+    body?: never;
+    path: {
+        /**
+         * ISO-2 country code (e.g. US)
+         */
+        country_code: string;
+        /**
+         * State/province code (e.g. CA)
+         */
+        state_code: string;
+    };
+    query?: never;
+    url: '/api/geo/countries/{country_code}/states/{state_code}/cities/';
+};
+
+export type ApiGeoCountriesStatesCitiesListResponses = {
+    /**
+     * List of cities
+     */
+    200: Array<{
+        name?: string;
+    }>;
+};
+
+export type ApiGeoCountriesStatesCitiesListResponse = ApiGeoCountriesStatesCitiesListResponses[keyof ApiGeoCountriesStatesCitiesListResponses];
 
 export type ApiInvitationsAcceptCreateData = {
     body: InvitationAccept;

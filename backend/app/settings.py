@@ -53,6 +53,7 @@ INSTALLED_APPS = [
     "job_profile",
     "job_applications",
     "job_application_analysis",
+    "geo",
     "drf_yasg",
 ]
 

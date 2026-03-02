@@ -10,6 +10,8 @@ import type {
   ExperienceLevel,
   AiScreeningConfiguration,
   UserProfile,
+  JobApplicationCreate,
+  JobApplicationDetail,
 } from "@/lib/client";
 import { bffClient } from "@/lib/auth";
 
@@ -255,6 +257,93 @@ export async function setDefaultOrganization(
   const response = await bffClient.patch<UserProfile>(
     "/api/users/profile/default-organization",
     { default_organization: orgId },
+  );
+  return response.data;
+}
+
+// ---------------------------------------------------------------------------
+// Job Applications (public endpoints)
+// ---------------------------------------------------------------------------
+
+export type { JobApplicationCreate };
+
+export async function submitApplication(
+  data: JobApplicationCreate,
+): Promise<JobApplicationDetail> {
+  const response = await bffClient.post<JobApplicationDetail>(
+    "/api/applications/submit",
+    data,
+  );
+  return response.data;
+}
+
+export async function uploadResume(
+  file: File,
+): Promise<{ file_id: string; file_name: string; file_size: number }> {
+  const formData = new FormData();
+  formData.append("file", file);
+
+  const response = await bffClient.post<{
+    file_id: string;
+    file_name: string;
+    file_size: number;
+  }>("/api/applications/submit/upload/resume", formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
+  return response.data;
+}
+
+/**
+ * Fetch a public job profile detail. This goes through the BFF but requires
+ * no authentication — it proxies to Django's public endpoint.
+ */
+export async function getPublicJobProfile(
+  jobId: string,
+): Promise<JobProfileDetail> {
+  const response = await bffClient.get<JobProfileDetail>(
+    `/api/job-profiles/${jobId}`,
+  );
+  return response.data;
+}
+
+// ---------------------------------------------------------------------------
+// Geo (public)
+// ---------------------------------------------------------------------------
+
+export interface GeoCountry {
+  iso2: string;
+  name: string;
+  phone_code?: string;
+  emoji?: string;
+}
+
+export interface GeoState {
+  iso2: string;
+  name: string;
+}
+
+export interface GeoCity {
+  name: string;
+}
+
+export async function getCountries(): Promise<GeoCountry[]> {
+  const response = await bffClient.get<GeoCountry[]>("/api/geo/countries");
+  return response.data;
+}
+
+export async function getStates(countryCode: string): Promise<GeoState[]> {
+  const response = await bffClient.get<GeoState[]>(
+    `/api/geo/countries/${countryCode}/states`,
+  );
+  return response.data;
+}
+
+export async function getCities(
+  countryCode: string,
+  stateCode: string,
+): Promise<GeoCity[]> {
+  const response = await bffClient.get<GeoCity[]>(
+    `/api/geo/countries/${countryCode}/states/${stateCode}/cities`,
   );
   return response.data;
 }

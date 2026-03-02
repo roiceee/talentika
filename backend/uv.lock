@@ -154,6 +154,7 @@ version = "0.1.0"
 source = { virtual = "." }
 dependencies = [
     { name = "boto3" },
+    { name = "countrystatecity-countries" },
     { name = "django" },
     { name = "django-rest-swagger" },
     { name = "djangorestframework" },
@@ -172,6 +173,7 @@ dependencies = [
 [package.metadata]
 requires-dist = [
     { name = "boto3", specifier = ">=1.42.54" },
+    { name = "countrystatecity-countries", specifier = ">=1.0.0" },
     { name = "django", specifier = ">=6.0.1" },
     { name = "django-rest-swagger", specifier = ">=2.2.0" },
     { name = "djangorestframework", specifier = ">=3.16.1" },
@@ -354,6 +356,18 @@ dependencies = [
     { name = "jinja2" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/93/08/1d105a70104e078718421e6c555b8b293259e7fc92f7e9a04869947f198f/coreschema-0.0.4.tar.gz", hash = "sha256:9503506007d482ab0867ba14724b93c18a33b22b6d19fb419ef2d239dd4a1607", size = 10974, upload-time = "2017-02-08T12:23:49.42Z" }
+
+[[package]]
+name = "countrystatecity-countries"
+version = "1.0.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "pydantic" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/8b/22/6edca7fe449286bf9296c4c202b27f2fe4d41d983151eede92712f59165d/countrystatecity_countries-1.0.0.tar.gz", hash = "sha256:ebab155ef067bc41556d22caa1aa4119c3f07571a19798491e6e34624fb75865", size = 3693060, upload-time = "2025-10-22T06:54:12.518Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/6a/6f/1d151237c7c09a535cf55aff3df4a3f60a86e69be4ed8869b9903a296ba6/countrystatecity_countries-1.0.0-py3-none-any.whl", hash = "sha256:392f2ff2a947c14c8272884d208a9603479d6afef8a4c4abdaa1719b7d32cec9", size = 5115142, upload-time = "2025-10-22T06:54:10.255Z" },
+]
 
 [[package]]
 name = "croniter"

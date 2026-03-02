@@ -622,8 +622,10 @@ function InvitationsTab({
       setDialogOpen(false);
       setInviteEmail("");
       setInviteRole("MEMBER");
-      await onUpdate();
+      setIsSending(false);
+      onUpdate();
     } catch (error) {
+      setIsSending(false);
       if (error instanceof AxiosError) {
         const msg =
           error.response?.data?.email?.[0] ||
@@ -631,8 +633,6 @@ function InvitationsTab({
           "Failed to send invitation";
         toast.error(msg);
       }
-    } finally {
-      setIsSending(false);
     }
   }
 

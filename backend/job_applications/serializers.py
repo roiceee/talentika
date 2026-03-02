@@ -38,6 +38,13 @@ class ApplicantAddressSerializer(serializers.ModelSerializer):
 class QuestionAnswerSerializer(serializers.ModelSerializer):
     """Serializer for question answers (write path — create only)"""
 
+    selected_choices = serializers.ListField(
+        child=serializers.CharField(),
+        default=list,
+        required=False,
+        help_text="Selected choices for MCQ questions (array of strings)",
+    )
+
     class Meta:
         model = QuestionAnswer
         fields = ["question", "answer_text", "selected_choices"]

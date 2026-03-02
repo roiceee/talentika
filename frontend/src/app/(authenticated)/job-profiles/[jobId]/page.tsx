@@ -36,6 +36,7 @@ import {
   List,
   MessageSquare,
   ChevronRight,
+  LinkIcon,
 } from "lucide-react";
 
 const EMPLOYMENT_TYPE_LABELS: Record<string, string> = {
@@ -201,13 +202,14 @@ export default function JobProfileDetailPage({
     return (
       <div className="mx-auto w-full max-w-3xl px-6 py-8">
         <div className="mb-6">
-          <button
+          <Button
+            variant={"ghost"}
             onClick={() => setIsEditMode(false)}
-            className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground mb-4"
+            className="inline-flex items-center gap-1 text-sm mb-4"
           >
             <X className="h-4 w-4" />
             Cancel editing
-          </button>
+          </Button>
           <h1 className="font-heading text-2xl font-semibold">
             Edit Job Profile
           </h1>
@@ -266,15 +268,28 @@ export default function JobProfileDetailPage({
               {(profile.organization as { name?: string })?.name}
             </p>
           </div>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setIsEditMode(true)}
-            className="shrink-0"
-          >
-            <Pencil className="mr-2 h-4 w-4" />
-            Edit
-          </Button>
+          <div className="flex gap-2 shrink-0">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                const url = `${window.location.origin}/jobs/${jobId}`;
+                navigator.clipboard.writeText(url);
+                toast.success("Public URL copied to clipboard");
+              }}
+            >
+              <LinkIcon className="mr-2 h-4 w-4" />
+              Copy Public URL
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setIsEditMode(true)}
+            >
+              <Pencil className="mr-2 h-4 w-4" />
+              Edit
+            </Button>
+          </div>
         </div>
       </div>
 

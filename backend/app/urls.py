@@ -41,6 +41,7 @@ urlpatterns = [
     path("api/", include("job_profile.urls")),
     path("api/", include("job_applications.urls")),
     path("api/", include("job_application_analysis.urls")),
+    path("api/", include("geo.urls")),
     path(
         "swagger.<format>/", schema_view.without_ui(cache_timeout=0), name="schema-json"
     ),

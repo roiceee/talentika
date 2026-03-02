@@ -1,277 +1,156 @@
 # Talentika - AI Coding Agent Instructions
 
-## Project Overview
+## Architecture Overview
 
-Talentika is a Django 6.0 REST API backend with PostgreSQL database, using modern Python tooling (uv package manager, Python 3.13+). The frontend folder exists but is currently empty.
+Full-stack SaaS platform for organizations to post job profiles, collect applications, and run AI-powered resume screening.
 
-**Core Domain**: Multi-tenant organization management system with email-based invitations and JWT authentication. Users can belong to multiple organizations simultaneously.
-
-## Architecture & Structure
-
-### Backend Organization
-
-- **`backend/app/`**: Main Django project configuration (settings, URLs, WSGI/ASGI)
-- **`backend/users/`**: User authentication, profile management, and password reset functionality
-- **`backend/organizations/`**: Organizations, memberships, and invitation system
-- **`backend/health/`**: Simple health check endpoint
-- Apps use **modular structure**: `models/`, `views/`, `serializers/`, `tests/` subdirectories instead of single files
-
-### Domain Model
-
-Critical relationships:
-
-**Users App** (see [users/models.py](backend/users/models.py)):
-
-1. **User** (custom model) → replaces Django's default, uses email for authentication (`AbstractUser` with UUID primary key)
-2. **PasswordResetToken** → secure 24-hour tokens for password resets
-
-**Organizations App** (see [organizations/models/\_\_init\_\_.py](backend/organizations/models/__init__.py)):
-
-1. **Organization** → has Status workflow (PENDING/APPROVED/REJECTED/SUSPENDED)
-2. **OrganizationMembership** → many-to-many with Role (ORG_ADMIN/MEMBER), links User to Organization
-3. **OrganizationInvitation** → token-based with 7-day expiration
-4. **Address** → optional foreign key on Organization
-
-**Key Constraints**:
-
-- User + Organization = unique membership (no duplicate memberships)
-- Only APPROVED organizations can send invitations
-- Organizations auto-approve when created via API (not via Django admin)
-- Invitations are single-use with email validation
-- Password reset tokens expire in 24 hours and are single-use
-
-### API Routing Structure
-
-URL organization (see [app/urls.py](backend/app/urls.py)):
-
-```python
-path("api/users/", include("users.urls"))      # User auth, profile, password reset
-path("api/", include("organizations.urls"))     # Organizations, memberships, invitations
+```
+backend/   → Django 6 REST API (Python 3.13+, uv)
+frontend/  → Next.js 16 app (pnpm, TypeScript)
 ```
 
-**Users App Endpoints** (`/api/users/`):
+**Django Apps:**
 
-- `POST /auth/register/` - User registration (optional invitation token)
-- `POST /auth/login/` - Email-based login (returns JWT tokens)
-- `POST /auth/token/refresh/` - Refresh JWT token
-- `GET /profile/` - Get current user profile
-- `PUT|PATCH /profile/update/` - Update profile (username, first_name, last_name)
-- `POST /password-reset/` - Request password reset email
-- `POST /password-reset/confirm/` - Confirm reset with token
+- `users/` — custom User model (email auth), profile, password reset
+- `organizations/` — org management, memberships, email invitations
+- `job_profile/` — job profiles, Q&A questions, job categories, AI screening configs
+- `job_applications/` — application submission, file uploads, status workflow
+- `job_application_analysis/` — RQ-based pipeline: OCR (doctr) → AI scoring (OpenAI/Gemini)
+- `health/` — `/health` liveness check
 
-**Organizations App Endpoints** (`/api/`):
+## Backend Developer Workflow
 
-- Organizations: `/organizations/`, `/organizations/create/`, `/organizations/<uuid:org_id>/`
-- Members: `/organizations/<uuid:org_id>/members/`, leave/remove operations
-- Invitations: `/organizations/<uuid:org_id>/invitations/`, accept/validate operations
+**Start everything:** `./backend/dev.sh` (starts Docker PostgreSQL → runs migrations → starts Django on :8000)
 
-### Permission System
-
-Custom DRF permissions (see [organizations/permissions.py](backend/organizations/permissions.py)):
-
-- `IsOrganizationAdmin` - checks `org_id` URL kwarg + membership role
-- `IsOrganizationMember` - allows superusers + checks membership
-- `IsOrgAdminOfOwnOrganization` - validates user is admin of specific org
-
-Helper functions in [models/helpers.py](backend/organizations/models/helpers.py):
-
-- `is_org_admin(user, organization)` - checks role or superuser
-- `get_user_organizations(user)` - returns all orgs user belongs to
-
-### Configuration Management
-
-- Environment variables loaded via `python-dotenv` in [app/settings.py](backend/app/settings.py#L17)
-- **Custom User Model**: `AUTH_USER_MODEL = "users.User"` (L56) - moved from organizations to users app
-- **JWT Configuration**: Uses `rest_framework_simplejwt` with 1-hour access tokens, 7-day refresh (L159-172)
-- **Email SMTP**: Gmail via TLS on port 587, requires app password (L149-154)
-- **APPEND_SLASH = False**: URLs must match exactly without trailing slashes (L38)
-- **FRONTEND_URL**: Required for password reset and invitation email links (default: `http://localhost:3000`)
-
-### Database
-
-- PostgreSQL 16 (Alpine) runs in Docker on port **5438** (not default 5432)
-- Connection details in `docker-compose.yml` and `.env`
-- Database name: `talentika_dev`, user: `talentika_user`
-
-## Developer Workflows
-
-### Starting Development
-
-**Always use the dev script**: `./backend/dev.sh`
-This orchestrates the entire startup:
-
-1. Starts PostgreSQL container via docker-compose
-2. Waits for `pg_isready` health check
-3. Runs migrations automatically
-4. Starts Django dev server on http://localhost:8000
-
-**Do not** run `manage.py runserver` directly without ensuring database is up.
-
-### Running Commands
-
-All Python commands use **uv** package manager:
+**All Python commands use `uv` (run from `backend/`):**
 
 ```bash
-uv run python manage.py <command>  # NOT just python manage.py
-```
-
-Common commands:
-
-- Migrations: `uv run python manage.py makemigrations && uv run python manage.py migrate`
-- Create superuser: `uv run python manage.py createsuperuser`
-- Shell: `uv run python manage.py shell`
-- Tests: `uv run python manage.py test organizations.tests`
-
-### Testing Strategy
-
-Tests organized by domain:
-
-**Organizations App** (see [organizations/tests/README.md](backend/organizations/tests/README.md)):
-
-- `test_authentication.py` - User registration & JWT login (5 tests)
-- `test_organizations.py` - Org creation, membership, permissions (18 tests)
-- `test_invitations.py` - Email invitations, validation, acceptance (37 tests)
-
-**Users App** (see [users/tests/README.md](backend/users/tests/README.md)):
-
-- `test_authentication.py` - User registration with/without invitation tokens
-- `test_profile.py` - Profile retrieval and updates (full/partial)
-- `test_password_reset.py` - Password reset request and token confirmation
-
-Run specific test modules:
-
-```bash
+uv run python manage.py makemigrations && uv run python manage.py migrate
 uv run python manage.py test organizations.tests.test_invitations
 uv run python manage.py test users.tests.test_password_reset
+uv run python manage.py seed_job_data   # seeds JobCategory, ExperienceLevel, AIScreeningConfiguration
+uv run python manage.py createsuperuser
 ```
 
-### Database Management
+**Database:** PostgreSQL 16 in Docker on port **5438** (not 5432). Name: `talentika_dev`, user: `talentika_user`.
 
-- Start database only: `docker compose up -d` (from backend/)
-- Stop database: `docker compose down`
-- Reset database: `docker compose down -v` (deletes all data)
+- Start only DB: `docker compose up -d` (from `backend/`)
+- Reset: `docker compose down -v`
 
-## API Documentation
+**Background workers (RQ, not Celery):**
 
-API docs are auto-generated using **drf-yasg**:
+```bash
+uv run python manage.py rqworker ocr_queue    # OCR pipeline
+uv run python manage.py rqworker ai_queue     # AI analysis pipeline
+```
 
-- Swagger UI: http://localhost:8000/swagger (includes "Authorize" button for Bearer tokens)
-- ReDoc: http://localhost:8000/redoc
-- Health Check: http://localhost:8000/health
+`REDIS_URL` env var (default `redis://localhost:6379/0`). Pipeline: `ocr_queue` → upon completion → enqueues `ai_queue`.
 
-### Documenting Endpoints
+## Frontend Developer Workflow
 
-Use `@swagger_auto_schema` decorator on API views (see [organizations/views/invitations.py](backend/organizations/views/invitations.py#L27-L59)):
+```bash
+cd frontend
+pnpm dev                # dev server on :3000
+pnpm build
+pnpm openapi-ts         # regenerate src/lib/client/ from backend /swagger.json
+```
+
+`src/lib/client/` is **auto-generated** from the backend's OpenAPI spec — never edit those files manually. Generation reads `BACKEND_URL` env var.
+
+## Critical Conventions
+
+**`APPEND_SLASH = False`** — URL patterns must include trailing slash; requests without it get 404:
+
+- ✅ `GET /api/organizations/` ❌ `GET /api/organizations`
+
+**Multiple apps share `/api/` prefix** (see [backend/app/urls.py](backend/app/urls.py)):
 
 ```python
-@swagger_auto_schema(
-    method='post',
-    operation_description="...",
-    manual_parameters=[openapi.Parameter('org_id', openapi.IN_PATH, ...)],
-    request_body=InvitationCreateSerializer,
-    responses={201: OrganizationInvitationSerializer, ...},
-    tags=['Invitations']
-)
+path("api/users/", include("users.urls"))
+path("api/",       include("organizations.urls"))
+path("api/",       include("job_profile.urls"))
+path("api/",       include("job_applications.urls"))
+path("api/",       include("job_application_analysis.urls"))
+```
+
+**Modular app structure** — use subdirectories, not flat files:
+
+```
+app/models/     app/views/     app/serializers/     app/tests/
+```
+
+**API views pattern** — always function-based + Swagger decorator + tags:
+
+```python
+@swagger_auto_schema(method='post', tags=['JobProfiles'], request_body=..., responses={...})
 @api_view(["POST"])
-@permission_classes([IsAuthenticated, IsOrgAdminOfOwnOrganization])
-def create_invitation(request, org_id):
-    ...
+@permission_classes([IsAuthenticated, IsOrganizationAdmin])
+def create_job_profile(request, org_id): ...
 ```
 
-## Project Conventions
+**Custom permissions** (see [backend/organizations/permissions.py](backend/organizations/permissions.py)):
 
-### Authentication Pattern
+- `IsOrganizationAdmin` / `IsOrganizationMember` — read `org_id` from URL kwargs
+- `IsOrgAdminOfOwnOrganization` — stricter check for mutations
 
-Email-based JWT auth split across two apps:
+**Frontend CSRF:** Edge middleware ([frontend/src/proxy.ts](frontend/src/proxy.ts)) validates CSRF cookie vs `x-csrf-token` header for all mutating BFF routes (`/api/*`). Exempt: `/api/auth/csrf`, `/api/auth/refresh`.
 
-**Users App** (see [users/authentication.py](backend/users/authentication.py)):
+**Frontend API calls** go through Next.js BFF routes (`frontend/src/app/api/`) proxying to Django — never call Django directly from the browser.
 
-- Custom serializer: `EmailTokenObtainPairSerializer` uses email instead of username
-- Login endpoint: `POST /api/users/auth/login/` with `{"email": "...", "password": "..."}`
-- Returns `access` (1h) and `refresh` (7d) tokens
-- Use in headers: `Authorization: Bearer <access_token>`
+## Key Data Flows
 
-**Organizations App** (see [organizations/authentication.py](backend/organizations/authentication.py)):
+**Application submission:**
+`POST /api/applications/submit/` → creates `JobApplication` + `QuestionAnswer` records → `_trigger_analysis_pipeline()` (silent fail) → enqueues OCR via RQ.
 
-- Legacy authentication module (maintained for backward compatibility)
-- New authentication endpoints use users app
+**Resume pre-upload:**
+`POST /api/applications/submit/upload/resume/` → `TemporaryFileUpload` (returns UUID) → pass UUID in submission payload. Dedup via SHA-256.
 
-### Password Reset Flow
+**Analysis pipeline state machine:** `UPLOADED → OCR_PENDING → OCR_DONE → AI_PENDING → DONE / FAILED`
+OCR uses **doctr** (singleton, lazy-loaded). AI provider via `AI_PROVIDER` env (`openai` or `gemini`); models via `OPENAI_MODEL` / `GEMINI_MODEL`.
 
-Secure token-based password reset (see [users/views/password_reset.py](backend/users/views/password_reset.py)):
+**Invitation flow:**
 
-1. User requests reset: `POST /api/users/password-reset/` with email
-2. Email sent with secure token (24-hour expiration)
-3. Frontend redirects to: `{FRONTEND_URL}/password-reset/{token}/`
-4. User confirms: `POST /api/users/password-reset/confirm/` with token and new password
+1. Org admin: `POST /api/organizations/{org_id}/invitations/` → email with 7-day token
+2. New users: register with token → auto-join. Existing users: `POST /api/invitations/accept/`
 
-Critical validations:
+**Password reset:** `POST /api/users/password-reset/` → email → `POST /api/users/password-reset/confirm/` with token (24h, single-use, `used_at` field).
 
-- Token is single-use (checked via `used_at` field)
-- Tokens expire in 24 hours
-- Response doesn't reveal if email exists (security best practice)
+## Auth
 
-### Invitation Flow
+Email-based JWT. `POST /api/users/auth/login/` with `{"email", "password"}` → `access` (1h) + `refresh` (7d).
+Header: `Authorization: Bearer <token>`. Serializer: `EmailTokenObtainPairSerializer` in [backend/users/authentication.py](backend/users/authentication.py).
 
-Complete workflow documented in [INVITATION_FLOW.md](backend/INVITATION_FLOW.md):
+## Domain Models
 
-1. Admin creates invitation: `POST /api/organizations/{org_id}/invitations/`
-2. Email sent with secure token (7-day expiration)
-3. **New users**: Register with token: `POST /api/users/auth/register/` (auto-joins org)
-4. **Existing users**: Accept invitation: `POST /api/invitations/accept/`
+**`job_profile`:** `JobProfile` (FK→Organization, title, category, employment_type, experience_level, requirements ArrayField, skills JSONField `[{skill, is_required}]`, optional AI screening config, `is_active`), `Question` (text/mcq/mcq_single), lookup tables `JobCategory` / `ExperienceLevel` / `AIScreeningConfiguration`.
 
-Critical validations:
+**`job_applications`:** `JobApplication` (FK→JobProfile, status: submitted→under_review→shortlisted→rejected), `QuestionAnswer`, `ApplicationAttachment` (S3/local storage), `TemporaryFileUpload`.
 
-- Email must match invitation
-- Token expires after 7 days
-- Single-use tokens (check `accepted_at` field)
-- Cannot join same org twice
+**`organizations`:** `Organization` (status: PENDING/APPROVED/REJECTED/SUSPENDED; auto-approved via API), `OrganizationMembership` (ORG_ADMIN/MEMBER), `OrganizationInvitation`, `Address`.
 
-### When Adding New Django Apps
+**`users`:** `User` (AbstractUser, UUID PK, email auth), `PasswordResetToken`.
 
-1. Create app: `uv run python manage.py startapp <app_name>`
-2. Add to `INSTALLED_APPS` in [app/settings.py](backend/app/settings.py#L41)
-3. Create `urls.py` in app directory
-4. Include in main [app/urls.py](backend/app/urls.py): `path("<prefix>/", include("<app_name>.urls"))`
+## Adding a New Django App
 
-### API Views Pattern
+1. `uv run python manage.py startapp <name>`
+2. Add to `INSTALLED_APPS` in [backend/app/settings.py](backend/app/settings.py)
+3. Create `urls.py`, include in [backend/app/urls.py](backend/app/urls.py)
 
-- Use DRF function-based views with `@api_view()` decorator
-- Always add Swagger documentation decorators with `tags=["..."]` for grouping
-- Return `Response()` objects from `rest_framework.response`
-- Use custom permission classes from [permissions.py](backend/organizations/permissions.py)
+## Key Reference Files
 
-### URL Routing Convention
+| File                                                                                             | Purpose                                     |
+| ------------------------------------------------------------------------------------------------ | ------------------------------------------- |
+| [backend/app/urls.py](backend/app/urls.py)                                                       | Full URL routing                            |
+| [backend/app/settings.py](backend/app/settings.py)                                               | All config (JWT, email, Redis, AI provider) |
+| [backend/organizations/permissions.py](backend/organizations/permissions.py)                     | Custom DRF permissions                      |
+| [backend/job_application_analysis/workers.py](backend/job_application_analysis/workers.py)       | RQ worker pipeline                          |
+| [backend/job_application_analysis/ai_service.py](backend/job_application_analysis/ai_service.py) | OpenAI/Gemini AI backend                    |
+| [backend/docker-compose.yml](backend/docker-compose.yml)                                         | PostgreSQL container (port 5438)            |
+| [frontend/src/proxy.ts](frontend/src/proxy.ts)                                                   | CSRF edge middleware                        |
+| [frontend/src/lib/hey-api.ts](frontend/src/lib/hey-api.ts)                                       | Axios client config                         |
+| [frontend/openapi-ts.config.ts](frontend/openapi-ts.config.ts)                                   | API client codegen config                   |
 
-**Important**: `APPEND_SLASH = False` means URLs must not have trailing slashes:
+## API Docs
 
-- ✅ `/api/organizations/`
-- ❌ `/api/organizations` (404)
-
-URL includes pattern (see [app/urls.py](backend/app/urls.py#L35)):
-
-```python
-path("api/users/", include("users.urls"))       # User auth & profile management
-path("api/", include("organizations.urls"))     # Organizations, memberships, invitations
-```
-
-## Tech Stack
-
-- **Framework**: Django 6.0.1 + Django REST Framework 3.16.1
-- **Database**: PostgreSQL 16 (via psycopg2-binary)
-- **Authentication**: djangorestframework-simplejwt (email-based)
-- **API Docs**: drf-yasg (Swagger/OpenAPI)
-- **Email**: SMTP via Gmail (requires app password)
-- **Package Manager**: uv (not pip/poetry)
-- **Python**: 3.13+ (see `.python-version`)
-- **Container**: Docker Compose for database only
-
-## Key Files
-
-- [backend/dev.sh](backend/dev.sh): Development startup script
-- [backend/INVITATION_FLOW.md](backend/INVITATION_FLOW.md): Complete invitation system documentation
-- [backend/app/settings.py](backend/app/settings.py): All Django configuration including JWT & email
-- [backend/app/urls.py](backend/app/urls.py): Main URL routing + Swagger setup
-- [backend/organizations/models/\_\_init\_\_.py](backend/organizations/models/__init__.py): All models + helper functions
-- [backend/organizations/permissions.py](backend/organizations/permissions.py): Custom DRF permissions
-- [backend/docker-compose.yml](backend/docker-compose.yml): PostgreSQL container config
+- Swagger UI: http://localhost:8000/swagger
+- ReDoc: http://localhost:8000/redoc
