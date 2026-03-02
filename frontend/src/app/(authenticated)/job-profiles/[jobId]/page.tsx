@@ -409,10 +409,7 @@ export default function JobProfileDetailPage({
                         q.question_type}
                     </Badge>
                     {q.is_required ? (
-                      <Badge
-                        variant="secondary"
-                        className="text-xs text-destructive"
-                      >
+                      <Badge variant="secondary" className="text-xs">
                         Required
                       </Badge>
                     ) : (
