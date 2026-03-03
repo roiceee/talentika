@@ -66,7 +66,7 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="mx-auto w-full max-w-2xl px-6 py-8">
+    <div className="w-full py-8">
       <h1 className="mb-6 font-heading text-2xl font-semibold">Profile</h1>
 
       <Card>

@@ -107,7 +107,7 @@ export default function CreateJobProfilePage() {
   if (!orgId) return null;
 
   return (
-    <div className="mx-auto w-full max-w-3xl px-6 py-8">
+    <div className="w-full py-8">
       <div className="mb-6">
         <Link
           href="/job-profiles"

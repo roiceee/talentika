@@ -12,6 +12,7 @@ import type {
   UserProfile,
   JobApplicationCreate,
   JobApplicationDetail,
+  JobApplicationDetailWithAnalysis,
 } from "@/lib/client";
 import { bffClient } from "@/lib/auth";
 
@@ -266,6 +267,49 @@ export async function setDefaultOrganization(
 // ---------------------------------------------------------------------------
 
 export type { JobApplicationCreate };
+export type { JobApplicationDetail };
+
+export async function listJobApplications(
+  orgId: string,
+  jobProfileId: string,
+): Promise<JobApplicationDetail[]> {
+  const response = await bffClient.get<JobApplicationDetail[]>(
+    `/api/organizations/${orgId}/job-profiles/${jobProfileId}/applications`,
+  );
+  return response.data;
+}
+
+export async function getJobApplication(
+  orgId: string,
+  jobProfileId: string,
+  applicationId: string,
+): Promise<JobApplicationDetailWithAnalysis> {
+  const response = await bffClient.get<JobApplicationDetailWithAnalysis>(
+    `/api/organizations/${orgId}/job-profiles/${jobProfileId}/applications/${applicationId}`,
+  );
+  return response.data;
+}
+
+export function getResumeDownloadUrl(
+  orgId: string,
+  jobProfileId: string,
+  applicationId: string,
+): string {
+  return `/api/organizations/${orgId}/job-profiles/${jobProfileId}/applications/${applicationId}/download`;
+}
+
+export async function updateApplicationStatus(
+  orgId: string,
+  jobProfileId: string,
+  applicationId: string,
+  newStatus: "to_be_reviewed" | "reviewed" | "shortlisted" | "rejected",
+): Promise<JobApplicationDetail> {
+  const response = await bffClient.patch<JobApplicationDetail>(
+    `/api/organizations/${orgId}/job-profiles/${jobProfileId}/applications/${applicationId}/status`,
+    { status: newStatus },
+  );
+  return response.data;
+}
 
 export async function submitApplication(
   data: JobApplicationCreate,

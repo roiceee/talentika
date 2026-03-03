@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback, use } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import { AxiosError } from "axios";
 import {
@@ -27,6 +27,8 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ApplicationsTab } from "@/components/applications-tab";
 import {
   ArrowLeft,
   Pencil,
@@ -37,6 +39,7 @@ import {
   MessageSquare,
   ChevronRight,
   LinkIcon,
+  FileText,
 } from "lucide-react";
 
 const EMPLOYMENT_TYPE_LABELS: Record<string, string> = {
@@ -61,6 +64,8 @@ export default function JobProfileDetailPage({
 }) {
   const { jobId } = use(params);
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const activeTab = searchParams.get("tab") ?? "details";
 
   const [profile, setProfile] = useState<JobProfileDetail | null>(null);
   const [categories, setCategories] = useState<JobCategory[]>([]);
@@ -185,7 +190,7 @@ export default function JobProfileDetailPage({
   // ─── Loading skeleton ────────────────────────────────────────────────────
   if (isLoading) {
     return (
-      <div className="mx-auto w-full max-w-3xl px-6 py-8 space-y-6">
+      <div className="w-full py-8 space-y-6">
         <Skeleton className="h-8 w-48" />
         <Skeleton className="h-64 w-full rounded-lg" />
         <Skeleton className="h-40 w-full rounded-lg" />
@@ -200,7 +205,7 @@ export default function JobProfileDetailPage({
   // ─── Edit mode ───────────────────────────────────────────────────────────
   if (isEditMode) {
     return (
-      <div className="mx-auto w-full max-w-3xl px-6 py-8">
+      <div className="w-full py-8">
         <div className="mb-6">
           <Button
             variant={"ghost"}
@@ -232,7 +237,7 @@ export default function JobProfileDetailPage({
 
   // ─── View mode ───────────────────────────────────────────────────────────
   return (
-    <div className="mx-auto w-full max-w-3xl px-6 py-8">
+    <div className="w-full py-8">
       {/* Header */}
       <div className="mb-6">
         <Link
@@ -293,170 +298,207 @@ export default function JobProfileDetailPage({
         </div>
       </div>
 
-      {/* Meta badges */}
-      <div className="mb-6 flex flex-wrap gap-2">
-        {profile.category && (
-          <Badge variant="secondary">
-            {(profile.category as { title?: string })?.title}
-          </Badge>
-        )}
-        {profile.experience_level && (
-          <Badge variant="outline">
-            {(profile.experience_level as { title?: string })?.title}
-          </Badge>
-        )}
-        {profile.employment_type && (
-          <Badge variant="outline">
-            {EMPLOYMENT_TYPE_LABELS[profile.employment_type] ??
-              profile.employment_type}
-          </Badge>
-        )}
-        {profile.ai_screening_configuration && (
-          <Badge variant="secondary" className="text-xs">
-            AI:{" "}
-            {(profile.ai_screening_configuration as { title?: string })?.title}
-          </Badge>
-        )}
-      </div>
+      {/* Tabs */}
+      <Tabs
+        value={activeTab}
+        onValueChange={(val) => router.replace(`?tab=${val}`)}
+        className="mt-2"
+      >
+        <TabsList>
+          <TabsTrigger value="details">
+            <List className="h-4 w-4 mr-1.5" />
+            Details
+          </TabsTrigger>
+          <TabsTrigger value="applications">
+            <FileText className="h-4 w-4 mr-1.5" />
+            Applications
+          </TabsTrigger>
+        </TabsList>
 
-      {/* Description */}
-      <Card className="mb-4">
-        <CardHeader>
-          <CardTitle className="text-base">Description</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-sm whitespace-pre-wrap text-muted-foreground leading-relaxed">
-            {profile.description}
-          </p>
-        </CardContent>
-      </Card>
-
-      {/* Requirements */}
-      {profile.requirements && profile.requirements.length > 0 && (
-        <Card className="mb-4">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base">
-              <List className="h-4 w-4" />
-              Requirements
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ul className="space-y-2">
-              {profile.requirements.map((req, i) => (
-                <li key={i} className="flex items-start gap-2 text-sm">
-                  <ChevronRight className="h-4 w-4 mt-0.5 shrink-0 text-muted-foreground" />
-                  <span>{req}</span>
-                </li>
-              ))}
-            </ul>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Skills */}
-      {profile.skills && profile.skills.length > 0 && (
-        <Card className="mb-4">
-          <CardHeader>
-            <CardTitle className="text-base">Skills</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex flex-wrap gap-2">
-              {(
-                profile.skills as Array<{ skill: string; is_required: boolean }>
-              ).map((s, i) => (
-                <Badge
-                  key={i}
-                  variant={s.is_required ? "default" : "outline"}
-                  className="text-xs"
-                >
-                  {s.skill}
-                  {!s.is_required && (
-                    <span className="ml-1 opacity-60">optional</span>
-                  )}
-                </Badge>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Questions */}
-      {profile.questions && profile.questions.length > 0 && (
-        <Card className="mb-4">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base">
-              <MessageSquare className="h-4 w-4" />
-              Application Questions
-              <Badge variant="secondary" className="text-xs font-normal">
-                {profile.questions.length}
+        <TabsContent value="details" className="mt-4">
+          {/* Meta badges */}
+          <div className="mb-6 flex flex-wrap gap-2">
+            {profile.category && (
+              <Badge variant="secondary">
+                {(profile.category as { title?: string })?.title}
               </Badge>
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {profile.questions.map((q, i) => (
-              <div key={q.id ?? i}>
-                {i > 0 && <Separator className="mb-4" />}
-                <div className="space-y-2">
-                  <div className="flex items-start gap-2">
-                    <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-medium shrink-0">
-                      {i + 1}
-                    </span>
-                    <p className="text-sm font-medium">{q.text}</p>
-                  </div>
-                  <div className="ml-8 flex flex-wrap items-center gap-2">
-                    <Badge variant="outline" className="text-xs">
-                      {QUESTION_TYPE_LABELS[q.question_type ?? "text"] ??
-                        q.question_type}
-                    </Badge>
-                    {q.is_required ? (
-                      <Badge variant="secondary" className="text-xs">
-                        Required
-                      </Badge>
-                    ) : (
-                      <Badge variant="outline" className="text-xs">
-                        Optional
-                      </Badge>
-                    )}
-                  </div>
-                  {q.choices && q.choices.length > 0 && (
-                    <ul className="ml-8 mt-1 space-y-1">
-                      {q.choices.map((c, ci) => (
-                        <li
-                          key={ci}
-                          className="flex items-center gap-2 text-sm text-muted-foreground"
-                        >
-                          <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground shrink-0" />
-                          {c}
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                </div>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Footer meta */}
-      <div className="mt-6 text-xs text-muted-foreground space-y-1">
-        {profile.created_at && (
-          <p>
-            Created {new Date(profile.created_at).toLocaleDateString()}{" "}
-            {profile.created_by && (
-              <>
-                by {(profile.created_by as { first_name?: string })?.first_name}{" "}
-                {(profile.created_by as { last_name?: string })?.last_name}
-              </>
             )}
-          </p>
-        )}
-        {profile.updated_at && (
-          <p>
-            Last updated {new Date(profile.updated_at).toLocaleDateString()}
-          </p>
-        )}
-      </div>
+            {profile.experience_level && (
+              <Badge variant="outline">
+                {(profile.experience_level as { title?: string })?.title}
+              </Badge>
+            )}
+            {profile.employment_type && (
+              <Badge variant="outline">
+                {EMPLOYMENT_TYPE_LABELS[profile.employment_type] ??
+                  profile.employment_type}
+              </Badge>
+            )}
+            {profile.ai_screening_configuration && (
+              <Badge variant="secondary" className="text-xs">
+                AI:{" "}
+                {
+                  (profile.ai_screening_configuration as { title?: string })
+                    ?.title
+                }
+              </Badge>
+            )}
+          </div>
+
+          {/* Description */}
+          <Card className="mb-4">
+            <CardHeader>
+              <CardTitle className="text-base">Description</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm whitespace-pre-wrap text-muted-foreground leading-relaxed">
+                {profile.description}
+              </p>
+            </CardContent>
+          </Card>
+
+          {/* Requirements */}
+          {profile.requirements && profile.requirements.length > 0 && (
+            <Card className="mb-4">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <List className="h-4 w-4" />
+                  Requirements
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ul className="space-y-2">
+                  {profile.requirements.map((req, i) => (
+                    <li key={i} className="flex items-start gap-2 text-sm">
+                      <ChevronRight className="h-4 w-4 mt-0.5 shrink-0 text-muted-foreground" />
+                      <span>{req}</span>
+                    </li>
+                  ))}
+                </ul>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Skills */}
+          {profile.skills && profile.skills.length > 0 && (
+            <Card className="mb-4">
+              <CardHeader>
+                <CardTitle className="text-base">Skills</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex flex-wrap gap-2">
+                  {(
+                    profile.skills as Array<{
+                      skill: string;
+                      is_required: boolean;
+                    }>
+                  ).map((s, i) => (
+                    <Badge
+                      key={i}
+                      variant={s.is_required ? "default" : "outline"}
+                      className="text-xs"
+                    >
+                      {s.skill}
+                      {!s.is_required && (
+                        <span className="ml-1 opacity-60">optional</span>
+                      )}
+                    </Badge>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Questions */}
+          {profile.questions && profile.questions.length > 0 && (
+            <Card className="mb-4">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <MessageSquare className="h-4 w-4" />
+                  Application Questions
+                  <Badge variant="secondary" className="text-xs font-normal">
+                    {profile.questions.length}
+                  </Badge>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {profile.questions.map((q, i) => (
+                  <div key={q.id ?? i}>
+                    {i > 0 && <Separator className="mb-4" />}
+                    <div className="space-y-2">
+                      <div className="flex items-start gap-2">
+                        <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-medium shrink-0">
+                          {i + 1}
+                        </span>
+                        <p className="text-sm font-medium">{q.text}</p>
+                      </div>
+                      <div className="ml-8 flex flex-wrap items-center gap-2">
+                        <Badge variant="outline" className="text-xs">
+                          {QUESTION_TYPE_LABELS[q.question_type ?? "text"] ??
+                            q.question_type}
+                        </Badge>
+                        {q.is_required ? (
+                          <Badge variant="secondary" className="text-xs">
+                            Required
+                          </Badge>
+                        ) : (
+                          <Badge variant="outline" className="text-xs">
+                            Optional
+                          </Badge>
+                        )}
+                      </div>
+                      {q.choices && q.choices.length > 0 && (
+                        <ul className="ml-8 mt-1 space-y-1">
+                          {q.choices.map((c, ci) => (
+                            <li
+                              key={ci}
+                              className="flex items-center gap-2 text-sm text-muted-foreground"
+                            >
+                              <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground shrink-0" />
+                              {c}
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Footer meta */}
+          <div className="mt-6 text-xs text-muted-foreground space-y-1">
+            {profile.created_at && (
+              <p>
+                Created {new Date(profile.created_at).toLocaleDateString()}{" "}
+                {profile.created_by && (
+                  <>
+                    by{" "}
+                    {
+                      (profile.created_by as { first_name?: string })
+                        ?.first_name
+                    }{" "}
+                    {(profile.created_by as { last_name?: string })?.last_name}
+                  </>
+                )}
+              </p>
+            )}
+            {profile.updated_at && (
+              <p>
+                Last updated {new Date(profile.updated_at).toLocaleDateString()}
+              </p>
+            )}
+          </div>
+        </TabsContent>
+
+        <TabsContent value="applications" className="mt-4">
+          <ApplicationsTab
+            orgId={(profile.organization as { id?: string })?.id ?? ""}
+            jobProfileId={jobId}
+          />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

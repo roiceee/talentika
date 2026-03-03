@@ -67,7 +67,7 @@ export default function JobProfilesPage() {
 
   if (!orgId || isLoading) {
     return (
-      <div className="mx-auto w-full max-w-4xl px-6 py-8 space-y-6">
+      <div className="w-full py-8 space-y-6">
         <Skeleton className="h-8 w-48" />
         <div className="space-y-4">
           {[...Array(3)].map((_, i) => (
@@ -79,7 +79,7 @@ export default function JobProfilesPage() {
   }
 
   return (
-    <div className="mx-auto w-full max-w-4xl px-6 py-8">
+    <div className="w-full py-8">
       <div className="mb-6">
         <div className="flex items-center justify-between">
           <div>

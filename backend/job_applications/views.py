@@ -482,10 +482,10 @@ def download_resume(request, org_id, job_profile_id, job_application_id):
     Update the status of a job application.
 
     Allowed status transitions:
-    - submitted → under_review, shortlisted, rejected
-    - under_review → shortlisted, rejected
+    - to_be_reviewed → reviewed, shortlisted, rejected
+    - reviewed → shortlisted, rejected
     - shortlisted → rejected
-    - rejected → under_review, shortlisted
+    - rejected → reviewed, shortlisted
     """,
     manual_parameters=[
         openapi.Parameter(
@@ -519,7 +519,7 @@ def download_resume(request, org_id, job_profile_id, job_application_id):
         properties={
             "status": openapi.Schema(
                 type=openapi.TYPE_STRING,
-                enum=["under_review", "shortlisted", "rejected"],
+                enum=["to_be_reviewed", "reviewed", "shortlisted", "rejected"],
             ),
         },
     ),
@@ -570,13 +570,6 @@ def update_application_status(request, org_id, job_profile_id, job_application_i
             {
                 "detail": f"Invalid status. Must be one of: {', '.join(sorted(valid_statuses))}"
             },
-            status=status.HTTP_400_BAD_REQUEST,
-        )
-
-    # Prevent setting back to 'submitted' via API
-    if new_status == JobApplication.Status.SUBMITTED:
-        return Response(
-            {"detail": "Cannot set status back to 'submitted'."},
             status=status.HTTP_400_BAD_REQUEST,
         )
 

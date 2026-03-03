@@ -40,7 +40,9 @@ export default function AuthenticatedLayout({
   return (
     <div className="flex min-h-screen flex-col">
       <AppNavbar />
-      <main className="flex-1">{children}</main>
+      <main className="flex-1 mx-auto w-full max-w-[1200px] px-6">
+        {children}
+      </main>
     </div>
   );
 }

@@ -9,8 +9,8 @@ class JobApplication(models.Model):
     """
 
     class Status(models.TextChoices):
-        SUBMITTED = "submitted", "Submitted"
-        UNDER_REVIEW = "under_review", "Under Review"
+        TO_BE_REVIEWED = "to_be_reviewed", "To Be Reviewed"
+        REVIEWED = "reviewed", "Reviewed"
         SHORTLISTED = "shortlisted", "Shortlisted"
         REJECTED = "rejected", "Rejected"
 
@@ -28,7 +28,7 @@ class JobApplication(models.Model):
     status = models.CharField(
         max_length=20,
         choices=Status.choices,
-        default=Status.SUBMITTED,
+        default=Status.TO_BE_REVIEWED,
     )
     submitted_at = models.DateTimeField(auto_now_add=True)
     created_at = models.DateTimeField(auto_now_add=True)

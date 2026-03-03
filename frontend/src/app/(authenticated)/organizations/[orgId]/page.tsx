@@ -144,7 +144,7 @@ export default function OrganizationDetailPage({
 
   if (isLoading) {
     return (
-      <div className="mx-auto w-full max-w-4xl px-6 py-8 space-y-6">
+      <div className="w-full py-8 space-y-6">
         <Skeleton className="h-8 w-48" />
         <Skeleton className="h-64 w-full" />
       </div>
@@ -154,7 +154,7 @@ export default function OrganizationDetailPage({
   if (!org) return null;
 
   return (
-    <div className="mx-auto w-full max-w-4xl px-6 py-8">
+    <div className="w-full py-8">
       <div className="mb-6">
         <Link
           href="/organizations"
