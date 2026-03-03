@@ -34,6 +34,10 @@ echo -e "${GREEN}Redis is ready!${NC}"
 echo -e "${YELLOW}Running database migrations...${NC}"
 uv run python manage.py migrate
 
+# Reset any analyses stuck in processing states from a previous interrupted run
+echo -e "${YELLOW}Checking for stuck analysis jobs...${NC}"
+uv run python manage.py reset_stuck_analyses
+
 # Start analysis pipeline workers in the background
 echo -e "${YELLOW}Starting analysis pipeline workers (ocr_queue + ai_queue)...${NC}"
 uv run python manage.py run_analysis_workers &

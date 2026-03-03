@@ -204,9 +204,14 @@ def retry_analysis(request, application_id):
             status=status.HTTP_404_NOT_FOUND,
         )
 
-    if analysis.status != ApplicationAnalysis.Status.FAILED:
+    if (
+        analysis.status != ApplicationAnalysis.Status.FAILED
+        or analysis.status != ApplicationAnalysis.Status.OCR_PENDING
+    ):
         return Response(
-            {"detail": f"Analysis is in '{analysis.status}' state, not FAILED."},
+            {
+                "detail": f"Analysis is in '{analysis.status}' state, not subject for retry."
+            },
             status=status.HTTP_400_BAD_REQUEST,
         )
 

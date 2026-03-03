@@ -273,10 +273,10 @@ def list_job_applications(request, org_id, job_profile_id):
     applications = (
         JobApplication.objects.filter(job_profile=job_profile)
         .select_related("job_profile", "address")
-        .prefetch_related("answers", "attachments")
+        .prefetch_related("answers", "attachments", "analysis")
     )
 
-    serializer = JobApplicationDetailSerializer(applications, many=True)
+    serializer = JobApplicationDetailWithAnalysisSerializer(applications, many=True)
     return Response(serializer.data, status=status.HTTP_200_OK)
 
 

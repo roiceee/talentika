@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useEffect, useState, useCallback } from "react";
+import { use, useEffect, useRef, useState, useCallback } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -10,6 +10,7 @@ import {
   getJobProfile,
   getResumeDownloadUrl,
   updateApplicationStatus,
+  retryAnalysis,
 } from "@/lib/api";
 import type {
   JobApplicationDetailWithAnalysis,
@@ -37,6 +38,17 @@ import {
   Download,
   MessageSquare,
   Loader2,
+  Brain,
+  AlertCircle,
+  Clock,
+  RefreshCw,
+  Star,
+  Lightbulb,
+  GraduationCap,
+  Briefcase,
+  Award,
+  TrendingUp,
+  TrendingDown,
 } from "lucide-react";
 
 const UPDATABLE_STATUSES = [
@@ -50,6 +62,25 @@ const QUESTION_TYPE_LABELS: Record<string, string> = {
   text: "Text",
   mcq: "Multiple Choice (multi)",
   mcq_single: "Multiple Choice (single)",
+};
+
+type AnalysisData = {
+  id?: string;
+  status?: string;
+  score?: number | null;
+  ai_analysis_summary?: string;
+  notable_traits?: string[];
+  key_skills?: string[];
+  detailed_analysis?: {
+    strengths?: string[];
+    areas_for_development?: string[];
+    experience?: { title?: string; company?: string; duration?: string }[];
+    education?: { degree?: string; institution?: string; year?: string }[];
+    certifications?: string[];
+  } | null;
+  error_message?: string;
+  created_at?: string;
+  updated_at?: string;
 };
 
 type AnswerItem = {
@@ -78,6 +109,7 @@ export default function ApplicationDetailPage({
   const [isDownloading, setIsDownloading] = useState(false);
   const [orgId, setOrgId] = useState<string>("");
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
+  const [isRetrying, setIsRetrying] = useState(false);
 
   async function handleDownload(fileName: string) {
     if (!resumeUrl || isDownloading) return;
@@ -135,6 +167,39 @@ export default function ApplicationDetailPage({
     fetchData();
   }, [fetchData]);
 
+  // Poll every 5 seconds while analysis is still processing
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  useEffect(() => {
+    const analysisRaw = (application?.analysis ??
+      null) as unknown as AnalysisData | null;
+    const isProcessing =
+      analysisRaw?.status && !["done", "failed"].includes(analysisRaw.status);
+
+    if (isProcessing && orgId) {
+      if (!pollRef.current) {
+        pollRef.current = setInterval(async () => {
+          try {
+            const data = await getJobApplication(orgId, jobId, applicationId);
+            setApplication(data);
+          } catch {
+            // silently ignore poll errors
+          }
+        }, 5000);
+      }
+    } else if (pollRef.current) {
+      clearInterval(pollRef.current);
+      pollRef.current = null;
+    }
+
+    return () => {
+      if (pollRef.current) {
+        clearInterval(pollRef.current);
+        pollRef.current = null;
+      }
+    };
+  }, [application, orgId, jobId, applicationId]);
+
   if (isLoading) {
     return (
       <div className="w-full py-8 space-y-4">
@@ -170,6 +235,8 @@ export default function ApplicationDetailPage({
       setIsUpdatingStatus(false);
     }
   }
+  const analysis = (application.analysis ??
+    null) as unknown as AnalysisData | null;
   const answers: AnswerItem[] =
     typeof application.answers === "string"
       ? []
@@ -177,6 +244,31 @@ export default function ApplicationDetailPage({
   const resumeAttachment = application.attachments?.find(
     (a) => a.file_type === "resume",
   );
+
+  async function handleRetryAnalysis() {
+    if (!application?.id || isRetrying) return;
+    setIsRetrying(true);
+    try {
+      await retryAnalysis(application.id);
+      toast.success("Analysis re-triggered");
+      setApplication((prev) =>
+        prev
+          ? {
+              ...prev,
+              analysis: JSON.stringify({
+                ...(analysis ?? {}),
+                status: "uploaded",
+                error_message: "",
+              }),
+            }
+          : prev,
+      );
+    } catch {
+      toast.error("Failed to retry analysis");
+    } finally {
+      setIsRetrying(false);
+    }
+  }
 
   return (
     <div className="w-full py-8 space-y-4">
@@ -362,6 +454,362 @@ export default function ApplicationDetailPage({
                 </div>
               </div>
             ))}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* AI Analysis */}
+      {analysis && (
+        <Card>
+          <CardHeader className="pb-4">
+            <div className="flex items-center justify-between">
+              <CardTitle className="flex items-center gap-2 text-base">
+                <Brain className="h-4 w-4" />
+                AI Analysis
+              </CardTitle>
+              <div className="flex items-center gap-2">
+                {analysis.status === "failed" && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleRetryAnalysis}
+                    disabled={isRetrying}
+                  >
+                    {isRetrying ? (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    ) : (
+                      <RefreshCw className="mr-2 h-4 w-4" />
+                    )}
+                    Retry
+                  </Button>
+                )}
+                {/* Allow retry for stuck processing states */}
+                {analysis.status &&
+                  !["done", "failed"].includes(analysis.status) && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleRetryAnalysis}
+                      disabled={isRetrying}
+                      title="Restart analysis if stuck"
+                    >
+                      {isRetrying ? (
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      ) : (
+                        <RefreshCw className="mr-2 h-4 w-4" />
+                      )}
+                      Restart
+                    </Button>
+                  )}
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            {/* Status + Score hero row */}
+            <div className="flex items-center gap-4">
+              {analysis.status === "done" ? (
+                <Badge className="bg-emerald-600 text-white hover:bg-emerald-700">
+                  Complete
+                </Badge>
+              ) : analysis.status === "failed" ? (
+                <Badge variant="destructive">Failed</Badge>
+              ) : (
+                <Badge variant="secondary" className="flex items-center gap-1">
+                  {analysis.status === "ocr_pending" ||
+                  analysis.status === "ai_pending" ? (
+                    <Loader2 className="h-3 w-3 animate-spin" />
+                  ) : (
+                    <Clock className="h-3 w-3" />
+                  )}
+                  {analysis.status === "uploaded"
+                    ? "Queued"
+                    : analysis.status === "ocr_pending"
+                      ? "OCR Processing"
+                      : analysis.status === "ocr_done"
+                        ? "OCR Done"
+                        : analysis.status === "ai_pending"
+                          ? "AI Analyzing"
+                          : analysis.status}
+                </Badge>
+              )}
+              {analysis.status === "done" && analysis.score != null && (
+                <div className="flex items-center gap-3">
+                  <div
+                    className={`flex items-center justify-center h-14 w-14 rounded-full border-4 ${
+                      analysis.score >= 70
+                        ? "border-emerald-500 text-emerald-600"
+                        : analysis.score >= 40
+                          ? "border-amber-400 text-amber-600"
+                          : "border-red-400 text-destructive"
+                    }`}
+                  >
+                    <span className="text-lg font-bold">{analysis.score}</span>
+                  </div>
+                  <div className="text-sm text-muted-foreground">
+                    Match Score
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Error message */}
+            {analysis.status === "failed" && analysis.error_message && (
+              <div className="flex items-start gap-2 rounded-md border border-destructive/50 bg-destructive/10 p-3">
+                <AlertCircle className="h-4 w-4 text-destructive shrink-0 mt-0.5" />
+                <p className="text-sm text-destructive">
+                  {analysis.error_message}
+                </p>
+              </div>
+            )}
+
+            {/* Processing message */}
+            {analysis.status &&
+              !["done", "failed"].includes(analysis.status) && (
+                <div className="flex items-center gap-2 text-sm text-muted-foreground bg-muted/50 rounded-md px-4 py-3">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <span>
+                    Analysis is in progress. This page will update
+                    automatically.
+                  </span>
+                </div>
+              )}
+
+            {/* Done — full analysis */}
+            {analysis.status === "done" && (
+              <>
+                {/* Summary */}
+                {analysis.ai_analysis_summary && (
+                  <div className="space-y-2">
+                    <h4 className="text-sm font-semibold flex items-center gap-1.5">
+                      <Lightbulb className="h-4 w-4 text-amber-500" />
+                      Summary
+                    </h4>
+                    <p className="text-sm leading-relaxed text-muted-foreground whitespace-pre-wrap bg-muted/40 rounded-lg px-4 py-3">
+                      {analysis.ai_analysis_summary}
+                    </p>
+                  </div>
+                )}
+
+                {/* Skills & Traits side-by-side */}
+                {((analysis.key_skills && analysis.key_skills.length > 0) ||
+                  (analysis.notable_traits &&
+                    analysis.notable_traits.length > 0)) && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* Key Skills */}
+                    {analysis.key_skills && analysis.key_skills.length > 0 && (
+                      <div className="space-y-2 bg-muted/30 rounded-lg p-4">
+                        <h4 className="text-sm font-semibold flex items-center gap-1.5">
+                          <Star className="h-4 w-4 text-blue-500" />
+                          Key Skills
+                        </h4>
+                        <div className="flex flex-wrap gap-1.5">
+                          {(analysis.key_skills as unknown as string[]).map(
+                            (skill, i) => (
+                              <Badge
+                                key={i}
+                                variant="secondary"
+                                className="text-xs"
+                              >
+                                {skill}
+                              </Badge>
+                            ),
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Notable Traits */}
+                    {analysis.notable_traits &&
+                      analysis.notable_traits.length > 0 && (
+                        <div className="space-y-2 bg-muted/30 rounded-lg p-4">
+                          <h4 className="text-sm font-semibold flex items-center gap-1.5">
+                            <Award className="h-4 w-4 text-purple-500" />
+                            Notable Traits
+                          </h4>
+                          <div className="flex flex-wrap gap-1.5">
+                            {(
+                              analysis.notable_traits as unknown as string[]
+                            ).map((trait, i) => (
+                              <Badge
+                                key={i}
+                                variant="outline"
+                                className="text-xs"
+                              >
+                                {trait}
+                              </Badge>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                  </div>
+                )}
+
+                {/* Detailed Analysis */}
+                {analysis.detailed_analysis && (
+                  <>
+                    <Separator />
+
+                    {/* Strengths & Areas for Development side-by-side */}
+                    {((analysis.detailed_analysis.strengths &&
+                      analysis.detailed_analysis.strengths.length > 0) ||
+                      (analysis.detailed_analysis.areas_for_development &&
+                        analysis.detailed_analysis.areas_for_development
+                          .length > 0)) && (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {/* Strengths */}
+                        {analysis.detailed_analysis.strengths &&
+                          analysis.detailed_analysis.strengths.length > 0 && (
+                            <div className="space-y-2 rounded-lg border border-emerald-200 bg-emerald-50/50 p-4">
+                              <h4 className="text-sm font-semibold flex items-center gap-1.5 text-emerald-700">
+                                <TrendingUp className="h-4 w-4" />
+                                Strengths
+                              </h4>
+                              <ul className="space-y-1.5">
+                                {analysis.detailed_analysis.strengths.map(
+                                  (s, i) => (
+                                    <li
+                                      key={i}
+                                      className="text-sm text-emerald-800/80 flex items-start gap-2"
+                                    >
+                                      <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-emerald-500 shrink-0" />
+                                      {s}
+                                    </li>
+                                  ),
+                                )}
+                              </ul>
+                            </div>
+                          )}
+
+                        {/* Areas for Development */}
+                        {analysis.detailed_analysis.areas_for_development &&
+                          analysis.detailed_analysis.areas_for_development
+                            .length > 0 && (
+                            <div className="space-y-2 rounded-lg border border-amber-200 bg-amber-50/50 p-4">
+                              <h4 className="text-sm font-semibold flex items-center gap-1.5 text-amber-700">
+                                <TrendingDown className="h-4 w-4" />
+                                Areas for Development
+                              </h4>
+                              <ul className="space-y-1.5">
+                                {analysis.detailed_analysis.areas_for_development.map(
+                                  (a, i) => (
+                                    <li
+                                      key={i}
+                                      className="text-sm text-amber-800/80 flex items-start gap-2"
+                                    >
+                                      <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-amber-500 shrink-0" />
+                                      {a}
+                                    </li>
+                                  ),
+                                )}
+                              </ul>
+                            </div>
+                          )}
+                      </div>
+                    )}
+
+                    {/* Experience & Education side-by-side */}
+                    {((analysis.detailed_analysis.experience &&
+                      analysis.detailed_analysis.experience.length > 0) ||
+                      (analysis.detailed_analysis.education &&
+                        analysis.detailed_analysis.education.length > 0)) && (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {/* Experience */}
+                        {analysis.detailed_analysis.experience &&
+                          analysis.detailed_analysis.experience.length > 0 && (
+                            <div className="space-y-3">
+                              <h4 className="text-sm font-semibold flex items-center gap-1.5">
+                                <Briefcase className="h-4 w-4 text-blue-500" />
+                                Experience
+                              </h4>
+                              <div className="space-y-2">
+                                {analysis.detailed_analysis.experience.map(
+                                  (exp, i) => (
+                                    <div
+                                      key={i}
+                                      className="text-sm rounded-lg border bg-card px-4 py-3"
+                                    >
+                                      <p className="font-medium">{exp.title}</p>
+                                      {exp.company && (
+                                        <p className="text-muted-foreground">
+                                          {exp.company}
+                                        </p>
+                                      )}
+                                      {exp.duration && (
+                                        <p className="text-xs text-muted-foreground/80 mt-0.5">
+                                          {exp.duration}
+                                        </p>
+                                      )}
+                                    </div>
+                                  ),
+                                )}
+                              </div>
+                            </div>
+                          )}
+
+                        {/* Education */}
+                        {analysis.detailed_analysis.education &&
+                          analysis.detailed_analysis.education.length > 0 && (
+                            <div className="space-y-3">
+                              <h4 className="text-sm font-semibold flex items-center gap-1.5">
+                                <GraduationCap className="h-4 w-4 text-indigo-500" />
+                                Education
+                              </h4>
+                              <div className="space-y-2">
+                                {analysis.detailed_analysis.education.map(
+                                  (edu, i) => (
+                                    <div
+                                      key={i}
+                                      className="text-sm rounded-lg border bg-card px-4 py-3"
+                                    >
+                                      <p className="font-medium">
+                                        {edu.degree}
+                                      </p>
+                                      {edu.institution && (
+                                        <p className="text-muted-foreground">
+                                          {edu.institution}
+                                        </p>
+                                      )}
+                                      {edu.year && (
+                                        <p className="text-xs text-muted-foreground/80 mt-0.5">
+                                          {edu.year}
+                                        </p>
+                                      )}
+                                    </div>
+                                  ),
+                                )}
+                              </div>
+                            </div>
+                          )}
+                      </div>
+                    )}
+
+                    {/* Certifications */}
+                    {analysis.detailed_analysis.certifications &&
+                      analysis.detailed_analysis.certifications.length > 0 && (
+                        <div className="space-y-2">
+                          <h4 className="text-sm font-semibold flex items-center gap-1.5">
+                            <Award className="h-4 w-4 text-teal-500" />
+                            Certifications
+                          </h4>
+                          <div className="flex flex-wrap gap-1.5">
+                            {analysis.detailed_analysis.certifications.map(
+                              (cert, i) => (
+                                <Badge
+                                  key={i}
+                                  variant="outline"
+                                  className="text-xs"
+                                >
+                                  {cert}
+                                </Badge>
+                              ),
+                            )}
+                          </div>
+                        </div>
+                      )}
+                  </>
+                )}
+              </>
+            )}
           </CardContent>
         </Card>
       )}

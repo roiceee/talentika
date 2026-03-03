@@ -272,8 +272,8 @@ export type { JobApplicationDetail };
 export async function listJobApplications(
   orgId: string,
   jobProfileId: string,
-): Promise<JobApplicationDetail[]> {
-  const response = await bffClient.get<JobApplicationDetail[]>(
+): Promise<JobApplicationDetailWithAnalysis[]> {
+  const response = await bffClient.get<JobApplicationDetailWithAnalysis[]>(
     `/api/organizations/${orgId}/job-profiles/${jobProfileId}/applications`,
   );
   return response.data;
@@ -308,6 +308,16 @@ export async function updateApplicationStatus(
     `/api/organizations/${orgId}/job-profiles/${jobProfileId}/applications/${applicationId}/status`,
     { status: newStatus },
   );
+  return response.data;
+}
+
+export async function retryAnalysis(
+  applicationId: string,
+): Promise<{ detail: string; analysis_id: string }> {
+  const response = await bffClient.post<{
+    detail: string;
+    analysis_id: string;
+  }>(`/api/applications/${applicationId}/analysis/retry`);
   return response.data;
 }
 
