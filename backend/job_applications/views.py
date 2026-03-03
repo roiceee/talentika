@@ -1,3 +1,4 @@
+from django.db.models import F, IntegerField, OuterRef, Subquery
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
 from job_profile.models import JobProfile
@@ -216,11 +217,10 @@ def upload_resume(request):
 @swagger_auto_schema(
     method="get",
     operation_description="""
-    List job applications for a specific organization (authenticated members only).
+    List job applications for a specific job profile (paginated, filterable, sortable).
 
-    - Returns all applications that belong to the organization's job profiles.
-    - Optionally filter by a specific job profile using ``?job_profile_id=<uuid>``.
-    - The requesting user must be a member of the organization.
+    Supports server-side pagination, search by name/email, status filter,
+    and ordering by any listed column.
     """,
     manual_parameters=[
         openapi.Parameter(
@@ -232,16 +232,58 @@ def upload_resume(request):
             required=True,
         ),
         openapi.Parameter(
-            "job_profile_id",
+            "page",
             openapi.IN_QUERY,
-            description="Filter by job profile UUID (must belong to the organization)",
+            description="Page number (1-based, default 1)",
+            type=openapi.TYPE_INTEGER,
+            required=False,
+        ),
+        openapi.Parameter(
+            "page_size",
+            openapi.IN_QUERY,
+            description="Results per page (default 10, max 100)",
+            type=openapi.TYPE_INTEGER,
+            required=False,
+        ),
+        openapi.Parameter(
+            "search",
+            openapi.IN_QUERY,
+            description="Search by first name, last name, or email",
             type=openapi.TYPE_STRING,
-            format="uuid",
+            required=False,
+        ),
+        openapi.Parameter(
+            "status",
+            openapi.IN_QUERY,
+            description="Filter by application status (to_be_reviewed, reviewed, shortlisted, rejected)",
+            type=openapi.TYPE_STRING,
+            required=False,
+        ),
+        openapi.Parameter(
+            "ordering",
+            openapi.IN_QUERY,
+            description="Sort field. Prefix with '-' for descending. Options: submitted_at, first_name, last_name, status, score",
+            type=openapi.TYPE_STRING,
             required=False,
         ),
     ],
     responses={
-        200: JobApplicationDetailSerializer(many=True),
+        200: openapi.Response(
+            "Paginated list of job applications",
+            schema=openapi.Schema(
+                type=openapi.TYPE_OBJECT,
+                properties={
+                    "count": openapi.Schema(type=openapi.TYPE_INTEGER),
+                    "page": openapi.Schema(type=openapi.TYPE_INTEGER),
+                    "page_size": openapi.Schema(type=openapi.TYPE_INTEGER),
+                    "num_pages": openapi.Schema(type=openapi.TYPE_INTEGER),
+                    "results": openapi.Schema(
+                        type=openapi.TYPE_ARRAY,
+                        items=openapi.Schema(type=openapi.TYPE_OBJECT),
+                    ),
+                },
+            ),
+        ),
         403: "Forbidden - user is not a member of the organization",
         404: "Organization or job profile not found",
     },
@@ -251,8 +293,12 @@ def upload_resume(request):
 @permission_classes([IsAuthenticated, IsOrganizationMember])
 def list_job_applications(request, org_id, job_profile_id):
     """
-    Return all job applications for the given organization and job profile.
+    Return paginated, filterable, sortable job applications for the given job profile.
     """
+    from django.core.paginator import Paginator
+    from django.db.models import Q
+    from job_application_analysis.models import ApplicationAnalysis
+
     try:
         organization = Organization.objects.get(id=org_id)
     except Organization.DoesNotExist:
@@ -270,14 +316,82 @@ def list_job_applications(request, org_id, job_profile_id):
             {"detail": "Job profile not found in this organization."},
             status=status.HTTP_404_NOT_FOUND,
         )
-    applications = (
+
+    # Annotate with the related analysis score for ordering
+    score_subquery = Subquery(
+        ApplicationAnalysis.objects.filter(job_application=OuterRef("pk")).values(
+            "score"
+        )[:1],
+        output_field=IntegerField(),
+    )
+
+    qs = (
         JobApplication.objects.filter(job_profile=job_profile)
         .select_related("job_profile", "address")
         .prefetch_related("answers", "attachments", "analysis")
+        .annotate(analysis_score=score_subquery)
     )
 
-    serializer = JobApplicationDetailWithAnalysisSerializer(applications, many=True)
-    return Response(serializer.data, status=status.HTTP_200_OK)
+    # Search
+    search = request.query_params.get("search", "").strip()
+    if search:
+        qs = qs.filter(
+            Q(first_name__icontains=search)
+            | Q(last_name__icontains=search)
+            | Q(email__icontains=search)
+        )
+
+    # Status filter
+    status_filter = request.query_params.get("status", "").strip()
+    if status_filter:
+        qs = qs.filter(status=status_filter)
+
+    # Ordering
+    VALID_ORDERINGS = {
+        "submitted_at": "submitted_at",
+        "-submitted_at": "-submitted_at",
+        "first_name": "first_name",
+        "-first_name": "-first_name",
+        "last_name": "last_name",
+        "-last_name": "-last_name",
+        "status": "status",
+        "-status": "-status",
+    }
+    ordering_param = request.query_params.get("ordering", "-submitted_at")
+    if ordering_param == "score":
+        qs = qs.order_by(F("analysis_score").asc(nulls_last=True))
+    elif ordering_param == "-score":
+        qs = qs.order_by(F("analysis_score").desc(nulls_last=True))
+    else:
+        db_ordering = VALID_ORDERINGS.get(ordering_param, "-submitted_at")
+        qs = qs.order_by(db_ordering)
+
+    # Pagination
+    try:
+        page = max(1, int(request.query_params.get("page", 1)))
+    except (ValueError, TypeError):
+        page = 1
+    try:
+        page_size = min(100, max(1, int(request.query_params.get("page_size", 10))))
+    except (ValueError, TypeError):
+        page_size = 10
+
+    paginator = Paginator(qs, page_size)
+    page_obj = paginator.get_page(page)
+
+    serializer = JobApplicationDetailWithAnalysisSerializer(
+        list(page_obj.object_list), many=True
+    )
+    return Response(
+        {
+            "count": paginator.count,
+            "page": page_obj.number,
+            "page_size": page_size,
+            "num_pages": paginator.num_pages,
+            "results": serializer.data,
+        },
+        status=status.HTTP_200_OK,
+    )
 
 
 @swagger_auto_schema(

@@ -269,12 +269,30 @@ export async function setDefaultOrganization(
 export type { JobApplicationCreate };
 export type { JobApplicationDetail };
 
+export type ApplicationListParams = {
+  page?: number;
+  page_size?: number;
+  search?: string;
+  status?: string;
+  ordering?: string;
+};
+
+export type PaginatedApplications = {
+  count: number;
+  page: number;
+  page_size: number;
+  num_pages: number;
+  results: JobApplicationDetailWithAnalysis[];
+};
+
 export async function listJobApplications(
   orgId: string,
   jobProfileId: string,
-): Promise<JobApplicationDetailWithAnalysis[]> {
-  const response = await bffClient.get<JobApplicationDetailWithAnalysis[]>(
+  params?: ApplicationListParams,
+): Promise<PaginatedApplications> {
+  const response = await bffClient.get<PaginatedApplications>(
     `/api/organizations/${orgId}/job-profiles/${jobProfileId}/applications`,
+    { params },
   );
   return response.data;
 }
