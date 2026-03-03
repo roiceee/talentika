@@ -27,7 +27,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" style={{ colorScheme: "light" }}>
       <body className={`${poppins.variable} ${fredoka.variable} antialiased`}>
         <AuthProvider>
           {children}
