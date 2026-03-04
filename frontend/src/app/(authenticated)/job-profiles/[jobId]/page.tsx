@@ -27,6 +27,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 import { ApplicationsTab } from "@/components/applications-tab";
 import { ShortlistedTab } from "@/components/shortlisted-tab";
 import { AnalyticsTab } from "@/components/analytics-tab";
@@ -47,6 +49,8 @@ import {
   FileText,
   Star,
   BarChart3,
+  Loader2,
+  Lock,
 } from "lucide-react";
 
 export default function JobProfileDetailPage({
@@ -67,6 +71,7 @@ export default function JobProfileDetailPage({
   const [isLoading, setIsLoading] = useState(true);
   const [isEditMode, setIsEditMode] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isTogglingActive, setIsTogglingActive] = useState(false);
 
   const fetchAll = useCallback(async () => {
     try {
@@ -152,6 +157,26 @@ export default function JobProfileDetailPage({
     }
   }
 
+  async function handleToggleActive() {
+    if (!profile) return;
+    setIsTogglingActive(true);
+    try {
+      const updated = await updateJobProfile(jobId, {
+        is_active: !profile.is_active,
+      });
+      setProfile(updated);
+      toast.success(
+        updated.is_active
+          ? "Now accepting applications"
+          : "No longer accepting applications",
+      );
+    } catch {
+      toast.error("Failed to update status");
+    } finally {
+      setIsTogglingActive(false);
+    }
+  }
+
   function buildInitialValues(p: JobProfileDetail): JobProfileFormValues {
     return {
       title: p.title ?? "",
@@ -198,6 +223,8 @@ export default function JobProfileDetailPage({
   if (!profile) return null;
 
   const isActive = profile.is_active ?? true;
+  const applicationCount = profile.application_count ?? 0;
+  const hasSubmissions = applicationCount > 0;
   const qualifications = (profile.qualifications ?? []) as Qualification[];
 
   // ─── Edit mode ───────────────────────────────────────────────────────────
@@ -226,7 +253,6 @@ export default function JobProfileDetailPage({
           onSubmit={handleUpdate}
           submitLabel="Save Changes"
           isSubmitting={isSubmitting}
-          showIsActive
         />
       </div>
     );
@@ -251,20 +277,6 @@ export default function JobProfileDetailPage({
               <h1 className="font-heading text-2xl font-semibold">
                 {profile.title}
               </h1>
-              {isActive ? (
-                <Badge variant="secondary" className="flex items-center gap-1">
-                  <CheckCircle2 className="h-3 w-3" />
-                  Active
-                </Badge>
-              ) : (
-                <Badge
-                  variant="outline"
-                  className="flex items-center gap-1 text-muted-foreground"
-                >
-                  <XCircle className="h-3 w-3" />
-                  Inactive
-                </Badge>
-              )}
             </div>
             <p className="text-muted-foreground text-sm">
               {(profile.organization as { name?: string })?.name}
@@ -283,14 +295,44 @@ export default function JobProfileDetailPage({
               <LinkIcon className="mr-2 h-4 w-4" />
               Copy Public URL
             </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setIsEditMode(true)}
-            >
-              <Pencil className="mr-2 h-4 w-4" />
-              Edit
-            </Button>
+            {hasSubmissions ? (
+              <Button
+                variant="outline"
+                size="sm"
+                disabled
+                title="Editing is disabled because this job profile has submissions"
+              >
+                <Lock className="mr-2 h-4 w-4" />
+                Edit
+              </Button>
+            ) : (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setIsEditMode(true)}
+              >
+                <Pencil className="mr-2 h-4 w-4" />
+                Edit
+              </Button>
+            )}
+            <div className="flex items-center gap-2 border rounded-md px-3 h-9">
+              {isTogglingActive ? (
+                <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+              ) : (
+                <Switch
+                  id="is_active_toggle"
+                  checked={isActive}
+                  onCheckedChange={handleToggleActive}
+                  disabled={isTogglingActive}
+                />
+              )}
+              <Label
+                htmlFor="is_active_toggle"
+                className="text-sm cursor-pointer select-none"
+              >
+                Accepting applications
+              </Label>
+            </div>
           </div>
         </div>
       </div>

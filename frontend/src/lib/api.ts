@@ -1,14 +1,17 @@
 import type {
   OrganizationList,
   Organization,
+  OrganizationCreate,
   OrganizationMembership,
   OrganizationInvitation,
+  InvitationCreate,
   JobProfileList,
   JobProfileDetail,
   JobProfileCreate,
   JobCategory,
   ExperienceLevel,
   UserProfile,
+  UserUpdate,
   JobApplicationCreate,
   JobApplicationDetail,
   JobApplicationDetailWithAnalysis,
@@ -44,11 +47,9 @@ export interface InvitationValidationResult {
 // User Profile
 // ---------------------------------------------------------------------------
 
-export async function updateUserProfile(data: {
-  username?: string;
-  first_name?: string;
-  last_name?: string;
-}): Promise<unknown> {
+export async function updateUserProfile(
+  data: Partial<UserUpdate>,
+): Promise<unknown> {
   const response = await bffClient.patch("/api/users/profile", data);
   return response.data;
 }
@@ -83,10 +84,9 @@ export async function listOrganizations(): Promise<OrganizationList[]> {
   return response.data;
 }
 
-export async function createOrganization(data: {
-  name: string;
-  description?: string | null;
-}): Promise<unknown> {
+export async function createOrganization(
+  data: OrganizationCreate,
+): Promise<unknown> {
   const response = await bffClient.post("/api/organizations", data);
   return response.data;
 }
@@ -100,7 +100,7 @@ export async function getOrganization(orgId: string): Promise<Organization> {
 
 export async function updateOrganization(
   orgId: string,
-  data: { name?: string; description?: string },
+  data: Partial<OrganizationCreate>,
 ): Promise<unknown> {
   const response = await bffClient.patch(`/api/organizations/${orgId}`, data);
   return response.data;
@@ -172,7 +172,7 @@ export async function listInvitations(
 
 export async function createInvitation(
   orgId: string,
-  data: { email: string; role: string },
+  data: InvitationCreate,
 ): Promise<{ email_sent?: boolean }> {
   const response = await bffClient.post<{ email_sent?: boolean }>(
     `/api/organizations/${orgId}/invitations`,

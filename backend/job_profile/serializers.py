@@ -1,4 +1,5 @@
 from rest_framework import serializers
+from drf_yasg.utils import swagger_serializer_method
 
 from users.serializers.user_serializer import UserSerializer
 from .models import (
@@ -157,6 +158,11 @@ class JobProfileDetailSerializer(serializers.ModelSerializer):
     created_by = UserSerializer(read_only=True)
     questions = QuestionSerializer(many=True, read_only=True)
     qualifications = QualificationSerializer(many=True, read_only=True)
+    application_count = serializers.SerializerMethodField()
+
+    @swagger_serializer_method(serializer_or_field=serializers.IntegerField())
+    def get_application_count(self, obj):
+        return obj.applications.count()
 
     class Meta:
         model = JobProfile
@@ -172,10 +178,17 @@ class JobProfileDetailSerializer(serializers.ModelSerializer):
             "qualifications",
             "questions",
             "is_active",
+            "application_count",
             "created_at",
             "updated_at",
         ]
-        read_only_fields = ["id", "created_by", "created_at", "updated_at"]
+        read_only_fields = [
+            "id",
+            "created_by",
+            "created_at",
+            "updated_at",
+            "application_count",
+        ]
 
 
 class JobProfileCreateSerializer(serializers.ModelSerializer):
@@ -193,6 +206,7 @@ class JobProfileCreateSerializer(serializers.ModelSerializer):
             "description",
             "qualifications",
             "questions",
+            "is_active",
         ]
         read_only_fields = ["organization"]
 

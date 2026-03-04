@@ -353,6 +353,12 @@ export type JobProfileCreate = {
     description: string;
     qualifications?: Array<QualificationWrite>;
     questions?: Array<Question>;
+    /**
+     * Is active
+     *
+     * Whether the job profile is active
+     */
+    is_active?: boolean;
 };
 
 export type Address = {
@@ -569,6 +575,10 @@ export type JobProfileDetail = {
      * Whether the job profile is active
      */
     is_active?: boolean;
+    /**
+     * Application count
+     */
+    readonly application_count?: number;
     /**
      * Created at
      */
@@ -1029,6 +1039,12 @@ export type JobProfileCreateWritable = {
     description: string;
     qualifications?: Array<QualificationWrite>;
     questions?: Array<QuestionWritable>;
+    /**
+     * Is active
+     *
+     * Whether the job profile is active
+     */
+    is_active?: boolean;
 };
 
 export type AddressWritable = {

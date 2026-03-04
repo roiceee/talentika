@@ -53,7 +53,11 @@ def list_experience_levels(request):
     method="post",
     operation_description="Create a new job profile for an organization.",
     request_body=JobProfileCreateSerializer,
-    responses={201: JobProfileDetailSerializer, 400: "Validation error", 403: "Forbidden"},
+    responses={
+        201: JobProfileDetailSerializer,
+        400: "Validation error",
+        403: "Forbidden",
+    },
     tags=["Job Profiles"],
 )
 @api_view(["POST"])
@@ -97,8 +101,11 @@ def create_job_profile(request):
     operation_description="List job profiles for an organization.",
     manual_parameters=[
         openapi.Parameter(
-            "org_id", openapi.IN_PATH,
-            description="Organization UUID", type=openapi.TYPE_STRING, format=openapi.FORMAT_UUID,
+            "org_id",
+            openapi.IN_PATH,
+            description="Organization UUID",
+            type=openapi.TYPE_STRING,
+            format=openapi.FORMAT_UUID,
         )
     ],
     responses={200: JobProfileListSerializer(many=True)},
@@ -129,8 +136,11 @@ def list_organization_job_profiles(request, org_id):
     operation_description="Get a specific job profile (PUBLIC).",
     manual_parameters=[
         openapi.Parameter(
-            "job_id", openapi.IN_PATH,
-            description="Job Profile UUID", type=openapi.TYPE_STRING, format=openapi.FORMAT_UUID,
+            "job_id",
+            openapi.IN_PATH,
+            description="Job Profile UUID",
+            type=openapi.TYPE_STRING,
+            format=openapi.FORMAT_UUID,
         )
     ],
     responses={200: JobProfileDetailSerializer},
@@ -159,12 +169,19 @@ def get_job_profile(request, job_id):
     operation_description="Update a job profile.",
     manual_parameters=[
         openapi.Parameter(
-            "job_id", openapi.IN_PATH,
-            description="Job Profile UUID", type=openapi.TYPE_STRING, format=openapi.FORMAT_UUID,
+            "job_id",
+            openapi.IN_PATH,
+            description="Job Profile UUID",
+            type=openapi.TYPE_STRING,
+            format=openapi.FORMAT_UUID,
         )
     ],
     request_body=JobProfileCreateSerializer,
-    responses={200: JobProfileDetailSerializer, 400: "Validation error", 403: "Forbidden"},
+    responses={
+        200: JobProfileDetailSerializer,
+        400: "Validation error",
+        403: "Forbidden",
+    },
     tags=["Job Profiles"],
 )
 @api_view(["PATCH"])
@@ -185,6 +202,18 @@ def update_job_profile(request, job_id):
             {"error": "Only organization admins can update job profiles."},
             status=status.HTTP_403_FORBIDDEN,
         )
+
+    # When there are submissions, only is_active may be changed.
+    has_applications = job_profile.applications.exists()
+    if has_applications:
+        disallowed = {k for k in request.data if k != "is_active"}
+        if disallowed:
+            return Response(
+                {
+                    "error": "This job profile has submissions and can only have its active status changed."
+                },
+                status=status.HTTP_403_FORBIDDEN,
+            )
 
     serializer = JobProfileCreateSerializer(
         job_profile, data=request.data, partial=True
