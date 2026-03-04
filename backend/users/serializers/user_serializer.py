@@ -132,6 +132,8 @@ class UserUpdateSerializer(serializers.ModelSerializer):
 class UserProfileSerializer(serializers.ModelSerializer):
     """Serializer for viewing user profile"""
 
+    profile_picture_url = serializers.SerializerMethodField()
+
     class Meta:
         model = User
         fields = [
@@ -141,9 +143,20 @@ class UserProfileSerializer(serializers.ModelSerializer):
             "first_name",
             "last_name",
             "default_organization",
+            "profile_picture_url",
             "date_joined",
         ]
         read_only_fields = ["id", "email", "date_joined"]
+
+    def get_profile_picture_url(self, obj):
+        if not obj.profile_picture:
+            return None
+        from job_applications.storage import get_storage
+
+        try:
+            return get_storage().get_url(obj.profile_picture)
+        except Exception:
+            return None
 
 
 class UserBasicSerializer(serializers.ModelSerializer):

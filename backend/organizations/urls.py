@@ -11,6 +11,8 @@ from .views import (
     list_organization_invitations,
     validate_invitation,
     accept_invitation,
+    upload_org_profile_picture,
+    delete_org_profile_picture,
 )
 
 
@@ -57,4 +59,15 @@ urlpatterns = [
         name="validate-invitation",
     ),
     path("invitations/accept/", accept_invitation, name="accept-invitation"),
+    # Profile picture
+    path(
+        "organizations/<uuid:org_id>/profile-picture/",
+        upload_org_profile_picture,
+        name="upload-org-profile-picture",
+    ),
+    path(
+        "organizations/<uuid:org_id>/profile-picture/delete/",
+        delete_org_profile_picture,
+        name="delete-org-profile-picture",
+    ),
 ]

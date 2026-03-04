@@ -16,7 +16,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   Building2,
   Briefcase,
@@ -122,7 +122,10 @@ export function AppNavbar() {
               </Button>
             </Link>
           </nav>
+        </div>
 
+        {/* Right side: org switcher + user dropdown */}
+        <div className="flex items-center gap-2">
           {/* Organization switcher */}
           <DropdownMenu
             open={orgDropdownOpen}
@@ -136,15 +139,31 @@ export function AppNavbar() {
             }}
           >
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm" className="gap-2 max-w-48">
-                <Building2 className="h-4 w-4 shrink-0" />
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-2 max-w-52 h-9"
+              >
+                <Avatar className="h-5 w-5 shrink-0">
+                  {currentOrg?.profile_picture_url && (
+                    <AvatarImage
+                      src={currentOrg.profile_picture_url}
+                      alt={currentOrg.name}
+                    />
+                  )}
+                  <AvatarFallback className="bg-primary text-primary-foreground text-[10px]">
+                    {currentOrg?.name?.[0]?.toUpperCase() ?? (
+                      <Building2 className="h-3 w-3" />
+                    )}
+                  </AvatarFallback>
+                </Avatar>
                 <span className="truncate">
                   {currentOrg?.name ?? "Select org"}
                 </span>
                 <ChevronsUpDown className="ml-auto h-3.5 w-3.5 shrink-0 opacity-50" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="start" className="w-56">
+            <DropdownMenuContent align="end" className="w-60">
               <DropdownMenuLabel className="text-xs text-muted-foreground font-normal">
                 Your organizations
               </DropdownMenuLabel>
@@ -170,10 +189,21 @@ export function AppNavbar() {
                       disabled={isSwitching}
                       className="gap-2"
                     >
-                      <Check
-                        className={`h-4 w-4 shrink-0 ${isActive ? "opacity-100" : "opacity-0"}`}
-                      />
-                      <span className="truncate">{org.name}</span>
+                      <Avatar className="h-5 w-5 shrink-0">
+                        {org.profile_picture_url && (
+                          <AvatarImage
+                            src={org.profile_picture_url}
+                            alt={org.name}
+                          />
+                        )}
+                        <AvatarFallback className="bg-muted text-muted-foreground text-[10px]">
+                          {org.name?.[0]?.toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+                      <span className="truncate flex-1">{org.name}</span>
+                      {isActive && (
+                        <Check className="h-3.5 w-3.5 shrink-0 text-primary" />
+                      )}
                     </DropdownMenuItem>
                   );
                 })}
@@ -190,40 +220,43 @@ export function AppNavbar() {
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
-        </div>
 
-        {/* User dropdown */}
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="relative h-9 w-9 rounded-full">
-              <Avatar className="h-9 w-9">
-                <AvatarFallback className="bg-primary text-primary-foreground text-sm">
-                  {initials}
-                </AvatarFallback>
-              </Avatar>
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-56">
-            <div className="flex items-center gap-2 p-2">
-              <div className="flex flex-col space-y-0.5">
-                <p className="text-sm font-medium">
-                  {user?.first_name} {user?.last_name}
-                </p>
-                <p className="text-xs text-muted-foreground">{user?.email}</p>
+          {/* User dropdown */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" className="relative h-9 w-9 rounded-full">
+                <Avatar className="h-9 w-9">
+                  {user?.profile_picture_url && (
+                    <AvatarImage src={user.profile_picture_url} alt="Profile" />
+                  )}
+                  <AvatarFallback className="bg-primary text-primary-foreground text-sm">
+                    {initials}
+                  </AvatarFallback>
+                </Avatar>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56">
+              <div className="flex items-center gap-2 p-2">
+                <div className="flex flex-col space-y-0.5">
+                  <p className="text-sm font-medium">
+                    {user?.first_name} {user?.last_name}
+                  </p>
+                  <p className="text-xs text-muted-foreground">{user?.email}</p>
+                </div>
               </div>
-            </div>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => router.push("/profile")}>
-              <User className="mr-2 h-4 w-4" />
-              Profile
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={handleLogout}>
-              <LogOut className="mr-2 h-4 w-4" />
-              Sign out
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => router.push("/profile")}>
+                <User className="mr-2 h-4 w-4" />
+                Profile
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={handleLogout}>
+                <LogOut className="mr-2 h-4 w-4" />
+                Sign out
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
       </div>
     </header>
   );

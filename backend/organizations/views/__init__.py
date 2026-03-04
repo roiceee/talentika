@@ -15,6 +15,10 @@ from .invitations import (
     validate_invitation,
     accept_invitation,
 )
+from .profile_picture import (
+    upload_org_profile_picture,
+    delete_org_profile_picture,
+)
 
 __all__ = [
     # Organizations
@@ -31,4 +35,7 @@ __all__ = [
     "list_organization_invitations",
     "validate_invitation",
     "accept_invitation",
+    # Profile picture
+    "upload_org_profile_picture",
+    "delete_org_profile_picture",
 ]

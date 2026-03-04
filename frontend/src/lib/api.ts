@@ -53,6 +53,26 @@ export async function updateUserProfile(data: {
   return response.data;
 }
 
+export async function uploadUserProfilePicture(
+  file: File,
+): Promise<UserProfile> {
+  const formData = new FormData();
+  formData.append("file", file);
+  const response = await bffClient.post<UserProfile>(
+    "/api/users/profile/picture",
+    formData,
+    { headers: { "Content-Type": "multipart/form-data" } },
+  );
+  return response.data;
+}
+
+export async function deleteUserProfilePicture(): Promise<UserProfile> {
+  const response = await bffClient.delete<UserProfile>(
+    "/api/users/profile/picture",
+  );
+  return response.data;
+}
+
 // ---------------------------------------------------------------------------
 // Organizations
 // ---------------------------------------------------------------------------
@@ -83,6 +103,29 @@ export async function updateOrganization(
   data: { name?: string; description?: string },
 ): Promise<unknown> {
   const response = await bffClient.patch(`/api/organizations/${orgId}`, data);
+  return response.data;
+}
+
+export async function uploadOrgProfilePicture(
+  orgId: string,
+  file: File,
+): Promise<Organization> {
+  const formData = new FormData();
+  formData.append("file", file);
+  const response = await bffClient.post<Organization>(
+    `/api/organizations/${orgId}/profile-picture`,
+    formData,
+    { headers: { "Content-Type": "multipart/form-data" } },
+  );
+  return response.data;
+}
+
+export async function deleteOrgProfilePicture(
+  orgId: string,
+): Promise<Organization> {
+  const response = await bffClient.delete<Organization>(
+    `/api/organizations/${orgId}/profile-picture`,
+  );
   return response.data;
 }
 

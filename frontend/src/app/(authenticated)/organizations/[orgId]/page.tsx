@@ -19,6 +19,8 @@ import {
   leaveOrganization,
   listInvitations,
   createInvitation,
+  uploadOrgProfilePicture,
+  deleteOrgProfilePicture,
 } from "@/lib/api";
 
 import { Button } from "@/components/ui/button";
@@ -70,6 +72,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
+import { AvatarUpload } from "@/components/avatar-upload";
 import {
   ArrowLeft,
   Building2,
@@ -164,11 +167,41 @@ export default function OrganizationDetailPage({
           Back to organizations
         </Link>
         <div className="flex items-center justify-between">
-          <div>
-            <h1 className="font-heading text-2xl font-semibold">{org.name}</h1>
-            {org.description && (
-              <p className="mt-1 text-muted-foreground">{org.description}</p>
-            )}
+          <div className="flex items-center gap-4">
+            <AvatarUpload
+              imageUrl={org.profile_picture_url}
+              initials={org.name?.[0]?.toUpperCase() || "O"}
+              className="h-20 w-20"
+              editable={isAdmin}
+              onUpload={async (file) => {
+                try {
+                  await uploadOrgProfilePicture(orgId, file);
+                  await fetchData();
+                  toast.success("Organization picture updated");
+                } catch {
+                  toast.error("Failed to upload organization picture");
+                  throw new Error("upload failed");
+                }
+              }}
+              onDelete={async () => {
+                try {
+                  await deleteOrgProfilePicture(orgId);
+                  await fetchData();
+                  toast.success("Organization picture removed");
+                } catch {
+                  toast.error("Failed to remove organization picture");
+                  throw new Error("delete failed");
+                }
+              }}
+            />
+            <div>
+              <h1 className="font-heading text-2xl font-semibold">
+                {org.name}
+              </h1>
+              {org.description && (
+                <p className="mt-1 text-muted-foreground">{org.description}</p>
+              )}
+            </div>
           </div>
           <Badge
             variant="outline"

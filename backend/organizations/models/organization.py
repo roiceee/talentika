@@ -45,6 +45,12 @@ class Organization(models.Model):
         blank=True,
         related_name="approved_organizations",
     )
+    profile_picture = models.CharField(
+        max_length=512,
+        blank=True,
+        null=True,
+        help_text="Storage path for the organization's profile picture",
+    )
 
     class Meta:
         db_table = "organizations"

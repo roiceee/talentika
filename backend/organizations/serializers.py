@@ -62,6 +62,7 @@ class OrganizationSerializer(serializers.ModelSerializer):
     approved_by_email = serializers.EmailField(
         source="approved_by.email", read_only=True
     )
+    profile_picture_url = serializers.SerializerMethodField()
 
     class Meta:
         model = Organization
@@ -76,6 +77,7 @@ class OrganizationSerializer(serializers.ModelSerializer):
             "approved_by_email",
             "member_count",
             "can_invite",
+            "profile_picture_url",
         ]
         read_only_fields = [
             "id",
@@ -84,6 +86,16 @@ class OrganizationSerializer(serializers.ModelSerializer):
             "approved_at",
             "approved_by_email",
         ]
+
+    def get_profile_picture_url(self, obj):
+        if not obj.profile_picture:
+            return None
+        from job_applications.storage import get_storage
+
+        try:
+            return get_storage().get_url(obj.profile_picture)
+        except Exception:
+            return None
 
     def validate_name(self, value):
         """Validate organization name uniqueness"""
@@ -153,6 +165,7 @@ class OrganizationListSerializer(serializers.ModelSerializer):
 
     address = AddressSerializer(read_only=True)
     member_count = serializers.IntegerField(source="memberships.count", read_only=True)
+    profile_picture_url = serializers.SerializerMethodField()
 
     class Meta:
         model = Organization
@@ -164,7 +177,18 @@ class OrganizationListSerializer(serializers.ModelSerializer):
             "status",
             "created_at",
             "member_count",
+            "profile_picture_url",
         ]
+
+    def get_profile_picture_url(self, obj):
+        if not obj.profile_picture:
+            return None
+        from job_applications.storage import get_storage
+
+        try:
+            return get_storage().get_url(obj.profile_picture)
+        except Exception:
+            return None
 
 
 class OrganizationApprovalSerializer(serializers.Serializer):

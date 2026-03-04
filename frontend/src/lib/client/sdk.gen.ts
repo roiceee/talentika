@@ -2,7 +2,7 @@
 
 import { type Client, formDataBodySerializer, type Options as Options2, type TDataShape } from './client';
 import { client } from './client.gen';
-import type { ApiApplicationsAnalysisListData, ApiApplicationsAnalysisListErrors, ApiApplicationsAnalysisListResponses, ApiApplicationsAnalysisRetryCreateData, ApiApplicationsAnalysisRetryCreateErrors, ApiApplicationsAnalysisRetryCreateResponses, ApiApplicationsSubmitCreateData, ApiApplicationsSubmitCreateErrors, ApiApplicationsSubmitCreateResponses, ApiApplicationsSubmitUploadResumeCreateData, ApiApplicationsSubmitUploadResumeCreateErrors, ApiApplicationsSubmitUploadResumeCreateResponses, ApiGeoCountriesListData, ApiGeoCountriesListResponses, ApiGeoCountriesStatesCitiesListData, ApiGeoCountriesStatesCitiesListResponses, ApiGeoCountriesStatesListData, ApiGeoCountriesStatesListResponses, ApiInvitationsAcceptCreateData, ApiInvitationsAcceptCreateErrors, ApiInvitationsAcceptCreateResponses, ApiInvitationsValidateCreateData, ApiInvitationsValidateCreateErrors, ApiInvitationsValidateCreateResponses, ApiJobProfilesCreateCreateData, ApiJobProfilesCreateCreateErrors, ApiJobProfilesCreateCreateResponses, ApiJobProfilesExperienceLevelsListData, ApiJobProfilesExperienceLevelsListResponses, ApiJobProfilesJobCategoriesListData, ApiJobProfilesJobCategoriesListResponses, ApiJobProfilesReadData, ApiJobProfilesReadResponses, ApiJobProfilesUpdatePartialUpdateData, ApiJobProfilesUpdatePartialUpdateErrors, ApiJobProfilesUpdatePartialUpdateResponses, ApiOrganizationsAnalyticsListData, ApiOrganizationsAnalyticsListResponses, ApiOrganizationsCreateCreateData, ApiOrganizationsCreateCreateErrors, ApiOrganizationsCreateCreateResponses, ApiOrganizationsInvitationsCreateData, ApiOrganizationsInvitationsCreateErrors, ApiOrganizationsInvitationsCreateResponses, ApiOrganizationsInvitationsListListData, ApiOrganizationsInvitationsListListErrors, ApiOrganizationsInvitationsListListResponses, ApiOrganizationsJobProfilesAnalysesListData, ApiOrganizationsJobProfilesAnalysesListErrors, ApiOrganizationsJobProfilesAnalysesListResponses, ApiOrganizationsJobProfilesAnalyticsListData, ApiOrganizationsJobProfilesAnalyticsListResponses, ApiOrganizationsJobProfilesApplicationsDownloadListData, ApiOrganizationsJobProfilesApplicationsDownloadListErrors, ApiOrganizationsJobProfilesApplicationsDownloadListResponses, ApiOrganizationsJobProfilesApplicationsListData, ApiOrganizationsJobProfilesApplicationsListErrors, ApiOrganizationsJobProfilesApplicationsListResponses, ApiOrganizationsJobProfilesApplicationsReadData, ApiOrganizationsJobProfilesApplicationsReadErrors, ApiOrganizationsJobProfilesApplicationsReadResponses, ApiOrganizationsJobProfilesApplicationsStatusPartialUpdateData, ApiOrganizationsJobProfilesApplicationsStatusPartialUpdateErrors, ApiOrganizationsJobProfilesApplicationsStatusPartialUpdateResponses, ApiOrganizationsJobProfilesListData, ApiOrganizationsJobProfilesListResponses, ApiOrganizationsLeaveDeleteData, ApiOrganizationsLeaveDeleteErrors, ApiOrganizationsLeaveDeleteResponses, ApiOrganizationsListData, ApiOrganizationsListErrors, ApiOrganizationsListResponses, ApiOrganizationsMembersDeleteData, ApiOrganizationsMembersDeleteErrors, ApiOrganizationsMembersDeleteResponses, ApiOrganizationsMembersListData, ApiOrganizationsMembersListErrors, ApiOrganizationsMembersListResponses, ApiOrganizationsReadData, ApiOrganizationsReadErrors, ApiOrganizationsReadResponses, ApiOrganizationsUpdatePartialUpdateData, ApiOrganizationsUpdatePartialUpdateErrors, ApiOrganizationsUpdatePartialUpdateResponses, ApiTestResumeExtractionCreateData, ApiTestResumeExtractionCreateErrors, ApiTestResumeExtractionCreateResponses, ApiUsersAuthLoginCreateData, ApiUsersAuthLoginCreateErrors, ApiUsersAuthLoginCreateResponses, ApiUsersAuthRegisterCreateData, ApiUsersAuthRegisterCreateErrors, ApiUsersAuthRegisterCreateResponses, ApiUsersAuthTokenRefreshCreateData, ApiUsersAuthTokenRefreshCreateErrors, ApiUsersAuthTokenRefreshCreateResponses, ApiUsersPasswordResetConfirmCreateData, ApiUsersPasswordResetConfirmCreateErrors, ApiUsersPasswordResetConfirmCreateResponses, ApiUsersPasswordResetCreateData, ApiUsersPasswordResetCreateErrors, ApiUsersPasswordResetCreateResponses, ApiUsersProfileDefaultOrganizationPartialUpdateData, ApiUsersProfileDefaultOrganizationPartialUpdateErrors, ApiUsersProfileDefaultOrganizationPartialUpdateResponses, ApiUsersProfileListData, ApiUsersProfileListErrors, ApiUsersProfileListResponses, ApiUsersProfileUpdatePartialUpdateData, ApiUsersProfileUpdatePartialUpdateErrors, ApiUsersProfileUpdatePartialUpdateResponses, HealthListData, HealthListResponses } from './types.gen';
+import type { ApiApplicationsAnalysisListData, ApiApplicationsAnalysisListErrors, ApiApplicationsAnalysisListResponses, ApiApplicationsAnalysisRetryCreateData, ApiApplicationsAnalysisRetryCreateErrors, ApiApplicationsAnalysisRetryCreateResponses, ApiApplicationsSubmitCreateData, ApiApplicationsSubmitCreateErrors, ApiApplicationsSubmitCreateResponses, ApiApplicationsSubmitUploadResumeCreateData, ApiApplicationsSubmitUploadResumeCreateErrors, ApiApplicationsSubmitUploadResumeCreateResponses, ApiGeoCountriesListData, ApiGeoCountriesListResponses, ApiGeoCountriesStatesCitiesListData, ApiGeoCountriesStatesCitiesListResponses, ApiGeoCountriesStatesListData, ApiGeoCountriesStatesListResponses, ApiInvitationsAcceptCreateData, ApiInvitationsAcceptCreateErrors, ApiInvitationsAcceptCreateResponses, ApiInvitationsValidateCreateData, ApiInvitationsValidateCreateErrors, ApiInvitationsValidateCreateResponses, ApiJobProfilesCreateCreateData, ApiJobProfilesCreateCreateErrors, ApiJobProfilesCreateCreateResponses, ApiJobProfilesExperienceLevelsListData, ApiJobProfilesExperienceLevelsListResponses, ApiJobProfilesJobCategoriesListData, ApiJobProfilesJobCategoriesListResponses, ApiJobProfilesReadData, ApiJobProfilesReadResponses, ApiJobProfilesUpdatePartialUpdateData, ApiJobProfilesUpdatePartialUpdateErrors, ApiJobProfilesUpdatePartialUpdateResponses, ApiOrganizationsAnalyticsListData, ApiOrganizationsAnalyticsListResponses, ApiOrganizationsCreateCreateData, ApiOrganizationsCreateCreateErrors, ApiOrganizationsCreateCreateResponses, ApiOrganizationsInvitationsCreateData, ApiOrganizationsInvitationsCreateErrors, ApiOrganizationsInvitationsCreateResponses, ApiOrganizationsInvitationsListListData, ApiOrganizationsInvitationsListListErrors, ApiOrganizationsInvitationsListListResponses, ApiOrganizationsJobProfilesAnalysesListData, ApiOrganizationsJobProfilesAnalysesListErrors, ApiOrganizationsJobProfilesAnalysesListResponses, ApiOrganizationsJobProfilesAnalyticsListData, ApiOrganizationsJobProfilesAnalyticsListResponses, ApiOrganizationsJobProfilesApplicationsDownloadListData, ApiOrganizationsJobProfilesApplicationsDownloadListErrors, ApiOrganizationsJobProfilesApplicationsDownloadListResponses, ApiOrganizationsJobProfilesApplicationsListData, ApiOrganizationsJobProfilesApplicationsListErrors, ApiOrganizationsJobProfilesApplicationsListResponses, ApiOrganizationsJobProfilesApplicationsReadData, ApiOrganizationsJobProfilesApplicationsReadErrors, ApiOrganizationsJobProfilesApplicationsReadResponses, ApiOrganizationsJobProfilesApplicationsStatusPartialUpdateData, ApiOrganizationsJobProfilesApplicationsStatusPartialUpdateErrors, ApiOrganizationsJobProfilesApplicationsStatusPartialUpdateResponses, ApiOrganizationsJobProfilesListData, ApiOrganizationsJobProfilesListResponses, ApiOrganizationsLeaveDeleteData, ApiOrganizationsLeaveDeleteErrors, ApiOrganizationsLeaveDeleteResponses, ApiOrganizationsListData, ApiOrganizationsListErrors, ApiOrganizationsListResponses, ApiOrganizationsMembersDeleteData, ApiOrganizationsMembersDeleteErrors, ApiOrganizationsMembersDeleteResponses, ApiOrganizationsMembersListData, ApiOrganizationsMembersListErrors, ApiOrganizationsMembersListResponses, ApiOrganizationsProfilePictureCreateData, ApiOrganizationsProfilePictureCreateErrors, ApiOrganizationsProfilePictureCreateResponses, ApiOrganizationsProfilePictureDeleteDeleteData, ApiOrganizationsProfilePictureDeleteDeleteErrors, ApiOrganizationsProfilePictureDeleteDeleteResponses, ApiOrganizationsReadData, ApiOrganizationsReadErrors, ApiOrganizationsReadResponses, ApiOrganizationsUpdatePartialUpdateData, ApiOrganizationsUpdatePartialUpdateErrors, ApiOrganizationsUpdatePartialUpdateResponses, ApiTestResumeExtractionCreateData, ApiTestResumeExtractionCreateErrors, ApiTestResumeExtractionCreateResponses, ApiUsersAuthLoginCreateData, ApiUsersAuthLoginCreateErrors, ApiUsersAuthLoginCreateResponses, ApiUsersAuthRegisterCreateData, ApiUsersAuthRegisterCreateErrors, ApiUsersAuthRegisterCreateResponses, ApiUsersAuthTokenRefreshCreateData, ApiUsersAuthTokenRefreshCreateErrors, ApiUsersAuthTokenRefreshCreateResponses, ApiUsersPasswordResetConfirmCreateData, ApiUsersPasswordResetConfirmCreateErrors, ApiUsersPasswordResetConfirmCreateResponses, ApiUsersPasswordResetCreateData, ApiUsersPasswordResetCreateErrors, ApiUsersPasswordResetCreateResponses, ApiUsersProfileDefaultOrganizationPartialUpdateData, ApiUsersProfileDefaultOrganizationPartialUpdateErrors, ApiUsersProfileDefaultOrganizationPartialUpdateResponses, ApiUsersProfileListData, ApiUsersProfileListErrors, ApiUsersProfileListResponses, ApiUsersProfilePictureCreateData, ApiUsersProfilePictureCreateErrors, ApiUsersProfilePictureCreateResponses, ApiUsersProfilePictureDeleteDeleteData, ApiUsersProfilePictureDeleteDeleteResponses, ApiUsersProfileUpdatePartialUpdateData, ApiUsersProfileUpdatePartialUpdateErrors, ApiUsersProfileUpdatePartialUpdateResponses, HealthListData, HealthListResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean> = Options2<TData, ThrowOnError> & {
     /**
@@ -485,6 +485,37 @@ export const apiOrganizationsMembersDelete = <ThrowOnError extends boolean = tru
 });
 
 /**
+ *
+ * Upload or replace an organization's profile picture.
+ * Only organization admins can perform this action.
+ *
+ * Accepts multipart/form-data with a single `file` field.
+ * Allowed types: JPEG, PNG, WebP. Max size: 5 MB.
+ *
+ */
+export const apiOrganizationsProfilePictureCreate = <ThrowOnError extends boolean = true>(options: Options<ApiOrganizationsProfilePictureCreateData, ThrowOnError>) => (options.client ?? client).post<ApiOrganizationsProfilePictureCreateResponses, ApiOrganizationsProfilePictureCreateErrors, ThrowOnError>({
+    ...formDataBodySerializer,
+    responseType: 'json',
+    security: [{ name: 'Authorization', type: 'apiKey' }],
+    url: '/api/organizations/{org_id}/profile-picture/',
+    ...options,
+    headers: {
+        'Content-Type': null,
+        ...options.headers
+    }
+});
+
+/**
+ * Remove the organization's profile picture. Only admins.
+ */
+export const apiOrganizationsProfilePictureDeleteDelete = <ThrowOnError extends boolean = true>(options: Options<ApiOrganizationsProfilePictureDeleteDeleteData, ThrowOnError>) => (options.client ?? client).delete<ApiOrganizationsProfilePictureDeleteDeleteResponses, ApiOrganizationsProfilePictureDeleteDeleteErrors, ThrowOnError>({
+    responseType: 'json',
+    security: [{ name: 'Authorization', type: 'apiKey' }],
+    url: '/api/organizations/{org_id}/profile-picture/delete/',
+    ...options
+});
+
+/**
  * Update organization details. Only organization admins can update.
  */
 export const apiOrganizationsUpdatePartialUpdate = <ThrowOnError extends boolean = true>(options: Options<ApiOrganizationsUpdatePartialUpdateData, ThrowOnError>) => (options.client ?? client).patch<ApiOrganizationsUpdatePartialUpdateResponses, ApiOrganizationsUpdatePartialUpdateErrors, ThrowOnError>({
@@ -645,6 +676,37 @@ export const apiUsersProfileDefaultOrganizationPartialUpdate = <ThrowOnError ext
         'Content-Type': 'application/json',
         ...options.headers
     }
+});
+
+/**
+ *
+ * Upload or replace the authenticated user's profile picture.
+ *
+ * Accepts multipart/form-data with a single `file` field.
+ * Allowed types: JPEG, PNG, WebP. Max size: 5 MB.
+ * The image should already be cropped to 1:1 by the client.
+ *
+ */
+export const apiUsersProfilePictureCreate = <ThrowOnError extends boolean = true>(options: Options<ApiUsersProfilePictureCreateData, ThrowOnError>) => (options.client ?? client).post<ApiUsersProfilePictureCreateResponses, ApiUsersProfilePictureCreateErrors, ThrowOnError>({
+    ...formDataBodySerializer,
+    responseType: 'json',
+    security: [{ name: 'Authorization', type: 'apiKey' }],
+    url: '/api/users/profile/picture/',
+    ...options,
+    headers: {
+        'Content-Type': null,
+        ...options.headers
+    }
+});
+
+/**
+ * Remove the authenticated user's profile picture.
+ */
+export const apiUsersProfilePictureDeleteDelete = <ThrowOnError extends boolean = true>(options?: Options<ApiUsersProfilePictureDeleteDeleteData, ThrowOnError>) => (options?.client ?? client).delete<ApiUsersProfilePictureDeleteDeleteResponses, unknown, ThrowOnError>({
+    responseType: 'json',
+    security: [{ name: 'Authorization', type: 'apiKey' }],
+    url: '/api/users/profile/picture/delete/',
+    ...options
 });
 
 /**

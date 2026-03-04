@@ -438,6 +438,10 @@ export type Organization = {
      * Can invite
      */
     readonly can_invite?: boolean;
+    /**
+     * Profile picture url
+     */
+    readonly profile_picture_url?: string;
 };
 
 export type User = {
@@ -603,6 +607,10 @@ export type OrganizationList = {
      * Member count
      */
     readonly member_count?: number;
+    /**
+     * Profile picture url
+     */
+    readonly profile_picture_url?: string;
 };
 
 export type OrganizationCreate = {
@@ -887,6 +895,10 @@ export type UserProfile = {
      * The user's default organization (used for login redirect)
      */
     default_organization?: string | null;
+    /**
+     * Profile picture url
+     */
+    readonly profile_picture_url?: string;
     /**
      * Date joined
      */
@@ -2243,6 +2255,79 @@ export type ApiOrganizationsMembersDeleteResponses = {
     204: unknown;
 };
 
+export type ApiOrganizationsProfilePictureCreateData = {
+    body: {
+        /**
+         * Profile picture file (JPEG, PNG, or WebP)
+         */
+        file: Blob | File;
+    };
+    path: {
+        /**
+         * Organization UUID
+         */
+        org_id: string;
+    };
+    query?: never;
+    url: '/api/organizations/{org_id}/profile-picture/';
+};
+
+export type ApiOrganizationsProfilePictureCreateErrors = {
+    /**
+     * Invalid file
+     */
+    400: unknown;
+    /**
+     * Not an admin
+     */
+    403: unknown;
+    /**
+     * Organization not found
+     */
+    404: unknown;
+};
+
+export type ApiOrganizationsProfilePictureCreateResponses = {
+    /**
+     * Organization with updated picture
+     */
+    200: Organization;
+};
+
+export type ApiOrganizationsProfilePictureCreateResponse = ApiOrganizationsProfilePictureCreateResponses[keyof ApiOrganizationsProfilePictureCreateResponses];
+
+export type ApiOrganizationsProfilePictureDeleteDeleteData = {
+    body?: never;
+    path: {
+        /**
+         * Organization UUID
+         */
+        org_id: string;
+    };
+    query?: never;
+    url: '/api/organizations/{org_id}/profile-picture/delete/';
+};
+
+export type ApiOrganizationsProfilePictureDeleteDeleteErrors = {
+    /**
+     * Not an admin
+     */
+    403: unknown;
+    /**
+     * Organization not found
+     */
+    404: unknown;
+};
+
+export type ApiOrganizationsProfilePictureDeleteDeleteResponses = {
+    /**
+     * Organization with picture removed
+     */
+    200: Organization;
+};
+
+export type ApiOrganizationsProfilePictureDeleteDeleteResponse = ApiOrganizationsProfilePictureDeleteDeleteResponses[keyof ApiOrganizationsProfilePictureDeleteDeleteResponses];
+
 export type ApiOrganizationsUpdatePartialUpdateData = {
     body: OrganizationCreateWritable;
     path: {
@@ -2511,6 +2596,50 @@ export type ApiUsersProfileDefaultOrganizationPartialUpdateResponses = {
 };
 
 export type ApiUsersProfileDefaultOrganizationPartialUpdateResponse = ApiUsersProfileDefaultOrganizationPartialUpdateResponses[keyof ApiUsersProfileDefaultOrganizationPartialUpdateResponses];
+
+export type ApiUsersProfilePictureCreateData = {
+    body: {
+        /**
+         * Profile picture file (JPEG, PNG, or WebP)
+         */
+        file: Blob | File;
+    };
+    path?: never;
+    query?: never;
+    url: '/api/users/profile/picture/';
+};
+
+export type ApiUsersProfilePictureCreateErrors = {
+    /**
+     * Invalid file
+     */
+    400: unknown;
+};
+
+export type ApiUsersProfilePictureCreateResponses = {
+    /**
+     * Profile with updated picture URL
+     */
+    200: UserProfile;
+};
+
+export type ApiUsersProfilePictureCreateResponse = ApiUsersProfilePictureCreateResponses[keyof ApiUsersProfilePictureCreateResponses];
+
+export type ApiUsersProfilePictureDeleteDeleteData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/users/profile/picture/delete/';
+};
+
+export type ApiUsersProfilePictureDeleteDeleteResponses = {
+    /**
+     * Profile with picture removed
+     */
+    200: UserProfile;
+};
+
+export type ApiUsersProfilePictureDeleteDeleteResponse = ApiUsersProfilePictureDeleteDeleteResponses[keyof ApiUsersProfilePictureDeleteDeleteResponses];
 
 export type ApiUsersProfileUpdatePartialUpdateData = {
     body: UserUpdateWritable;

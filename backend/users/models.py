@@ -23,6 +23,12 @@ class User(AbstractUser):
         related_name="default_users",
         help_text="The user's default organization (used for login redirect)",
     )
+    profile_picture = models.CharField(
+        max_length=512,
+        blank=True,
+        null=True,
+        help_text="Storage path for the user's profile picture",
+    )
     # first_name, last_name, password are inherited from AbstractUser
     # is_superuser is also inherited for app owner/super admin access
 

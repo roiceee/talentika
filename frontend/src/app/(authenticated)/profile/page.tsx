@@ -2,7 +2,11 @@
 
 import { useState } from "react";
 import { useAuth } from "@/contexts/auth-context";
-import { updateUserProfile } from "@/lib/api";
+import {
+  updateUserProfile,
+  uploadUserProfilePicture,
+  deleteUserProfilePicture,
+} from "@/lib/api";
 import { toast } from "sonner";
 import { AxiosError } from "axios";
 
@@ -17,7 +21,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { AvatarUpload } from "@/components/avatar-upload";
 import { Loader2, Pencil } from "lucide-react";
 
 export default function ProfilePage() {
@@ -72,11 +76,31 @@ export default function ProfilePage() {
       <Card>
         <CardHeader>
           <div className="flex items-center gap-4">
-            <Avatar className="h-16 w-16">
-              <AvatarFallback className="bg-primary text-primary-foreground text-xl">
-                {initials}
-              </AvatarFallback>
-            </Avatar>
+            <AvatarUpload
+              imageUrl={user.profile_picture_url}
+              initials={initials}
+              className="h-16 w-16"
+              onUpload={async (file) => {
+                try {
+                  await uploadUserProfilePicture(file);
+                  await refreshUser();
+                  toast.success("Profile picture updated");
+                } catch {
+                  toast.error("Failed to upload profile picture");
+                  throw new Error("upload failed");
+                }
+              }}
+              onDelete={async () => {
+                try {
+                  await deleteUserProfilePicture();
+                  await refreshUser();
+                  toast.success("Profile picture removed");
+                } catch {
+                  toast.error("Failed to remove profile picture");
+                  throw new Error("delete failed");
+                }
+              }}
+            />
             <div>
               <CardTitle>
                 {user.first_name} {user.last_name}

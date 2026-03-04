@@ -118,6 +118,25 @@ class FileStorageBackend(ABC):
 
         return f"{timestamp}_{unique_id}_{clean_name}{ext}"
 
+    def save_at_path(
+        self,
+        file: BinaryIO,
+        storage_path: str,
+        content_type: Optional[str] = None,
+    ) -> tuple[str, str]:
+        """
+        Save a file at an exact storage path (no auto-naming or date layout).
+
+        Args:
+            file: File-like object to save
+            storage_path: Exact path where the file should be stored
+            content_type: MIME type of the file
+
+        Returns:
+            Tuple of (storage_path, public_url)
+        """
+        raise NotImplementedError
+
 
 class LocalFileStorage(FileStorageBackend):
     """
@@ -176,6 +195,17 @@ class LocalFileStorage(FileStorageBackend):
         # Get public URL
         public_url = self.storage.url(saved_path)
 
+        return saved_path, public_url
+
+    def save_at_path(
+        self,
+        file: BinaryIO,
+        storage_path: str,
+        content_type: Optional[str] = None,
+    ) -> tuple[str, str]:
+        """Save file at an exact storage path."""
+        saved_path = self.storage.save(storage_path, file)
+        public_url = self.storage.url(saved_path)
         return saved_path, public_url
 
     def delete(self, storage_path: str) -> bool:
@@ -283,6 +313,22 @@ class S3FileStorage(FileStorageBackend):
             file, self.bucket_name, storage_path, ExtraArgs=extra_args
         )
 
+        public_url = self.get_url(storage_path)
+        return storage_path, public_url
+
+    def save_at_path(
+        self,
+        file: BinaryIO,
+        storage_path: str,
+        content_type: Optional[str] = None,
+    ) -> tuple[str, str]:
+        """Save file at an exact S3 key."""
+        extra_args = {}
+        if content_type:
+            extra_args["ContentType"] = content_type
+        self.client.upload_fileobj(
+            file, self.bucket_name, storage_path, ExtraArgs=extra_args
+        )
         public_url = self.get_url(storage_path)
         return storage_path, public_url
 
