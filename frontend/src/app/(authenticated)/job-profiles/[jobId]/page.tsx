@@ -10,13 +10,12 @@ import {
   updateJobProfile,
   listJobCategories,
   listExperienceLevels,
-  listAiScreeningConfigs,
 } from "@/lib/api";
 import type {
   JobProfileDetail,
   JobCategory,
   ExperienceLevel,
-  AiScreeningConfiguration,
+  Qualification,
 } from "@/lib/client";
 import {
   JobProfileForm,
@@ -31,6 +30,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ApplicationsTab } from "@/components/applications-tab";
 import { ShortlistedTab } from "@/components/shortlisted-tab";
 import { AnalyticsTab } from "@/components/analytics-tab";
+import { QualificationsDisplay } from "@/components/qualifications-display";
+import {
+  EMPLOYMENT_TYPE_LABELS,
+  QUESTION_TYPE_LABELS,
+} from "@/lib/constants/job-profile";
 import {
   ArrowLeft,
   Pencil,
@@ -39,27 +43,11 @@ import {
   XCircle,
   List,
   MessageSquare,
-  ChevronRight,
   LinkIcon,
   FileText,
   Star,
   BarChart3,
 } from "lucide-react";
-
-const EMPLOYMENT_TYPE_LABELS: Record<string, string> = {
-  full_time: "Full Time",
-  part_time: "Part Time",
-  contract: "Contract",
-  internship: "Internship",
-  freelance: "Freelance",
-  not_applicable: "Not Applicable",
-};
-
-const QUESTION_TYPE_LABELS: Record<string, string> = {
-  text: "Text",
-  mcq: "Multiple Choice (multi)",
-  mcq_single: "Multiple Choice (single)",
-};
 
 export default function JobProfileDetailPage({
   params,
@@ -76,25 +64,20 @@ export default function JobProfileDetailPage({
   const [experienceLevels, setExperienceLevels] = useState<ExperienceLevel[]>(
     [],
   );
-  const [aiScreeningConfigs, setAiScreeningConfigs] = useState<
-    AiScreeningConfiguration[]
-  >([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isEditMode, setIsEditMode] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const fetchAll = useCallback(async () => {
     try {
-      const [prof, cats, levels, configs] = await Promise.all([
+      const [prof, cats, levels] = await Promise.all([
         getJobProfile(jobId),
         listJobCategories(),
         listExperienceLevels(),
-        listAiScreeningConfigs(),
       ]);
       setProfile(prof);
       setCategories(cats ?? []);
       setExperienceLevels(levels ?? []);
-      setAiScreeningConfigs(configs ?? []);
     } catch (error) {
       if (error instanceof AxiosError) {
         if (error.response?.status === 403 || error.response?.status === 404) {
@@ -123,9 +106,15 @@ export default function JobProfileDetailPage({
         employment_type: values.employment_type,
         experience_level: values.experience_level,
         description: values.description,
-        requirements: values.requirements.filter((r) => r.trim()),
-        skills: values.skills,
-        ai_screening_configuration: values.ai_screening_configuration,
+        qualifications: values.qualifications.map((q, i) => ({
+          ...(q.id ? { id: q.id } : {}),
+          category: q.category,
+          name: q.name,
+          requirement_level: q.requirement_level,
+          years_required: q.years_required ?? null,
+          proficiency_level: q.proficiency_level ?? null,
+          order: i,
+        })),
         is_active: values.is_active,
         questions: values.questions.map((q, i) => ({
           ...(q.id ? { id: q.id } : {}),
@@ -172,13 +161,17 @@ export default function JobProfileDetailPage({
         "full_time",
       experience_level: (p.experience_level as { id?: string })?.id ?? "",
       description: p.description ?? "",
-      requirements: p.requirements ?? [],
-      skills: (p.skills ?? []).map((s) => ({
-        skill: (s as { skill?: string }).skill ?? "",
-        is_required: (s as { is_required?: boolean }).is_required ?? false,
-      })),
-      ai_screening_configuration:
-        (p.ai_screening_configuration as { id?: string })?.id ?? null,
+      qualifications: ((p.qualifications ?? []) as Qualification[]).map(
+        (q) => ({
+          id: q.id,
+          category: q.category,
+          name: q.name,
+          requirement_level: q.requirement_level ?? "required",
+          years_required: q.years_required ?? null,
+          proficiency_level: q.proficiency_level ?? null,
+          order: q.order ?? 0,
+        }),
+      ),
       is_active: p.is_active ?? true,
       questions: (p.questions ?? []).map((q) => ({
         id: q.id,
@@ -205,6 +198,7 @@ export default function JobProfileDetailPage({
   if (!profile) return null;
 
   const isActive = profile.is_active ?? true;
+  const qualifications = (profile.qualifications ?? []) as Qualification[];
 
   // ─── Edit mode ───────────────────────────────────────────────────────────
   if (isEditMode) {
@@ -228,7 +222,6 @@ export default function JobProfileDetailPage({
         <JobProfileForm
           categories={categories}
           experienceLevels={experienceLevels}
-          aiScreeningConfigs={aiScreeningConfigs}
           initialValues={buildInitialValues(profile)}
           onSubmit={handleUpdate}
           submitLabel="Save Changes"
@@ -346,15 +339,6 @@ export default function JobProfileDetailPage({
                   profile.employment_type}
               </Badge>
             )}
-            {profile.ai_screening_configuration && (
-              <Badge variant="secondary" className="text-xs">
-                AI:{" "}
-                {
-                  (profile.ai_screening_configuration as { title?: string })
-                    ?.title
-                }
-              </Badge>
-            )}
           </div>
 
           {/* Description */}
@@ -369,54 +353,20 @@ export default function JobProfileDetailPage({
             </CardContent>
           </Card>
 
-          {/* Requirements */}
-          {profile.requirements && profile.requirements.length > 0 && (
+          {/* Qualifications */}
+          {qualifications.length > 0 && (
             <Card className="mb-4">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-base">
                   <List className="h-4 w-4" />
-                  Requirements
+                  Qualifications
+                  <Badge variant="secondary" className="text-xs font-normal">
+                    {qualifications.length}
+                  </Badge>
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <ul className="space-y-2">
-                  {profile.requirements.map((req, i) => (
-                    <li key={i} className="flex items-start gap-2 text-sm">
-                      <ChevronRight className="h-4 w-4 mt-0.5 shrink-0 text-muted-foreground" />
-                      <span>{req}</span>
-                    </li>
-                  ))}
-                </ul>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Skills */}
-          {profile.skills && profile.skills.length > 0 && (
-            <Card className="mb-4">
-              <CardHeader>
-                <CardTitle className="text-base">Skills</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="flex flex-wrap gap-2">
-                  {(
-                    profile.skills as Array<{
-                      skill: string;
-                      is_required: boolean;
-                    }>
-                  ).map((s, i) => (
-                    <Badge
-                      key={i}
-                      variant={s.is_required ? "default" : "outline"}
-                      className="text-xs"
-                    >
-                      {s.skill}
-                      {!s.is_required && (
-                        <span className="ml-1 opacity-60">optional</span>
-                      )}
-                    </Badge>
-                  ))}
-                </div>
+                <QualificationsDisplay qualifications={qualifications} />
               </CardContent>
             </Card>
           )}

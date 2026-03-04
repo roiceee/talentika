@@ -20,6 +20,7 @@ import {
   Download,
   MessageSquare,
 } from "lucide-react";
+import { QUESTION_TYPE_LABELS } from "@/lib/constants/job-profile";
 
 const STATUS_CONFIG: Record<
   string,
@@ -32,12 +33,6 @@ const STATUS_CONFIG: Record<
   under_review: { label: "Under Review", variant: "default" },
   shortlisted: { label: "Shortlisted", variant: "default" },
   rejected: { label: "Rejected", variant: "destructive" },
-};
-
-const QUESTION_TYPE_LABELS: Record<string, string> = {
-  text: "Text",
-  mcq: "Multiple Choice (multi)",
-  mcq_single: "Multiple Choice (single)",
 };
 
 interface ApplicationDetailViewProps {

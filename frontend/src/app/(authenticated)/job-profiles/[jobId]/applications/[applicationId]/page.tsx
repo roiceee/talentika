@@ -50,6 +50,7 @@ import {
   TrendingUp,
   TrendingDown,
 } from "lucide-react";
+import { QUESTION_TYPE_LABELS } from "@/lib/constants/job-profile";
 
 const UPDATABLE_STATUSES = [
   { value: "to_be_reviewed", label: "To Be Reviewed" },
@@ -57,12 +58,6 @@ const UPDATABLE_STATUSES = [
   { value: "shortlisted", label: "Shortlisted" },
   { value: "rejected", label: "Rejected" },
 ] as const;
-
-const QUESTION_TYPE_LABELS: Record<string, string> = {
-  text: "Text",
-  mcq: "Multiple Choice (multi)",
-  mcq_single: "Multiple Choice (single)",
-};
 
 type AnalysisData = {
   id?: string;

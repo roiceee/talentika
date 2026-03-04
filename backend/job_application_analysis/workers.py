@@ -157,13 +157,23 @@ def process_ai_analysis(application_analysis_id: str):
         # 2. Collect context
         qa_pairs = _collect_qa_pairs(job_app)
 
-        # 3. Call OpenAI
+        # Build qualifications list from the new Qualification model
+        qualifications_list = list(
+            job_profile.qualifications.values(
+                "category",
+                "name",
+                "requirement_level",
+                "years_required",
+                "proficiency_level",
+            )
+        )
+
+        # 3. Call AI
         result = analyse_resume(
             resume_text=analysis.extracted_resume_text,
             job_title=job_profile.title,
             job_description=job_profile.description,
-            job_requirements=list(job_profile.requirements),
-            job_skills=job_profile.skills or [],
+            qualifications=qualifications_list,
             questions_and_answers=qa_pairs,
         )
 

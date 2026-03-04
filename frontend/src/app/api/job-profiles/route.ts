@@ -3,7 +3,6 @@ import {
   apiJobProfilesCreateCreate,
   apiJobProfilesJobCategoriesList,
   apiJobProfilesExperienceLevelsList,
-  apiJobProfilesAiScreeningConfigsList,
 } from "@/lib/client";
 import { authenticatedSdkCall } from "@/lib/server/api-client";
 import { errorResponse } from "@/lib/server/errors";
@@ -27,7 +26,7 @@ export async function POST(request: NextRequest) {
 }
 
 /**
- * GET /api/job-profiles?type=categories|experience-levels|ai-screening-configs
+ * GET /api/job-profiles?type=categories|experience-levels
  *
  * Get reference data for job profile creation.
  * Query param `type` determines which reference data to return.
@@ -50,17 +49,10 @@ export async function GET(request: NextRequest) {
       return NextResponse.json(response.data);
     }
 
-    if (type === "ai-screening-configs") {
-      const response = await authenticatedSdkCall((opts) =>
-        apiJobProfilesAiScreeningConfigsList({ ...opts }),
-      );
-      return NextResponse.json(response.data);
-    }
-
     return NextResponse.json(
       {
         error:
-          "Missing or invalid 'type' query parameter. Use: categories, experience-levels, or ai-screening-configs",
+          "Missing or invalid 'type' query parameter. Use: categories or experience-levels",
       },
       { status: 400 },
     );

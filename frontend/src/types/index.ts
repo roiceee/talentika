@@ -22,7 +22,7 @@ export type {
   JobProfileCreate,
   JobCategory,
   ExperienceLevel,
-  AiScreeningConfiguration,
+  Qualification,
   Question,
 } from "@/lib/client";
 

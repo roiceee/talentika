@@ -9,13 +9,11 @@ import { useAuth } from "@/contexts/auth-context";
 import {
   listJobCategories,
   listExperienceLevels,
-  listAiScreeningConfigs,
   createJobProfile,
 } from "@/lib/api";
 import type {
   JobCategory,
   ExperienceLevel,
-  AiScreeningConfiguration,
 } from "@/lib/client";
 import {
   JobProfileForm,
@@ -33,9 +31,6 @@ export default function CreateJobProfilePage() {
   const [experienceLevels, setExperienceLevels] = useState<ExperienceLevel[]>(
     [],
   );
-  const [aiScreeningConfigs, setAiScreeningConfigs] = useState<
-    AiScreeningConfiguration[]
-  >([]);
   const [isLoadingRef, setIsLoadingRef] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -47,12 +42,10 @@ export default function CreateJobProfilePage() {
     Promise.all([
       listJobCategories(),
       listExperienceLevels(),
-      listAiScreeningConfigs(),
     ])
-      .then(([cats, levels, configs]) => {
+      .then(([cats, levels]) => {
         setCategories(cats ?? []);
         setExperienceLevels(levels ?? []);
-        setAiScreeningConfigs(configs ?? []);
       })
       .catch(() => toast.error("Failed to load reference data"))
       .finally(() => setIsLoadingRef(false));
@@ -66,7 +59,6 @@ export default function CreateJobProfilePage() {
       const payload: any = {
         ...values,
         organization: orgId,
-        requirements: values.requirements.filter((r) => r.trim()),
         questions: values.questions.map((q, i) => ({
           ...q,
           order: i,
@@ -132,7 +124,6 @@ export default function CreateJobProfilePage() {
         <JobProfileForm
           categories={categories}
           experienceLevels={experienceLevels}
-          aiScreeningConfigs={aiScreeningConfigs}
           onSubmit={handleSubmit}
           submitLabel="Create Job Profile"
           isSubmitting={isSubmitting}

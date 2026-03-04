@@ -2,28 +2,17 @@ from rest_framework import serializers
 
 from users.serializers.user_serializer import UserSerializer
 from .models import (
-    AIScreeningConfiguration,
     JobCategory,
     ExperienceLevel,
     JobProfile,
+    Qualification,
     Question,
 )
 from organizations.serializers import OrganizationSerializer
 from users.serializers import UserBasicSerializer
 
 
-class AIScreeningConfigurationSerializer(serializers.ModelSerializer):
-    """Serializer for AI Screening Configuration"""
-
-    class Meta:
-        model = AIScreeningConfiguration
-        fields = ["id", "title", "description"]
-        read_only_fields = ["id", "title", "description"]
-
-
 class JobCategorySerializer(serializers.ModelSerializer):
-    """Serializer for Job Category"""
-
     class Meta:
         model = JobCategory
         fields = ["id", "title"]
@@ -31,27 +20,57 @@ class JobCategorySerializer(serializers.ModelSerializer):
 
 
 class ExperienceLevelSerializer(serializers.ModelSerializer):
-    """Serializer for Experience Level"""
-
     class Meta:
         model = ExperienceLevel
         fields = ["id", "title"]
         read_only_fields = ["id", "title"]
 
 
-class SkillItemSerializer(serializers.Serializer):
-    """Represents a single skill entry in a job profile."""
+# ─── Qualification serializers ───────────────────────────────────────────────
 
-    skill = serializers.CharField(
-        help_text="Name of the skill, e.g. 'Python', 'Django'"
+
+class QualificationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Qualification
+        fields = [
+            "id",
+            "category",
+            "name",
+            "requirement_level",
+            "years_required",
+            "proficiency_level",
+            "order",
+        ]
+        read_only_fields = ["id"]
+
+
+class QualificationWriteSerializer(serializers.Serializer):
+    """Used for create/update — accepts optional id for upserts."""
+
+    id = serializers.UUIDField(required=False)
+    category = serializers.ChoiceField(choices=Qualification.Category.choices)
+    name = serializers.CharField(max_length=255)
+    requirement_level = serializers.ChoiceField(
+        choices=Qualification.RequirementLevel.choices,
+        default="required",
     )
-    is_required = serializers.BooleanField(
-        help_text="True if the skill is mandatory; False if nice-to-have"
+    years_required = serializers.IntegerField(
+        required=False, allow_null=True, default=None
     )
+    proficiency_level = serializers.ChoiceField(
+        choices=Qualification.ProficiencyLevel.choices,
+        required=False,
+        allow_null=True,
+        allow_blank=True,
+        default=None,
+    )
+    order = serializers.IntegerField(default=0)
+
+
+# ─── Question serializers ───────────────────────────────────────────────────
 
 
 class QuestionSerializer(serializers.ModelSerializer):
-
     class Meta:
         model = Question
         fields = [
@@ -62,21 +81,17 @@ class QuestionSerializer(serializers.ModelSerializer):
             "choices",
             "is_required",
         ]
-        read_only_fields = []  # Allow id to be provided for updates
+        read_only_fields = []
 
     def validate_choices(self, value):
-        """Validate choices array for MCQ questions"""
         if not isinstance(value, list):
             raise serializers.ValidationError("Choices must be an array.")
-
         for choice in value:
             if not isinstance(choice, str):
                 raise serializers.ValidationError("Each choice must be a string.")
-
         return value
 
     def validate(self, attrs):
-        """Validate that MCQ questions have choices"""
         question_type = attrs.get(
             "question_type", getattr(self.instance, "question_type", None)
         )
@@ -102,9 +117,10 @@ class QuestionSerializer(serializers.ModelSerializer):
         return attrs
 
 
-class JobProfileListSerializer(serializers.ModelSerializer):
-    """Lightweight serializer for listing job profiles"""
+# ─── Job profile serializers ────────────────────────────────────────────────
 
+
+class JobProfileListSerializer(serializers.ModelSerializer):
     category_name = serializers.CharField(source="category.title", read_only=True)
     experience_level_name = serializers.CharField(
         source="experience_level.title", read_only=True
@@ -128,23 +144,19 @@ class JobProfileListSerializer(serializers.ModelSerializer):
             "experience_level_name",
             "created_by",
             "created_by_email",
+            "is_active",
             "created_at",
         ]
         read_only_fields = ["id", "created_at"]
 
 
 class JobProfileDetailSerializer(serializers.ModelSerializer):
-    """Detailed serializer for job profile with all information"""
-
-    organization = OrganizationSerializer(
-        read_only=True,
-    )
+    organization = OrganizationSerializer(read_only=True)
     category = JobCategorySerializer(read_only=True)
     experience_level = ExperienceLevelSerializer(read_only=True)
-    ai_screening_configuration = AIScreeningConfigurationSerializer(read_only=True)
     created_by = UserSerializer(read_only=True)
     questions = QuestionSerializer(many=True, read_only=True)
-    skills = SkillItemSerializer(many=True, read_only=True)
+    qualifications = QualificationSerializer(many=True, read_only=True)
 
     class Meta:
         model = JobProfile
@@ -157,9 +169,7 @@ class JobProfileDetailSerializer(serializers.ModelSerializer):
             "employment_type",
             "experience_level",
             "description",
-            "requirements",
-            "skills",
-            "ai_screening_configuration",
+            "qualifications",
             "questions",
             "is_active",
             "created_at",
@@ -167,21 +177,10 @@ class JobProfileDetailSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = ["id", "created_by", "created_at", "updated_at"]
 
-    def get_created_by_name(self, obj):
-        """Get creator's full name"""
-        return f"{obj.created_by.first_name} {obj.created_by.last_name}".strip()
-
 
 class JobProfileCreateSerializer(serializers.ModelSerializer):
-    """Serializer for creating/updating job profiles"""
-
     questions = QuestionSerializer(many=True, required=False)
-    skills = SkillItemSerializer(
-        many=True,
-        required=False,
-        default=list,
-        help_text="List of required/optional skills for this job profile",
-    )
+    qualifications = QualificationWriteSerializer(many=True, required=False)
 
     class Meta:
         model = JobProfile
@@ -192,23 +191,76 @@ class JobProfileCreateSerializer(serializers.ModelSerializer):
             "employment_type",
             "experience_level",
             "description",
-            "requirements",
-            "skills",
-            "ai_screening_configuration",
+            "qualifications",
             "questions",
         ]
         read_only_fields = ["organization"]
 
+    def _sync_qualifications(self, job_profile, qualifications_data):
+        """Replace-all sync for qualifications."""
+        existing_ids = set(job_profile.qualifications.values_list("id", flat=True))
+        incoming_ids = set()
+
+        for idx, q_data in enumerate(qualifications_data):
+            q_id = q_data.get("id")
+            defaults = {
+                "category": q_data["category"],
+                "name": q_data["name"],
+                "requirement_level": q_data.get("requirement_level", "required"),
+                "years_required": q_data.get("years_required"),
+                "proficiency_level": q_data.get("proficiency_level") or None,
+                "order": q_data.get("order", idx),
+            }
+            if q_id:
+                Qualification.objects.update_or_create(
+                    id=q_id, job_profile=job_profile, defaults=defaults
+                )
+                incoming_ids.add(q_id)
+            else:
+                obj = Qualification.objects.create(job_profile=job_profile, **defaults)
+                incoming_ids.add(obj.id)
+
+        # Delete removed qualifications
+        to_delete = existing_ids - incoming_ids
+        if to_delete:
+            Qualification.objects.filter(
+                id__in=to_delete, job_profile=job_profile
+            ).delete()
+
+    def _sync_questions(self, job_profile, questions_data):
+        """Replace-all sync for questions."""
+        existing_ids = set(job_profile.questions.values_list("id", flat=True))
+        incoming_ids = set()
+
+        for idx, q_data in enumerate(questions_data):
+            q_id = q_data.get("id")
+            defaults = {
+                "text": q_data["text"],
+                "question_type": q_data.get("question_type", "text"),
+                "order": q_data.get("order", idx),
+                "choices": q_data.get("choices", []),
+                "is_required": q_data.get("is_required", True),
+            }
+            if q_id:
+                Question.objects.update_or_create(
+                    id=q_id, job_profile=job_profile, defaults=defaults
+                )
+                incoming_ids.add(q_id)
+            else:
+                obj = Question.objects.create(job_profile=job_profile, **defaults)
+                incoming_ids.add(obj.id)
+
+        to_delete = existing_ids - incoming_ids
+        if to_delete:
+            Question.objects.filter(id__in=to_delete, job_profile=job_profile).delete()
+
     def create(self, validated_data):
-        """Create job profile with organization from context and questions"""
-        # Organization must be passed via context, not in validated_data
         organization = self.context.get("organization")
         if not organization:
             raise serializers.ValidationError(
                 {"organization": "Organization must be provided in context."}
             )
 
-        # Validate organization is approved
         if not organization.is_approved():
             raise serializers.ValidationError(
                 {
@@ -216,74 +268,32 @@ class JobProfileCreateSerializer(serializers.ModelSerializer):
                 }
             )
 
-        # Extract questions data
         questions_data = validated_data.pop("questions", [])
+        qualifications_data = validated_data.pop("qualifications", [])
 
-        # Create job profile
         job_profile = JobProfile.objects.create(
             organization=organization, **validated_data
         )
 
-        # Create questions
-        for question_data in questions_data:
-            Question.objects.create(job_profile=job_profile, **question_data)
+        self._sync_qualifications(job_profile, qualifications_data)
+        self._sync_questions(job_profile, questions_data)
 
         return job_profile
 
     def update(self, instance, validated_data):
-        """Update job profile, explicitly excluding organization, and update questions"""
-        # Strip organization if somehow present in validated_data
         validated_data.pop("organization", None)
 
-        # Extract questions data
         questions_data = validated_data.pop("questions", None)
+        qualifications_data = validated_data.pop("qualifications", None)
 
-        # Update job profile fields
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
         instance.save()
 
-        # Update questions if provided
+        if qualifications_data is not None:
+            self._sync_qualifications(instance, qualifications_data)
+
         if questions_data is not None:
-            # Get IDs of questions in the request
-            question_ids_in_request = [
-                q.get("id") for q in questions_data if q.get("id") is not None
-            ]
-
-            # Delete questions not in the request
-            instance.questions.exclude(id__in=question_ids_in_request).delete()
-
-            # Update or create questions
-            for question_data in questions_data:
-                question_id = question_data.get("id")
-                if question_id:
-                    # Update existing question
-                    try:
-                        question = instance.questions.get(id=question_id)
-                        for attr, value in question_data.items():
-                            if attr != "id":
-                                setattr(question, attr, value)
-                        question.save()
-                    except Question.DoesNotExist:
-                        # Question ID provided doesn't belong to this job profile
-                        raise serializers.ValidationError(
-                            {
-                                "questions": f"Question with id {question_id} does not belong to this job profile."
-                            }
-                        )
-                else:
-                    # Create new question
-                    Question.objects.create(job_profile=instance, **question_data)
+            self._sync_questions(instance, questions_data)
 
         return instance
-
-    def validate_requirements(self, value):
-        """Validate requirements array"""
-        if not isinstance(value, list):
-            raise serializers.ValidationError("Requirements must be an array.")
-
-        for requirement in value:
-            if not isinstance(requirement, str):
-                raise serializers.ValidationError("Each requirement must be a string.")
-
-        return value

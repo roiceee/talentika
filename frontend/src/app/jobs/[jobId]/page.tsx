@@ -18,6 +18,7 @@ import type {
   JobApplicationCreate,
   JobProfileDetail,
   Question,
+  Qualification,
 } from "@/lib/client";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -41,20 +42,12 @@ import {
   XCircle,
   Loader2,
   List,
-  ChevronRight,
 } from "lucide-react";
 import { LocationCombobox } from "@/components/jobs/location-combobox";
 import { QuestionField } from "@/components/jobs/question-field";
 import { PhoneInput } from "@/components/jobs/phone-input";
-
-const EMPLOYMENT_TYPE_LABELS: Record<string, string> = {
-  full_time: "Full Time",
-  part_time: "Part Time",
-  contract: "Contract",
-  internship: "Internship",
-  freelance: "Freelance",
-  not_applicable: "Not Applicable",
-};
+import { QualificationsDisplay } from "@/components/qualifications-display";
+import { EMPLOYMENT_TYPE_LABELS } from "@/lib/constants/job-profile";
 
 export default function PublicJobProfilePage({
   params,
@@ -374,51 +367,20 @@ export default function PublicJobProfilePage({
         </CardContent>
       </Card>
 
-      {/* Requirements */}
-      {profile.requirements && profile.requirements.length > 0 && (
-        <Card className="mb-4">
+      {/* Qualifications */}
+      {((profile.qualifications ?? []) as Qualification[]).length > 0 && (
+        <Card className="mb-6">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-base">
               <List className="h-4 w-4" />
-              Requirements
+              Qualifications
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <ul className="space-y-2">
-              {profile.requirements.map((req, i) => (
-                <li key={i} className="flex items-start gap-2 text-sm">
-                  <ChevronRight className="h-4 w-4 mt-0.5 shrink-0 text-muted-foreground" />
-                  <span>{req}</span>
-                </li>
-              ))}
-            </ul>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Skills */}
-      {profile.skills && profile.skills.length > 0 && (
-        <Card className="mb-6">
-          <CardHeader>
-            <CardTitle className="text-base">Skills</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex flex-wrap gap-2">
-              {(
-                profile.skills as Array<{ skill: string; is_required: boolean }>
-              ).map((s, i) => (
-                <Badge
-                  key={i}
-                  variant={s.is_required ? "default" : "outline"}
-                  className="text-xs"
-                >
-                  {s.skill}
-                  {!s.is_required && (
-                    <span className="ml-1 opacity-60">optional</span>
-                  )}
-                </Badge>
-              ))}
-            </div>
+            <QualificationsDisplay
+              qualifications={(profile.qualifications ?? []) as Qualification[]}
+              showCategoryBadge={false}
+            />
           </CardContent>
         </Card>
       )}

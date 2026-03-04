@@ -4,30 +4,7 @@ from django.conf import settings
 from django.contrib.postgres.fields import ArrayField
 
 
-class AIScreeningConfiguration(models.Model):
-    """
-    Configuration for AI-powered screening of job applications.
-    """
-
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    title = models.CharField(max_length=255)
-    description = models.TextField()
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-
-    class Meta:
-        db_table = "ai_screening_configurations"
-        ordering = ["-created_at"]
-
-    def __str__(self):
-        return self.title
-
-
 class JobCategory(models.Model):
-    """
-    Categories for job profiles (e.g., Engineering, Marketing, Sales).
-    """
-
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     title = models.CharField(max_length=255, unique=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -43,10 +20,6 @@ class JobCategory(models.Model):
 
 
 class ExperienceLevel(models.Model):
-    """
-    Experience levels for job profiles (e.g., Entry Level, Mid-Level, Senior).
-    """
-
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     title = models.CharField(max_length=255, unique=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -61,10 +34,6 @@ class ExperienceLevel(models.Model):
 
 
 class JobProfile(models.Model):
-    """
-    Job profile model representing job positions with requirements and screening configuration.
-    """
-
     class EmploymentType(models.TextChoices):
         FULL_TIME = "full_time", "Full Time"
         PART_TIME = "part_time", "Part Time"
@@ -105,25 +74,6 @@ class JobProfile(models.Model):
         help_text="Required experience level",
     )
     description = models.TextField(help_text="Detailed job description")
-    requirements = ArrayField(
-        models.TextField(),
-        default=list,
-        blank=True,
-        help_text="List of job requirements",
-    )
-    skills = models.JSONField(
-        default=list,
-        blank=True,
-        help_text="Array of skill objects with 'skill' and 'is_required' fields",
-    )
-    ai_screening_configuration = models.ForeignKey(
-        AIScreeningConfiguration,
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name="job_profiles",
-        help_text="AI screening configuration for this job",
-    )
     is_active = models.BooleanField(
         default=True, help_text="Whether the job profile is active"
     )
@@ -138,11 +88,62 @@ class JobProfile(models.Model):
         return f"{self.title} ({self.category}) - {self.organization.name}"
 
 
-class Question(models.Model):
+class Qualification(models.Model):
     """
-    Questions for job profiles to gather applicant information.
+    Unified qualification requirement for a job profile.
+    Replaces the old separate requirements (ArrayField) and skills (JSONField).
     """
 
+    class Category(models.TextChoices):
+        SKILL = "skill", "Skill"
+        EXPERIENCE = "experience", "Experience"
+        EDUCATION = "education", "Education"
+        CERTIFICATION = "certification", "Certification"
+        TOOL = "tool", "Tool"
+        LANGUAGE = "language", "Language"
+        OTHER = "other", "Other"
+
+    class RequirementLevel(models.TextChoices):
+        REQUIRED = "required", "Required"
+        PREFERRED = "preferred", "Preferred"
+
+    class ProficiencyLevel(models.TextChoices):
+        BEGINNER = "beginner", "Beginner"
+        INTERMEDIATE = "intermediate", "Intermediate"
+        ADVANCED = "advanced", "Advanced"
+        EXPERT = "expert", "Expert"
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    job_profile = models.ForeignKey(
+        JobProfile,
+        on_delete=models.CASCADE,
+        related_name="qualifications",
+    )
+    category = models.CharField(max_length=20, choices=Category.choices)
+    name = models.CharField(max_length=255)
+    requirement_level = models.CharField(
+        max_length=10,
+        choices=RequirementLevel.choices,
+        default=RequirementLevel.REQUIRED,
+    )
+    years_required = models.PositiveIntegerField(null=True, blank=True)
+    proficiency_level = models.CharField(
+        max_length=15,
+        choices=ProficiencyLevel.choices,
+        null=True,
+        blank=True,
+    )
+    order = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        db_table = "qualifications"
+        ordering = ["category", "order", "name"]
+
+    def __str__(self):
+        return f"{self.get_category_display()}: {self.name} ({self.get_requirement_level_display()})"
+
+
+class Question(models.Model):
     class QuestionType(models.TextChoices):
         TEXT = "text", "Text"
         MCQ = "mcq", "Multiple Choice (Multi-Select)"

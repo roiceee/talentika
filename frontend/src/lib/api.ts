@@ -8,7 +8,6 @@ import type {
   JobProfileCreate,
   JobCategory,
   ExperienceLevel,
-  AiScreeningConfiguration,
   UserProfile,
   JobApplicationCreate,
   JobApplicationDetail,
@@ -235,15 +234,6 @@ export async function listJobCategories(): Promise<JobCategory[]> {
 export async function listExperienceLevels(): Promise<ExperienceLevel[]> {
   const response = await bffClient.get<ExperienceLevel[]>(
     "/api/job-profiles?type=experience-levels",
-  );
-  return response.data;
-}
-
-export async function listAiScreeningConfigs(): Promise<
-  AiScreeningConfiguration[]
-> {
-  const response = await bffClient.get<AiScreeningConfiguration[]>(
-    "/api/job-profiles?type=ai-screening-configs",
   );
   return response.data;
 }
