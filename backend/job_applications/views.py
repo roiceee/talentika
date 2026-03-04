@@ -780,16 +780,22 @@ def job_profile_analytics(request, org_id, job_profile_id):
         status=ApplicationAnalysis.Status.DONE,
     )
 
-    # Score distribution buckets
-    score_distribution = {
-        "0-20": analyses.filter(score__gte=0, score__lte=20).count(),
-        "21-40": analyses.filter(score__gte=21, score__lte=40).count(),
-        "41-60": analyses.filter(score__gte=41, score__lte=60).count(),
-        "61-80": analyses.filter(score__gte=61, score__lte=80).count(),
-        "81-100": analyses.filter(score__gte=81, score__lte=100).count(),
+    # Category distribution (matches score_categories.py thresholds)
+    category_distribution = {
+        "excellent": analyses.filter(score__gte=90).count(),
+        "good": analyses.filter(score__gte=75, score__lte=89).count(),
+        "moderate": analyses.filter(score__gte=40, score__lte=74).count(),
+        "bad": analyses.filter(score__gte=0, score__lte=39).count(),
     }
 
     avg_score = analyses.aggregate(avg=Avg("score"))["avg"]
+
+    # Average score category
+    from job_application_analysis.score_categories import get_score_category
+
+    avg_score_rounded = round(avg_score, 1) if avg_score is not None else None
+    avg_cat = get_score_category(avg_score_rounded)
+    average_category = {"key": avg_cat.key, "label": avg_cat.label} if avg_cat else None
 
     # Top skills & traits
     skill_counter = Counter()
@@ -827,8 +833,8 @@ def job_profile_analytics(request, org_id, job_profile_id):
         {
             "total_applications": total,
             "status_breakdown": status_breakdown,
-            "score_distribution": score_distribution,
-            "average_score": round(avg_score, 1) if avg_score is not None else None,
+            "category_distribution": category_distribution,
+            "average_category": average_category,
             "top_skills": top_skills,
             "top_traits": top_traits,
             "applications_over_time": applications_over_time,

@@ -38,12 +38,12 @@ export function AppNavbar() {
   const [orgDropdownOpen, setOrgDropdownOpen] = useState(false);
   const [switchingOrgId, setSwitchingOrgId] = useState<string | null>(null);
 
-  // Load orgs once on mount
+  // Reload orgs on every route change so newly created orgs appear immediately
   useEffect(() => {
     listOrganizations()
       .then(setOrgs)
       .catch(() => {});
-  }, []);
+  }, [pathname]);
 
   const currentOrg = orgs.find((o) => o.id === user?.default_organization);
 
@@ -114,7 +114,14 @@ export function AppNavbar() {
           {/* Organization switcher */}
           <DropdownMenu
             open={orgDropdownOpen}
-            onOpenChange={setOrgDropdownOpen}
+            onOpenChange={(open) => {
+              setOrgDropdownOpen(open);
+              if (open) {
+                listOrganizations()
+                  .then(setOrgs)
+                  .catch(() => {});
+              }
+            }}
           >
             <DropdownMenuTrigger asChild>
               <Button variant="outline" size="sm" className="gap-2 max-w-48">

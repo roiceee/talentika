@@ -263,6 +263,30 @@ export async function setDefaultOrganization(
 }
 
 // ---------------------------------------------------------------------------
+// Job Profile Analytics
+// ---------------------------------------------------------------------------
+
+export type JobProfileAnalytics = {
+  total_applications: number;
+  status_breakdown: Record<string, number>;
+  category_distribution: Record<string, number>;
+  average_category: { key: string; label: string } | null;
+  top_skills: { skill: string; count: number }[];
+  top_traits: { trait: string; count: number }[];
+  applications_over_time: { date: string; count: number }[];
+};
+
+export async function getJobProfileAnalytics(
+  orgId: string,
+  jobProfileId: string,
+): Promise<JobProfileAnalytics> {
+  const response = await bffClient.get<JobProfileAnalytics>(
+    `/api/organizations/${orgId}/job-profiles/${jobProfileId}/analytics`,
+  );
+  return response.data;
+}
+
+// ---------------------------------------------------------------------------
 // Job Applications (public endpoints)
 // ---------------------------------------------------------------------------
 

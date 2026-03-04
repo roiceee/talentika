@@ -41,7 +41,6 @@ import {
 import {
   Mail,
   Phone,
-  FileText,
   User,
   RefreshCw,
   Loader2,
@@ -55,35 +54,10 @@ import {
   ChevronRight,
   ChevronsLeft,
   ChevronsRight,
+  Star,
 } from "lucide-react";
 
 // ─── Config ──────────────────────────────────────────────────────────────────
-
-const STATUS_CONFIG: Record<
-  string,
-  {
-    label: string;
-    variant: "default" | "secondary" | "outline" | "destructive";
-    className?: string;
-  }
-> = {
-  to_be_reviewed: { label: "To Be Reviewed", variant: "secondary" },
-  reviewed: { label: "Reviewed", variant: "default" },
-  shortlisted: {
-    label: "Shortlisted",
-    variant: "default",
-    className: "bg-emerald-600 text-white hover:bg-emerald-700",
-  },
-  rejected: { label: "Rejected", variant: "destructive" },
-};
-
-const STATUS_OPTIONS = [
-  { value: "", label: "All Statuses" },
-  { value: "to_be_reviewed", label: "To Be Reviewed" },
-  { value: "reviewed", label: "Reviewed" },
-  { value: "shortlisted", label: "Shortlisted" },
-  { value: "rejected", label: "Rejected" },
-];
 
 const ANALYSIS_STATUS_CONFIG: Record<
   string,
@@ -106,7 +80,11 @@ const ANALYSIS_STATUS_CONFIG: Record<
     className: "text-blue-600",
   },
   done: { label: "Done", icon: Brain, className: "text-emerald-600" },
-  failed: { label: "Failed", icon: AlertCircle, className: "text-destructive" },
+  failed: {
+    label: "Failed",
+    icon: AlertCircle,
+    className: "text-destructive",
+  },
 };
 
 type AnalysisData = {
@@ -151,14 +129,14 @@ function SortableHeader({
 
 // ─── Props ────────────────────────────────────────────────────────────────────
 
-interface ApplicationsTabProps {
+interface ShortlistedTabProps {
   orgId: string;
   jobProfileId: string;
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
-export function ApplicationsTab({ orgId, jobProfileId }: ApplicationsTabProps) {
+export function ShortlistedTab({ orgId, jobProfileId }: ShortlistedTabProps) {
   const router = useRouter();
 
   // Server state
@@ -168,13 +146,12 @@ export function ApplicationsTab({ orgId, jobProfileId }: ApplicationsTabProps) {
 
   // Table state (all server-side)
   const [pagination, setPagination] = useState<PaginationState>({
-    pageIndex: 0, // 0-based for TanStack, converted to 1-based for API
+    pageIndex: 0,
     pageSize: 10,
   });
   const [sorting, setSorting] = useState<SortingState>([
-    { id: "submitted_at", desc: true },
+    { id: "score", desc: true },
   ]);
-  const [statusFilter, setStatusFilter] = useState<string>("");
   const [searchInput, setSearchInput] = useState<string>("");
   const [debouncedSearch, setDebouncedSearch] = useState<string>("");
 
@@ -182,31 +159,26 @@ export function ApplicationsTab({ orgId, jobProfileId }: ApplicationsTabProps) {
   useEffect(() => {
     const t = setTimeout(() => {
       setDebouncedSearch(searchInput);
-      setPagination((p) => ({ ...p, pageIndex: 0 })); // reset to page 1
+      setPagination((p) => ({ ...p, pageIndex: 0 }));
     }, 350);
     return () => clearTimeout(t);
   }, [searchInput]);
 
-  // Reset page when filter/status changes
-  useEffect(() => {
-    setPagination((p) => ({ ...p, pageIndex: 0 }));
-  }, [statusFilter]);
-
   // Derived: convert TanStack sorting to API ordering string
   const ordering = useMemo(() => {
-    if (sorting.length === 0) return "-submitted_at";
+    if (sorting.length === 0) return "-score";
     const s = sorting[0];
     return `${s.desc ? "-" : ""}${s.id}`;
   }, [sorting]);
 
-  // Fetch
+  // Fetch — always filter to shortlisted status
   const fetchData = useCallback(async () => {
     try {
       const result = await listJobApplications(orgId, jobProfileId, {
         page: pagination.pageIndex + 1,
         page_size: pagination.pageSize,
         search: debouncedSearch || undefined,
-        status: statusFilter || undefined,
+        status: "shortlisted",
         ordering,
       });
       setData(result);
@@ -214,19 +186,12 @@ export function ApplicationsTab({ orgId, jobProfileId }: ApplicationsTabProps) {
       if (error instanceof AxiosError && error.response?.status === 403) {
         toast.error("You don't have permission to view applications");
       } else {
-        toast.error("Failed to load applications");
+        toast.error("Failed to load shortlisted candidates");
       }
     } finally {
       setIsLoading(false);
     }
-  }, [
-    orgId,
-    jobProfileId,
-    pagination,
-    debouncedSearch,
-    statusFilter,
-    ordering,
-  ]);
+  }, [orgId, jobProfileId, pagination, debouncedSearch, ordering]);
 
   useEffect(() => {
     setIsLoading(true);
@@ -300,13 +265,13 @@ export function ApplicationsTab({ orgId, jobProfileId }: ApplicationsTabProps) {
     [],
   );
 
-  // Toggle sort for a column
+  // Toggle sort
   const handleSort = useCallback((id: string) => {
     setSorting((prev) => {
       const existing = prev.find((s) => s.id === id);
       if (!existing) return [{ id, desc: false }];
       if (!existing.desc) return [{ id, desc: true }];
-      return [{ id: "submitted_at", desc: true }]; // reset
+      return [{ id: "score", desc: true }]; // default reset
     });
     setPagination((p) => ({ ...p, pageIndex: 0 }));
   }, []);
@@ -326,12 +291,14 @@ export function ApplicationsTab({ orgId, jobProfileId }: ApplicationsTabProps) {
         ),
         cell: ({ row }) => (
           <div className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-muted shrink-0">
-              <User className="h-4 w-4 text-muted-foreground" />
+            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-emerald-100 shrink-0">
+              <User className="h-4 w-4 text-emerald-700" />
             </div>
-            <p className="font-medium text-sm">
-              {row.original.first_name} {row.original.last_name}
-            </p>
+            <div>
+              <p className="font-medium text-sm">
+                {row.original.first_name} {row.original.last_name}
+              </p>
+            </div>
           </div>
         ),
       },
@@ -350,28 +317,6 @@ export function ApplicationsTab({ orgId, jobProfileId }: ApplicationsTabProps) {
             </div>
           </div>
         ),
-      },
-      {
-        id: "status",
-        header: () => (
-          <SortableHeader
-            label="Status"
-            columnId="status"
-            sorting={sorting}
-            onSort={handleSort}
-          />
-        ),
-        cell: ({ row }) => {
-          const cfg = STATUS_CONFIG[row.original.status ?? "to_be_reviewed"];
-          return (
-            <Badge
-              variant={cfg?.variant ?? "secondary"}
-              className={cfg?.className}
-            >
-              {cfg?.label ?? row.original.status}
-            </Badge>
-          );
-        },
       },
       {
         id: "ai_analysis",
@@ -402,7 +347,6 @@ export function ApplicationsTab({ orgId, jobProfileId }: ApplicationsTabProps) {
               <span className={`text-xs font-medium ${cfg.className}`}>
                 {cfg.label}
               </span>
-              {/* Retry button: for failed or stuck */}
               {(analysisStatus === "failed" ||
                 (analysisStatus &&
                   !["done", "failed"].includes(analysisStatus))) && (
@@ -474,11 +418,7 @@ export function ApplicationsTab({ orgId, jobProfileId }: ApplicationsTabProps) {
             <span className="text-sm text-muted-foreground">
               {new Date(row.original.submitted_at).toLocaleDateString(
                 undefined,
-                {
-                  year: "numeric",
-                  month: "short",
-                  day: "numeric",
-                },
+                { year: "numeric", month: "short", day: "numeric" },
               )}
             </span>
           ) : (
@@ -509,7 +449,6 @@ export function ApplicationsTab({ orgId, jobProfileId }: ApplicationsTabProps) {
       <div className="space-y-3">
         <div className="flex gap-2">
           <Skeleton className="h-9 w-60" />
-          <Skeleton className="h-9 w-36" />
         </div>
         <Skeleton className="h-10 w-full" />
         <Skeleton className="h-14 w-full" />
@@ -519,18 +458,19 @@ export function ApplicationsTab({ orgId, jobProfileId }: ApplicationsTabProps) {
     );
   }
 
-  const isEmpty =
-    !isLoading && (data?.count ?? 0) === 0 && !debouncedSearch && !statusFilter;
+  const isEmpty = !isLoading && (data?.count ?? 0) === 0 && !debouncedSearch;
 
   if (isEmpty) {
     return (
       <Card>
         <CardContent className="flex flex-col items-center justify-center py-12 text-center">
-          <FileText className="h-12 w-12 text-muted-foreground/40 mb-4" />
-          <h3 className="text-lg font-medium mb-1">No applications yet</h3>
+          <Star className="h-12 w-12 text-muted-foreground/40 mb-4" />
+          <h3 className="text-lg font-medium mb-1">
+            No shortlisted candidates
+          </h3>
           <p className="text-sm text-muted-foreground">
-            Applications will appear here once candidates apply for this job
-            profile.
+            Shortlisted candidates will appear here. You can shortlist
+            candidates from the Applications tab.
           </p>
         </CardContent>
       </Card>
@@ -546,6 +486,18 @@ export function ApplicationsTab({ orgId, jobProfileId }: ApplicationsTabProps) {
 
   return (
     <div className="space-y-3">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Badge
+            variant="default"
+            className="bg-emerald-600 text-white hover:bg-emerald-700"
+          >
+            {totalCount} shortlisted
+          </Badge>
+        </div>
+      </div>
+
       {/* Toolbar */}
       <div className="flex flex-wrap items-center gap-2">
         <Input
@@ -554,24 +506,6 @@ export function ApplicationsTab({ orgId, jobProfileId }: ApplicationsTabProps) {
           onChange={(e) => setSearchInput(e.target.value)}
           className="h-9 w-64"
         />
-        <Select
-          value={statusFilter || "__all__"}
-          onValueChange={(val) => setStatusFilter(val === "__all__" ? "" : val)}
-        >
-          <SelectTrigger className="h-9 w-44">
-            <SelectValue placeholder="All Statuses" />
-          </SelectTrigger>
-          <SelectContent>
-            {STATUS_OPTIONS.map((opt) => (
-              <SelectItem
-                key={opt.value || "__all__"}
-                value={opt.value || "__all__"}
-              >
-                {opt.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
         <div className="ml-auto flex items-center gap-2">
           <span className="text-xs text-muted-foreground">Rows per page</span>
           <Select
@@ -630,7 +564,7 @@ export function ApplicationsTab({ orgId, jobProfileId }: ApplicationsTabProps) {
                   colSpan={columns.length}
                   className="h-24 text-center text-sm text-muted-foreground"
                 >
-                  No applications match your filters.
+                  No shortlisted candidates match your search.
                 </TableCell>
               </TableRow>
             ) : (

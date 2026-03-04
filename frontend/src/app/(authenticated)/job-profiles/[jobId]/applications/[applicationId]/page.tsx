@@ -67,7 +67,7 @@ const QUESTION_TYPE_LABELS: Record<string, string> = {
 type AnalysisData = {
   id?: string;
   status?: string;
-  score?: number | null;
+  score_category?: { key: string; label: string } | null;
   ai_analysis_summary?: string;
   notable_traits?: string[];
   key_skills?: string[];
@@ -505,7 +505,7 @@ export default function ApplicationDetailPage({
             </div>
           </CardHeader>
           <CardContent className="space-y-6">
-            {/* Status + Score hero row */}
+            {/* Status + Category hero row */}
             <div className="flex items-center gap-4">
               {analysis.status === "done" ? (
                 <Badge className="bg-emerald-600 text-white hover:bg-emerald-700">
@@ -532,21 +532,25 @@ export default function ApplicationDetailPage({
                           : analysis.status}
                 </Badge>
               )}
-              {analysis.status === "done" && analysis.score != null && (
+              {analysis.status === "done" && analysis.score_category && (
                 <div className="flex items-center gap-3">
                   <div
-                    className={`flex items-center justify-center h-14 w-14 rounded-full border-4 ${
-                      analysis.score >= 70
-                        ? "border-emerald-500 text-emerald-600"
-                        : analysis.score >= 40
-                          ? "border-amber-400 text-amber-600"
-                          : "border-red-400 text-destructive"
+                    className={`flex items-center justify-center h-14 px-4 rounded-full border-4 ${
+                      {
+                        excellent: "border-emerald-500 text-emerald-600",
+                        good: "border-blue-400 text-blue-600",
+                        moderate: "border-amber-400 text-amber-600",
+                        bad: "border-red-400 text-destructive",
+                      }[analysis.score_category.key] ??
+                      "border-muted text-muted-foreground"
                     }`}
                   >
-                    <span className="text-lg font-bold">{analysis.score}</span>
+                    <span className="text-lg font-bold">
+                      {analysis.score_category.label}
+                    </span>
                   </div>
                   <div className="text-sm text-muted-foreground">
-                    Match Score
+                    Match Category
                   </div>
                 </div>
               )}

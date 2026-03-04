@@ -1,9 +1,28 @@
 from rest_framework import serializers
 
 from .models import ApplicationAnalysis
+from .score_categories import get_score_category
 
 
-class ApplicationAnalysisSerializer(serializers.ModelSerializer):
+# ---------------------------------------------------------------------------
+# Mixin that adds a computed ``score_category`` field to any serializer
+# whose model has a ``score`` attribute.
+# ---------------------------------------------------------------------------
+
+
+class _ScoreCategoryMixin(serializers.Serializer):
+    """Adds *score_category* (e.g. "Excellent", "Bad") derived from *score*."""
+
+    score_category = serializers.SerializerMethodField()
+
+    def get_score_category(self, obj) -> dict | None:
+        cat = get_score_category(getattr(obj, "score", None))
+        if cat is None:
+            return None
+        return {"key": cat.key, "label": cat.label}
+
+
+class ApplicationAnalysisSerializer(_ScoreCategoryMixin, serializers.ModelSerializer):
     """Read-only serializer for the full analysis result."""
 
     class Meta:
@@ -17,7 +36,7 @@ class ApplicationAnalysisSerializer(serializers.ModelSerializer):
             "ai_analysis_summary",
             "notable_traits",
             "key_skills",
-            "score",
+            "score_category",
             "detailed_analysis",
             "created_at",
             "updated_at",
@@ -25,8 +44,10 @@ class ApplicationAnalysisSerializer(serializers.ModelSerializer):
         read_only_fields = fields
 
 
-class ApplicationAnalysisStatusSerializer(serializers.ModelSerializer):
-    """Lightweight serializer — status + score only."""
+class ApplicationAnalysisStatusSerializer(
+    _ScoreCategoryMixin, serializers.ModelSerializer
+):
+    """Lightweight serializer — status + category only."""
 
     class Meta:
         model = ApplicationAnalysis
@@ -34,14 +55,16 @@ class ApplicationAnalysisStatusSerializer(serializers.ModelSerializer):
             "id",
             "job_application",
             "status",
-            "score",
+            "score_category",
             "created_at",
             "updated_at",
         ]
         read_only_fields = fields
 
 
-class BaseApplicationAnalysisSerializer(serializers.ModelSerializer):
+class BaseApplicationAnalysisSerializer(
+    _ScoreCategoryMixin, serializers.ModelSerializer
+):
     """
     Base serializer with ONLY ApplicationAnalysis fields.
     No JobApplication or JobProfile flattening.
@@ -52,7 +75,7 @@ class BaseApplicationAnalysisSerializer(serializers.ModelSerializer):
         fields = [
             "id",
             "status",
-            "score",
+            "score_category",
             "ai_analysis_summary",
             "notable_traits",
             "key_skills",

@@ -80,7 +80,15 @@ class ResumeAnalysisResult(BaseModel):
     score: int = Field(
         ge=0,
         le=100,
-        description="Overall candidate-job-fit score from 0 to 100",
+        description=(
+            "Overall candidate-job-fit score from 0 to 100. "
+            "Use these ranges to assign the score: "
+            "Excellent = 90-100 (outstanding fit, exceeds most requirements), "
+            "Good = 75-89 (strong fit, meets key requirements), "
+            "Moderate = 40-74 (partial fit, meets some requirements), "
+            "Bad = 0-39 (poor fit, does not meet core requirements). "
+            "Choose a score that places the candidate in the appropriate category."
+        ),
     )
     detailed_analysis: DetailedAnalysis = Field(
         description="In-depth structured analysis",
@@ -97,7 +105,13 @@ def _build_system_prompt() -> str:
         "You are an expert talent-acquisition analyst. "
         "Given a candidate's resume text and a job description, "
         "produce a structured analysis of the candidate's fit for the role. "
-        "Be objective, thorough, and concise."
+        "Be objective, thorough, and concise.\n\n"
+        "When assigning the score, use these category thresholds:\n"
+        "- Excellent (90-100): Outstanding fit — exceeds most requirements\n"
+        "- Good (75-89): Strong fit — meets key requirements well\n"
+        "- Moderate (40-74): Partial fit — meets some requirements but has gaps\n"
+        "- Bad (0-39): Poor fit — does not meet core requirements\n"
+        "Pick a score that clearly places the candidate in the right category."
     )
 
 

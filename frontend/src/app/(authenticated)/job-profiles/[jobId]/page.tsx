@@ -29,6 +29,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ApplicationsTab } from "@/components/applications-tab";
+import { ShortlistedTab } from "@/components/shortlisted-tab";
+import { AnalyticsTab } from "@/components/analytics-tab";
 import {
   ArrowLeft,
   Pencil,
@@ -40,6 +42,8 @@ import {
   ChevronRight,
   LinkIcon,
   FileText,
+  Star,
+  BarChart3,
 } from "lucide-react";
 
 const EMPLOYMENT_TYPE_LABELS: Record<string, string> = {
@@ -313,6 +317,14 @@ export default function JobProfileDetailPage({
             <FileText className="h-4 w-4 mr-1.5" />
             Applications
           </TabsTrigger>
+          <TabsTrigger value="shortlisted">
+            <Star className="h-4 w-4 mr-1.5" />
+            Shortlisted
+          </TabsTrigger>
+          <TabsTrigger value="analytics">
+            <BarChart3 className="h-4 w-4 mr-1.5" />
+            Analytics
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="details" className="mt-4">
@@ -494,6 +506,20 @@ export default function JobProfileDetailPage({
 
         <TabsContent value="applications" className="mt-4">
           <ApplicationsTab
+            orgId={(profile.organization as { id?: string })?.id ?? ""}
+            jobProfileId={jobId}
+          />
+        </TabsContent>
+
+        <TabsContent value="shortlisted" className="mt-4">
+          <ShortlistedTab
+            orgId={(profile.organization as { id?: string })?.id ?? ""}
+            jobProfileId={jobId}
+          />
+        </TabsContent>
+
+        <TabsContent value="analytics" className="mt-4">
+          <AnalyticsTab
             orgId={(profile.organization as { id?: string })?.id ?? ""}
             jobProfileId={jobId}
           />
