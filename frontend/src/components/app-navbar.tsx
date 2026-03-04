@@ -20,6 +20,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   Building2,
   Briefcase,
+  BarChart3,
   LogOut,
   User,
   ChevronsUpDown,
@@ -82,6 +83,7 @@ export function AppNavbar() {
   }
 
   const jobProfilesActive = pathname.startsWith("/job-profiles");
+  const analyticsActive = pathname.startsWith("/analytics");
 
   return (
     <header className="sticky top-0 z-50 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -107,6 +109,16 @@ export function AppNavbar() {
               >
                 <Briefcase className="h-4 w-4" />
                 Job Profiles
+              </Button>
+            </Link>
+            <Link href="/analytics">
+              <Button
+                variant={analyticsActive ? "secondary" : "ghost"}
+                size="sm"
+                className="gap-2"
+              >
+                <BarChart3 className="h-4 w-4" />
+                Analytics
               </Button>
             </Link>
           </nav>

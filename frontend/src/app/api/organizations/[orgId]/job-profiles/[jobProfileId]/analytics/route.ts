@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getAccessToken } from "@/lib/server/tokens";
+import { apiOrganizationsJobProfilesAnalyticsList } from "@/lib/client";
+import { authenticatedSdkCall } from "@/lib/server/api-client";
 import { errorResponse } from "@/lib/server/errors";
-
-const BACKEND_URL = process.env.BACKEND_URL ?? "http://localhost:8000";
 
 /**
  * GET /api/organizations/:orgId/job-profiles/:jobProfileId/analytics
@@ -15,20 +14,13 @@ export async function GET(
 ) {
   try {
     const { orgId, jobProfileId } = await params;
-    const token = await getAccessToken();
-
-    const url = `${BACKEND_URL}/api/organizations/${orgId}/job-profiles/${jobProfileId}/analytics/`;
-
-    const res = await fetch(url, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-      },
-    });
-
-    const data = await res.json();
-    if (!res.ok) return NextResponse.json(data, { status: res.status });
-    return NextResponse.json(data);
+    const response = await authenticatedSdkCall((opts) =>
+      apiOrganizationsJobProfilesAnalyticsList({
+        ...opts,
+        path: { org_id: orgId, job_profile_id: jobProfileId },
+      }),
+    );
+    return NextResponse.json(response.data);
   } catch (error: unknown) {
     return errorResponse(error);
   }

@@ -46,7 +46,6 @@ import {
   CommandList,
 } from "@/components/ui/command";
 import { QUALIFICATION_CATEGORY_COLORS } from "@/lib/constants/job-profile";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Checkbox } from "@/components/ui/checkbox";
 
 import type {

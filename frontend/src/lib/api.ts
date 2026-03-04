@@ -277,6 +277,37 @@ export async function getJobProfileAnalytics(
 }
 
 // ---------------------------------------------------------------------------
+// Org-wide Analytics
+// ---------------------------------------------------------------------------
+
+export type OrgAnalytics = {
+  total_applications: number;
+  total_job_profiles: { total: number; active: number; inactive: number };
+  status_breakdown: Record<string, number>;
+  category_distribution: Record<string, number>;
+  average_category: { key: string; label: string } | null;
+  top_skills: { skill: string; count: number }[];
+  top_traits: { trait: string; count: number }[];
+  applications_over_time: { date: string; count: number }[];
+  applications_by_job_profile: {
+    id: string;
+    title: string;
+    employment_type: string;
+    is_active: boolean;
+    application_count: number;
+    avg_score_category: { key: string; label: string } | null;
+  }[];
+  employment_type_breakdown: Record<string, number>;
+};
+
+export async function getOrgAnalytics(orgId: string): Promise<OrgAnalytics> {
+  const response = await bffClient.get<OrgAnalytics>(
+    `/api/organizations/${orgId}/analytics`,
+  );
+  return response.data;
+}
+
+// ---------------------------------------------------------------------------
 // Job Applications (public endpoints)
 // ---------------------------------------------------------------------------
 

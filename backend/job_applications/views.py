@@ -841,3 +841,171 @@ def job_profile_analytics(request, org_id, job_profile_id):
         },
         status=status.HTTP_200_OK,
     )
+
+
+@swagger_auto_schema(
+    method="get",
+    operation_description="""
+    Get org-wide analytics aggregated across all job profiles in the organization.
+
+    Returns:
+    - **total_applications**: Total across all job profiles
+    - **total_job_profiles**: Dict with total, active, inactive counts
+    - **status_breakdown**: Count per application status
+    - **category_distribution**: AI score category counts (excellent/good/moderate/bad)
+    - **average_category**: Org-wide average score category
+    - **top_skills**: Most frequent skills across all analyses (top 15)
+    - **top_traits**: Most frequent traits across all analyses (top 10)
+    - **applications_over_time**: Daily application counts (last 30 days)
+    - **applications_by_job_profile**: Per-profile breakdown with title, count, avg_score_category
+    - **employment_type_breakdown**: Application counts by job profile employment type
+    """,
+    manual_parameters=[
+        openapi.Parameter(
+            "org_id",
+            openapi.IN_PATH,
+            description="Organization UUID",
+            type=openapi.TYPE_STRING,
+            format="uuid",
+            required=True,
+        ),
+    ],
+    responses={200: "Org analytics object"},
+    tags=["Job Applications"],
+)
+@api_view(["GET"])
+@permission_classes([IsAuthenticated, IsOrganizationMember])
+def org_analytics(request, org_id):
+    """Return aggregate analytics across all job profiles in an organization."""
+    from collections import Counter
+    from datetime import timedelta
+    from django.db.models import Avg, Count
+    from django.utils import timezone
+
+    try:
+        organization = Organization.objects.get(id=org_id)
+    except Organization.DoesNotExist:
+        return Response(
+            {"detail": "Organization not found."},
+            status=status.HTTP_404_NOT_FOUND,
+        )
+
+    job_profiles = JobProfile.objects.filter(organization=organization)
+    total_profiles = job_profiles.count()
+    active_profiles = job_profiles.filter(is_active=True).count()
+
+    applications = JobApplication.objects.filter(job_profile__organization=organization)
+    total = applications.count()
+
+    # --- Status breakdown ---
+    status_breakdown = dict(
+        applications.values_list("status")
+        .annotate(count=Count("id"))
+        .values_list("status", "count")
+    )
+
+    # --- AI analysis stats ---
+    from job_application_analysis.models import ApplicationAnalysis
+    from job_application_analysis.score_categories import get_score_category
+
+    analyses = ApplicationAnalysis.objects.filter(
+        job_application__job_profile__organization=organization,
+        status=ApplicationAnalysis.Status.DONE,
+    )
+
+    category_distribution = {
+        "excellent": analyses.filter(score__gte=90).count(),
+        "good": analyses.filter(score__gte=75, score__lte=89).count(),
+        "moderate": analyses.filter(score__gte=40, score__lte=74).count(),
+        "bad": analyses.filter(score__gte=0, score__lte=39).count(),
+    }
+
+    avg_score = analyses.aggregate(avg=Avg("score"))["avg"]
+    avg_score_rounded = round(avg_score, 1) if avg_score is not None else None
+    avg_cat = get_score_category(avg_score_rounded)
+    average_category = {"key": avg_cat.key, "label": avg_cat.label} if avg_cat else None
+
+    # Top skills & traits
+    skill_counter = Counter()
+    trait_counter = Counter()
+    for skills, traits in analyses.values_list("key_skills", "notable_traits"):
+        if skills:
+            skill_counter.update(skills)
+        if traits:
+            trait_counter.update(traits)
+
+    top_skills = [
+        {"skill": skill, "count": count}
+        for skill, count in skill_counter.most_common(15)
+    ]
+    top_traits = [
+        {"trait": trait, "count": count}
+        for trait, count in trait_counter.most_common(10)
+    ]
+
+    # --- Applications over time (last 30 days) ---
+    thirty_days_ago = timezone.now() - timedelta(days=30)
+    daily_counts = (
+        applications.filter(submitted_at__gte=thirty_days_ago)
+        .extra(select={"day": "DATE(submitted_at)"})
+        .values("day")
+        .annotate(count=Count("id"))
+        .order_by("day")
+    )
+    applications_over_time = [
+        {"date": str(row["day"]), "count": row["count"]} for row in daily_counts
+    ]
+
+    # --- Per-job-profile breakdown ---
+    profile_rows = (
+        job_profiles.annotate(app_count=Count("applications"))
+        .values("id", "title", "employment_type", "is_active", "app_count")
+        .order_by("-app_count")
+    )
+    applications_by_job_profile = []
+    for row in profile_rows:
+        profile_analyses = analyses.filter(job_application__job_profile_id=row["id"])
+        profile_avg = profile_analyses.aggregate(avg=Avg("score"))["avg"]
+        profile_avg_rounded = round(profile_avg, 1) if profile_avg is not None else None
+        profile_cat = get_score_category(profile_avg_rounded)
+        applications_by_job_profile.append(
+            {
+                "id": str(row["id"]),
+                "title": row["title"],
+                "employment_type": row["employment_type"],
+                "is_active": row["is_active"],
+                "application_count": row["app_count"],
+                "avg_score_category": (
+                    {"key": profile_cat.key, "label": profile_cat.label}
+                    if profile_cat
+                    else None
+                ),
+            }
+        )
+
+    # --- Employment type breakdown ---
+    employment_type_breakdown = dict(
+        applications.values("job_profile__employment_type")
+        .annotate(count=Count("id"))
+        .values_list("job_profile__employment_type", "count")
+    )
+
+    return Response(
+        {
+            "total_applications": total,
+            "total_job_profiles": {
+                "total": total_profiles,
+                "active": active_profiles,
+                "inactive": total_profiles - active_profiles,
+            },
+            "status_breakdown": status_breakdown,
+            "category_distribution": category_distribution,
+            "average_category": average_category,
+            "top_skills": top_skills,
+            "top_traits": top_traits,
+            "applications_over_time": applications_over_time,
+            "applications_by_job_profile": applications_by_job_profile,
+            "employment_type_breakdown": employment_type_breakdown,
+        },
+        status=status.HTTP_200_OK,
+    )
