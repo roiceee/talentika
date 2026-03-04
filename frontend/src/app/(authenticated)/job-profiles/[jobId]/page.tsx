@@ -282,10 +282,9 @@ export default function JobProfileDetailPage({
               {(profile.organization as { name?: string })?.name}
             </p>
           </div>
-          <div className="flex gap-2 shrink-0">
+          <div className="flex gap-2 shrink">
             <Button
               variant="outline"
-              size="sm"
               onClick={() => {
                 const url = `${window.location.origin}/jobs/${jobId}`;
                 navigator.clipboard.writeText(url);
@@ -298,7 +297,6 @@ export default function JobProfileDetailPage({
             {hasSubmissions ? (
               <Button
                 variant="outline"
-                size="sm"
                 disabled
                 title="Editing is disabled because this job profile has submissions"
               >
@@ -306,11 +304,7 @@ export default function JobProfileDetailPage({
                 Edit
               </Button>
             ) : (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setIsEditMode(true)}
-              >
+              <Button variant="outline" onClick={() => setIsEditMode(true)}>
                 <Pencil className="mr-2 h-4 w-4" />
                 Edit
               </Button>
