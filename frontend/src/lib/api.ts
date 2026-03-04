@@ -507,3 +507,68 @@ export async function getCities(
   );
   return response.data;
 }
+
+// ---------------------------------------------------------------------------
+// Results & Export
+// ---------------------------------------------------------------------------
+
+export type ResultsCategory = {
+  status: string;
+  label: string;
+  count: number;
+  preview: JobApplicationDetailWithAnalysis[];
+};
+
+export type ResultsSummary = {
+  categories: ResultsCategory[];
+};
+
+export async function getResultsSummary(
+  orgId: string,
+  jobProfileId: string,
+): Promise<ResultsSummary> {
+  const response = await bffClient.get<ResultsSummary>(
+    `/api/organizations/${orgId}/job-profiles/${jobProfileId}/results`,
+  );
+  return response.data;
+}
+
+export type ExportJobStatus = {
+  id: string;
+  status: "pending" | "processing" | "done" | "failed";
+  export_format: "csv" | "xlsx";
+  application_status: string;
+  error_message?: string;
+  created_at: string;
+};
+
+export async function requestExport(
+  orgId: string,
+  jobProfileId: string,
+  opts: { application_status?: string; format?: "csv" | "xlsx" },
+): Promise<ExportJobStatus> {
+  const response = await bffClient.post<ExportJobStatus>(
+    `/api/organizations/${orgId}/job-profiles/${jobProfileId}/export`,
+    opts,
+  );
+  return response.data;
+}
+
+export async function pollExport(
+  orgId: string,
+  jobProfileId: string,
+  exportId: string,
+): Promise<ExportJobStatus> {
+  const response = await bffClient.get<ExportJobStatus>(
+    `/api/organizations/${orgId}/job-profiles/${jobProfileId}/export/${exportId}`,
+  );
+  return response.data;
+}
+
+export function getExportDownloadUrl(
+  orgId: string,
+  jobProfileId: string,
+  exportId: string,
+): string {
+  return `/api/organizations/${orgId}/job-profiles/${jobProfileId}/export/${exportId}/download`;
+}

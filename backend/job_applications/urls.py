@@ -8,6 +8,10 @@ from .views import (
     update_application_status,
     job_profile_analytics,
     org_analytics,
+    application_results_summary,
+    request_export,
+    poll_export,
+    download_export,
 )
 
 urlpatterns = [
@@ -42,5 +46,27 @@ urlpatterns = [
         "organizations/<uuid:org_id>/analytics/",
         org_analytics,
         name="org_analytics",
+    ),
+    # Results summary (grouped by status)
+    path(
+        "organizations/<uuid:org_id>/job-profiles/<uuid:job_profile_id>/results/",
+        application_results_summary,
+        name="application_results_summary",
+    ),
+    # Export: request, poll, download
+    path(
+        "organizations/<uuid:org_id>/job-profiles/<uuid:job_profile_id>/export/",
+        request_export,
+        name="request_export",
+    ),
+    path(
+        "organizations/<uuid:org_id>/job-profiles/<uuid:job_profile_id>/export/<uuid:export_id>/",
+        poll_export,
+        name="poll_export",
+    ),
+    path(
+        "organizations/<uuid:org_id>/job-profiles/<uuid:job_profile_id>/export/<uuid:export_id>/download/",
+        download_export,
+        name="download_export",
     ),
 ]

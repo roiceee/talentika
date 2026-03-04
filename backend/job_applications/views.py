@@ -1009,3 +1009,304 @@ def org_analytics(request, org_id):
         },
         status=status.HTTP_200_OK,
     )
+
+
+# ---------------------------------------------------------------------------
+# Application results summary (grouped by status)
+# ---------------------------------------------------------------------------
+
+
+@swagger_auto_schema(
+    method="get",
+    operation_description=(
+        "Get a summary of job applications grouped by status. "
+        "Returns counts and a preview of applications per status category."
+    ),
+    manual_parameters=[
+        openapi.Parameter(
+            "org_id",
+            openapi.IN_PATH,
+            description="Organization UUID",
+            type=openapi.TYPE_STRING,
+            format="uuid",
+        ),
+        openapi.Parameter(
+            "job_profile_id",
+            openapi.IN_PATH,
+            description="Job Profile UUID",
+            type=openapi.TYPE_STRING,
+            format="uuid",
+        ),
+    ],
+    responses={200: "Results summary", 403: "Forbidden"},
+    tags=["Job Applications"],
+)
+@api_view(["GET"])
+@permission_classes([IsAuthenticated, IsOrganizationMember])
+def application_results_summary(request, org_id, job_profile_id):
+    """Return application counts and preview rows for each status category."""
+    from django.db.models import Count
+
+    job_profile = JobProfile.objects.filter(
+        id=job_profile_id, organization_id=org_id
+    ).first()
+    if not job_profile:
+        return Response(
+            {"error": "Job profile not found."}, status=status.HTTP_404_NOT_FOUND
+        )
+
+    applications = JobApplication.objects.filter(job_profile=job_profile)
+
+    # Counts per status
+    status_counts = dict(
+        applications.values("status")
+        .annotate(count=Count("id"))
+        .values_list("status", "count")
+    )
+
+    # For each status, get top 5 with analysis
+    categories = []
+    for status_choice, status_label in JobApplication.Status.choices:
+        count = status_counts.get(status_choice, 0)
+        preview_apps = applications.filter(status=status_choice).order_by(
+            "-submitted_at"
+        )[:5]
+        preview = JobApplicationDetailWithAnalysisSerializer(
+            preview_apps, many=True
+        ).data
+        categories.append(
+            {
+                "status": status_choice,
+                "label": status_label,
+                "count": count,
+                "preview": preview,
+            }
+        )
+
+    return Response({"categories": categories}, status=status.HTTP_200_OK)
+
+
+# ---------------------------------------------------------------------------
+# Export: request, poll, download
+# ---------------------------------------------------------------------------
+
+
+@swagger_auto_schema(
+    method="post",
+    operation_description=(
+        "Request an async export of job applications (with analysis) as CSV or XLSX. "
+        "The export is processed via RQ and can be polled for status."
+    ),
+    manual_parameters=[
+        openapi.Parameter(
+            "org_id",
+            openapi.IN_PATH,
+            description="Organization UUID",
+            type=openapi.TYPE_STRING,
+            format="uuid",
+        ),
+        openapi.Parameter(
+            "job_profile_id",
+            openapi.IN_PATH,
+            description="Job Profile UUID",
+            type=openapi.TYPE_STRING,
+            format="uuid",
+        ),
+    ],
+    request_body=openapi.Schema(
+        type=openapi.TYPE_OBJECT,
+        properties={
+            "application_status": openapi.Schema(
+                type=openapi.TYPE_STRING,
+                description="Filter by application status (blank for all)",
+                enum=["", "to_be_reviewed", "reviewed", "shortlisted", "rejected"],
+            ),
+            "format": openapi.Schema(
+                type=openapi.TYPE_STRING,
+                description="Export format",
+                enum=["csv", "xlsx"],
+                default="xlsx",
+            ),
+        },
+    ),
+    responses={201: "Export job created", 403: "Forbidden"},
+    tags=["Job Applications"],
+)
+@api_view(["POST"])
+@permission_classes([IsAuthenticated, IsOrganizationMember])
+def request_export(request, org_id, job_profile_id):
+    """Create an export job and enqueue it on RQ."""
+    from .models import ApplicationExportJob
+    from .export_worker import enqueue_export
+
+    job_profile = JobProfile.objects.filter(
+        id=job_profile_id, organization_id=org_id
+    ).first()
+    if not job_profile:
+        return Response(
+            {"error": "Job profile not found."}, status=status.HTTP_404_NOT_FOUND
+        )
+
+    app_status = request.data.get("application_status", "")
+    export_format = request.data.get("format", "xlsx")
+    if export_format not in ("csv", "xlsx"):
+        export_format = "xlsx"
+
+    export_job = ApplicationExportJob.objects.create(
+        job_profile=job_profile,
+        requested_by=request.user,
+        application_status=app_status,
+        export_format=export_format,
+    )
+
+    try:
+        enqueue_export(str(export_job.id))
+    except Exception as exc:
+        logger.exception("Failed to enqueue export job %s", export_job.id)
+        export_job.status = ApplicationExportJob.ExportStatus.FAILED
+        export_job.error_message = str(exc)
+        export_job.save(update_fields=["status", "error_message"])
+        return Response(
+            {"error": "Failed to start export. Is Redis running?"},
+            status=status.HTTP_503_SERVICE_UNAVAILABLE,
+        )
+
+    return Response(
+        {
+            "id": str(export_job.id),
+            "status": export_job.status,
+            "format": export_job.export_format,
+            "application_status": export_job.application_status,
+        },
+        status=status.HTTP_201_CREATED,
+    )
+
+
+@swagger_auto_schema(
+    method="get",
+    operation_description="Poll the status of an export job.",
+    manual_parameters=[
+        openapi.Parameter(
+            "org_id",
+            openapi.IN_PATH,
+            description="Organization UUID",
+            type=openapi.TYPE_STRING,
+            format="uuid",
+        ),
+        openapi.Parameter(
+            "job_profile_id",
+            openapi.IN_PATH,
+            description="Job Profile UUID",
+            type=openapi.TYPE_STRING,
+            format="uuid",
+        ),
+        openapi.Parameter(
+            "export_id",
+            openapi.IN_PATH,
+            description="Export job UUID",
+            type=openapi.TYPE_STRING,
+            format="uuid",
+        ),
+    ],
+    responses={200: "Export job status"},
+    tags=["Job Applications"],
+)
+@api_view(["GET"])
+@permission_classes([IsAuthenticated, IsOrganizationMember])
+def poll_export(request, org_id, job_profile_id, export_id):
+    """Return the current status of an export job."""
+    from .models import ApplicationExportJob
+
+    export_job = ApplicationExportJob.objects.filter(
+        id=export_id,
+        job_profile_id=job_profile_id,
+        job_profile__organization_id=org_id,
+    ).first()
+    if not export_job:
+        return Response(
+            {"error": "Export job not found."}, status=status.HTTP_404_NOT_FOUND
+        )
+
+    return Response(
+        {
+            "id": str(export_job.id),
+            "status": export_job.status,
+            "format": export_job.export_format,
+            "application_status": export_job.application_status,
+            "error_message": (
+                export_job.error_message if export_job.status == "failed" else ""
+            ),
+        }
+    )
+
+
+@swagger_auto_schema(
+    method="get",
+    operation_description="Download a completed export file.",
+    manual_parameters=[
+        openapi.Parameter(
+            "org_id",
+            openapi.IN_PATH,
+            description="Organization UUID",
+            type=openapi.TYPE_STRING,
+            format="uuid",
+        ),
+        openapi.Parameter(
+            "job_profile_id",
+            openapi.IN_PATH,
+            description="Job Profile UUID",
+            type=openapi.TYPE_STRING,
+            format="uuid",
+        ),
+        openapi.Parameter(
+            "export_id",
+            openapi.IN_PATH,
+            description="Export job UUID",
+            type=openapi.TYPE_STRING,
+            format="uuid",
+        ),
+    ],
+    responses={200: "File download", 404: "Not found"},
+    tags=["Job Applications"],
+)
+@api_view(["GET"])
+@permission_classes([IsAuthenticated, IsOrganizationMember])
+def download_export(request, org_id, job_profile_id, export_id):
+    """Serve the completed export file."""
+    from django.http import FileResponse
+    from pathlib import Path
+    from .models import ApplicationExportJob
+
+    export_job = ApplicationExportJob.objects.filter(
+        id=export_id,
+        job_profile_id=job_profile_id,
+        job_profile__organization_id=org_id,
+    ).first()
+    if not export_job:
+        return Response(
+            {"error": "Export job not found."}, status=status.HTTP_404_NOT_FOUND
+        )
+
+    if export_job.status != ApplicationExportJob.ExportStatus.DONE:
+        return Response(
+            {"error": "Export not ready."}, status=status.HTTP_400_BAD_REQUEST
+        )
+
+    file_path = Path(export_job.file_path)
+    if not file_path.exists():
+        return Response(
+            {"error": "Export file not found."}, status=status.HTTP_404_NOT_FOUND
+        )
+
+    content_type = (
+        "text/csv"
+        if export_job.export_format == "csv"
+        else "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
+
+    return FileResponse(
+        open(file_path, "rb"),
+        content_type=content_type,
+        as_attachment=True,
+        filename=file_path.name,
+    )

@@ -30,7 +30,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { ApplicationsTab } from "@/components/applications-tab";
-import { ShortlistedTab } from "@/components/shortlisted-tab";
+import { ResultsTab } from "@/components/results-tab";
 import { AnalyticsTab } from "@/components/analytics-tab";
 import { QualificationsDisplay } from "@/components/qualifications-display";
 import {
@@ -41,8 +41,6 @@ import {
   ArrowLeft,
   Pencil,
   X,
-  CheckCircle2,
-  XCircle,
   List,
   MessageSquare,
   LinkIcon,
@@ -346,9 +344,9 @@ export default function JobProfileDetailPage({
             <FileText className="h-4 w-4 mr-1.5" />
             Applications
           </TabsTrigger>
-          <TabsTrigger value="shortlisted">
+          <TabsTrigger value="results">
             <Star className="h-4 w-4 mr-1.5" />
-            Shortlisted
+            Results
           </TabsTrigger>
           <TabsTrigger value="analytics">
             <BarChart3 className="h-4 w-4 mr-1.5" />
@@ -497,8 +495,8 @@ export default function JobProfileDetailPage({
           />
         </TabsContent>
 
-        <TabsContent value="shortlisted" className="mt-4">
-          <ShortlistedTab
+        <TabsContent value="results" className="mt-4">
+          <ResultsTab
             orgId={(profile.organization as { id?: string })?.id ?? ""}
             jobProfileId={jobId}
           />

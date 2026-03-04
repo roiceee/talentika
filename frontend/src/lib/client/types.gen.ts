@@ -2170,6 +2170,136 @@ export type ApiOrganizationsJobProfilesApplicationsStatusPartialUpdateResponses 
 
 export type ApiOrganizationsJobProfilesApplicationsStatusPartialUpdateResponse = ApiOrganizationsJobProfilesApplicationsStatusPartialUpdateResponses[keyof ApiOrganizationsJobProfilesApplicationsStatusPartialUpdateResponses];
 
+export type ApiOrganizationsJobProfilesExportCreateData = {
+    body: {
+        /**
+         * Filter by application status (blank for all)
+         */
+        application_status?: '' | 'to_be_reviewed' | 'reviewed' | 'shortlisted' | 'rejected';
+        /**
+         * Export format
+         */
+        format?: 'csv' | 'xlsx';
+    };
+    path: {
+        /**
+         * Organization UUID
+         */
+        org_id: string;
+        /**
+         * Job Profile UUID
+         */
+        job_profile_id: string;
+    };
+    query?: never;
+    url: '/api/organizations/{org_id}/job-profiles/{job_profile_id}/export/';
+};
+
+export type ApiOrganizationsJobProfilesExportCreateErrors = {
+    /**
+     * Forbidden
+     */
+    403: unknown;
+};
+
+export type ApiOrganizationsJobProfilesExportCreateResponses = {
+    /**
+     * Export job created
+     */
+    201: unknown;
+};
+
+export type ApiOrganizationsJobProfilesExportReadData = {
+    body?: never;
+    path: {
+        /**
+         * Organization UUID
+         */
+        org_id: string;
+        /**
+         * Job Profile UUID
+         */
+        job_profile_id: string;
+        /**
+         * Export job UUID
+         */
+        export_id: string;
+    };
+    query?: never;
+    url: '/api/organizations/{org_id}/job-profiles/{job_profile_id}/export/{export_id}/';
+};
+
+export type ApiOrganizationsJobProfilesExportReadResponses = {
+    /**
+     * Export job status
+     */
+    200: unknown;
+};
+
+export type ApiOrganizationsJobProfilesExportDownloadListData = {
+    body?: never;
+    path: {
+        /**
+         * Organization UUID
+         */
+        org_id: string;
+        /**
+         * Job Profile UUID
+         */
+        job_profile_id: string;
+        /**
+         * Export job UUID
+         */
+        export_id: string;
+    };
+    query?: never;
+    url: '/api/organizations/{org_id}/job-profiles/{job_profile_id}/export/{export_id}/download/';
+};
+
+export type ApiOrganizationsJobProfilesExportDownloadListErrors = {
+    /**
+     * Not found
+     */
+    404: unknown;
+};
+
+export type ApiOrganizationsJobProfilesExportDownloadListResponses = {
+    /**
+     * File download
+     */
+    200: unknown;
+};
+
+export type ApiOrganizationsJobProfilesResultsListData = {
+    body?: never;
+    path: {
+        /**
+         * Organization UUID
+         */
+        org_id: string;
+        /**
+         * Job Profile UUID
+         */
+        job_profile_id: string;
+    };
+    query?: never;
+    url: '/api/organizations/{org_id}/job-profiles/{job_profile_id}/results/';
+};
+
+export type ApiOrganizationsJobProfilesResultsListErrors = {
+    /**
+     * Forbidden
+     */
+    403: unknown;
+};
+
+export type ApiOrganizationsJobProfilesResultsListResponses = {
+    /**
+     * Results summary
+     */
+    200: unknown;
+};
+
 export type ApiOrganizationsLeaveDeleteData = {
     body?: never;
     path: {

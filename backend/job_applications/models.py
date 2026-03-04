@@ -197,3 +197,65 @@ class TemporaryFileUpload(models.Model):
 
     def __str__(self):
         return f"{self.file_name} ({self.id})"
+
+
+class ApplicationExportJob(models.Model):
+    """
+    Tracks an async export job that generates CSV or XLSX files
+    containing job application data (with analysis) for a given status.
+    """
+
+    class ExportFormat(models.TextChoices):
+        CSV = "csv", "CSV"
+        XLSX = "xlsx", "XLSX"
+
+    class ExportStatus(models.TextChoices):
+        PENDING = "pending", "Pending"
+        PROCESSING = "processing", "Processing"
+        DONE = "done", "Done"
+        FAILED = "failed", "Failed"
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    job_profile = models.ForeignKey(
+        "job_profile.JobProfile",
+        on_delete=models.CASCADE,
+        related_name="export_jobs",
+        help_text="Job profile whose applications are being exported",
+    )
+    requested_by = models.ForeignKey(
+        "users.User",
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name="export_jobs",
+    )
+    application_status = models.CharField(
+        max_length=20,
+        choices=JobApplication.Status.choices,
+        blank=True,
+        help_text="Filter applications to this status. Blank = all statuses.",
+    )
+    export_format = models.CharField(
+        max_length=10,
+        choices=ExportFormat.choices,
+        default=ExportFormat.XLSX,
+    )
+    status = models.CharField(
+        max_length=20,
+        choices=ExportStatus.choices,
+        default=ExportStatus.PENDING,
+    )
+    file_path = models.CharField(
+        max_length=500,
+        blank=True,
+        help_text="Storage path of the generated file",
+    )
+    error_message = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = "application_export_jobs"
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"Export({self.status}) – {self.job_profile} [{self.application_status or 'all'}]"
