@@ -14,5 +14,9 @@ fi
 echo "Applying database migrations..."
 uv run python manage.py migrate --noinput
 
+# Reset any analyses stuck in processing states from a previous interrupted run
+echo "Resetting stuck analyses..."
+uv run python manage.py reset_stuck_analyses
+
 # Execute the container CMD (e.g. runserver, rqworker, etc.)
 exec "$@"

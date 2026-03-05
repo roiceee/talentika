@@ -2,11 +2,43 @@ services:
   server:
     build: .
     container_name: talentika_server
-    command: "uv run python3 manage.py runserver"
+    command: ["uv", "run", "python", "manage.py", "runserver", "0.0.0.0:8000"]
     volumes:
       - .:/app
+      - /app/.venv
     ports:
       - "8000:8000"
+    env_file:
+      - .env
+    environment:
+      DB_HOST: postgres
+      DB_PORT: "5432"
+      DB_NAME: talentika_dev
+      DB_USER: talentika_user
+      DB_PASSWORD: talentika_password
+      REDIS_URL: redis://redis:6379/0
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  ocr-worker:
+    build: .
+    container_name: talentika_ocr_worker
+    command:
+      [
+        "uv",
+        "run",
+        "python",
+        "manage.py",
+        "run_analysis_workers",
+        "--queue",
+        "ocr",
+      ]
+    volumes:
+      - .:/app
+      - /app/.venv
     env_file:
       - .env
     depends_on:
@@ -14,6 +46,31 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+
+  ai-analysis-worker:
+    build: .
+    container_name: talentika_ai_analysis_worker
+    command:
+      [
+        "uv",
+        "run",
+        "python",
+        "manage.py",
+        "run_analysis_workers",
+        "--queue",
+        "ai_analysis",
+      ]
+    volumes:
+      - .:/app
+      - /app/.venv
+    env_file:
+      - .env
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
   postgres:
     image: postgres:16-alpine
     container_name: talentika_postgres
