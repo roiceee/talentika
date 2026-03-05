@@ -358,14 +358,10 @@ export default function JobProfileDetailPage({
           {/* Meta badges */}
           <div className="mb-6 flex flex-wrap gap-2">
             {profile.category && (
-              <Badge variant="secondary">
-                {(profile.category as { title?: string })?.title}
-              </Badge>
+              <Badge variant="secondary">{profile.category?.title}</Badge>
             )}
             {profile.experience_level && (
-              <Badge variant="outline">
-                {(profile.experience_level as { title?: string })?.title}
-              </Badge>
+              <Badge variant="outline">{profile.experience_level?.title}</Badge>
             )}
             {profile.employment_type && (
               <Badge variant="outline">
