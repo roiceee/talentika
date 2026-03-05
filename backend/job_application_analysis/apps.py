@@ -8,12 +8,12 @@ class JobApplicationAnalysisConfig(AppConfig):
 
     def ready(self):
         """
-        Pre-warm the doctr OCR model in a daemon thread so the weights are
-        downloaded and loaded at server startup, not on the first request.
+        Verify Tesseract OCR is available at server startup so
+        misconfiguration is detected early.
         """
         thread = threading.Thread(
             target=self._warmup_ocr,
-            name="doctr-warmup",
+            name="tesseract-warmup",
             daemon=True,
         )
         thread.start()
@@ -28,5 +28,5 @@ class JobApplicationAnalysisConfig(AppConfig):
             import logging
 
             logging.getLogger(__name__).exception(
-                "doctr OCR warm-up failed — model will load on first use instead."
+                "Tesseract OCR warm-up check failed — OCR may not work."
             )
