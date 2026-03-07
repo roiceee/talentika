@@ -1,0 +1,73 @@
+# --- Droplet ---
+
+output "droplet_id" {
+  description = "ID of the Droplet"
+  value       = digitalocean_droplet.app.id
+}
+
+output "droplet_ipv4" {
+  description = "Public IPv4 address of the Droplet"
+  value       = digitalocean_droplet.app.ipv4_address
+}
+
+output "droplet_name" {
+  description = "Name of the Droplet"
+  value       = digitalocean_droplet.app.name
+}
+
+# --- Postgres ---
+
+output "db_cluster_id" {
+  description = "ID of the managed Postgres cluster"
+  value       = digitalocean_database_cluster.postgres.id
+}
+
+output "db_host" {
+  description = "Postgres connection host"
+  value       = digitalocean_database_cluster.postgres.host
+}
+
+output "db_port" {
+  description = "Postgres connection port"
+  value       = digitalocean_database_cluster.postgres.port
+}
+
+output "db_user" {
+  description = "Default Postgres admin user"
+  value       = digitalocean_database_cluster.postgres.user
+}
+
+output "db_password" {
+  description = "Default Postgres admin password"
+  value       = digitalocean_database_cluster.postgres.password
+  sensitive   = true
+}
+
+output "db_uri" {
+  description = "Full Postgres connection URI"
+  value       = digitalocean_database_cluster.postgres.uri
+  sensitive   = true
+}
+
+output "db_name" {
+  description = "Application database name"
+  value       = digitalocean_database_db.app_db.name
+}
+
+# --- Redis ---
+
+output "redis_host" {
+  description = "Redis connection host"
+  value       = digitalocean_database_cluster.redis.host
+}
+
+output "redis_port" {
+  description = "Redis connection port"
+  value       = digitalocean_database_cluster.redis.port
+}
+
+output "redis_uri" {
+  description = "Full Redis connection URI"
+  value       = digitalocean_database_cluster.redis.uri
+  sensitive   = true
+}

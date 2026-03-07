@@ -16,6 +16,7 @@ frontend/  → Next.js 16 app (pnpm, TypeScript)
 - `job_profile/` — job profiles, Q&A questions, job categories, AI screening configs
 - `job_applications/` — application submission, file uploads, status workflow
 - `job_application_analysis/` — RQ-based pipeline: OCR (doctr) → AI scoring (OpenAI/Gemini)
+- `geo/` — country/state/city lookup endpoints (public, uses `countrystatecity_countries`)
 - `health/` — `/health` liveness check
 
 ## Backend Developer Workflow
@@ -90,12 +91,19 @@ def create_job_profile(request, org_id): ...
 
 **Custom permissions** (see [backend/organizations/permissions.py](backend/organizations/permissions.py)):
 
-- `IsOrganizationAdmin` / `IsOrganizationMember` — read `org_id` from URL kwargs
+- `IsOrganizationAdmin` — checks `is_org_admin(user, org)` via `org_id` URL kwarg
+- `IsOrganizationMember` — checks membership; superusers bypass automatically
+- `IsApprovedOrganization` — checks `is_org_approved(org)` via `org_id` URL kwarg
+- `IsSuperAdmin` — checks `user.is_superuser`
 - `IsOrgAdminOfOwnOrganization` — stricter check for mutations
+
+**URL name convention:** kebab-case (e.g., `name="list-organizations"`, `name="create-job-profile"`). UUID path converters for resource IDs: `<uuid:org_id>`, `<uuid:job_profile_id>`.
+
+**Storage:** `STORAGE_BACKEND` env var — `"local"` (dev) or `"s3"` (prod via boto3). File download logic in `workers.py` branches on this value.
 
 **Frontend CSRF:** Edge middleware ([frontend/src/proxy.ts](frontend/src/proxy.ts)) validates CSRF cookie vs `x-csrf-token` header for all mutating BFF routes (`/api/*`). Exempt: `/api/auth/csrf`, `/api/auth/refresh`.
 
-**Frontend API calls** go through Next.js BFF routes (`frontend/src/app/api/`) proxying to Django — never call Django directly from the browser.
+**Frontend API calls** go through Next.js BFF routes (`frontend/src/app/api/`) proxying to Django — never call Django directly from the browser. BFF directories: `applications/`, `auth/`, `geo/`, `invitations/`, `job-profiles/`, `organizations/`, `users/`. Each route uses `authenticatedSdkCall()` from `src/lib/` to inject JWT, and `errorResponse()` for uniform error formatting.
 
 ## Key Data Flows
 

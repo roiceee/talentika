@@ -10,13 +10,6 @@ services:
       - "8000:8000"
     env_file:
       - .env
-    environment:
-      DB_HOST: postgres
-      DB_PORT: "5432"
-      DB_NAME: talentika_dev
-      DB_USER: talentika_user
-      DB_PASSWORD: talentika_password
-      REDIS_URL: redis://redis:6379/0
     depends_on:
       postgres:
         condition: service_healthy
