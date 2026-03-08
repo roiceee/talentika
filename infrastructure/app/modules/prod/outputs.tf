@@ -1,18 +1,13 @@
-# --- Droplet ---
+# --- App Platform ---
 
-output "droplet_id" {
-  description = "ID of the Droplet"
-  value       = digitalocean_droplet.app.id
+output "app_id" {
+  description = "ID of the App Platform app (use as DIGITALOCEAN_APP_ID in CI)"
+  value       = digitalocean_app.backend.id
 }
 
-output "droplet_ipv4" {
-  description = "Public IPv4 address of the Droplet"
-  value       = digitalocean_droplet.app.ipv4_address
-}
-
-output "droplet_name" {
-  description = "Name of the Droplet"
-  value       = digitalocean_droplet.app.name
+output "app_default_url" {
+  description = "Default URL assigned by App Platform"
+  value       = digitalocean_app.backend.default_ingress
 }
 
 # --- Postgres ---

@@ -1,6 +1,6 @@
 # -----------------------------------------------------------------
 # DigitalOcean production resources
-# Droplet + Managed PostgreSQL + Managed Redis
+# App Platform + Managed PostgreSQL + Managed Redis
 # -----------------------------------------------------------------
 
 terraform {
@@ -9,70 +9,6 @@ terraform {
       source  = "digitalocean/digitalocean"
       version = "~> 2.0"
     }
-  }
-}
-
-# --- SSH Key ---
-
-data "digitalocean_ssh_key" "default" {
-  name = var.ssh_key_name
-}
-
-# --- Droplet ---
-
-resource "digitalocean_droplet" "app" {
-  name     = "${var.project_name}-prod"
-  region   = var.region
-  size     = var.droplet_size
-  image    = var.droplet_image
-  ssh_keys = [data.digitalocean_ssh_key.default.id]
-
-  tags = [var.project_name, "prod"]
-}
-
-# --- Firewall for Droplet ---
-
-resource "digitalocean_firewall" "app" {
-  name        = "${var.project_name}-prod-fw"
-  droplet_ids = [digitalocean_droplet.app.id]
-
-  # SSH
-  inbound_rule {
-    protocol         = "tcp"
-    port_range       = "22"
-    source_addresses = ["0.0.0.0/0", "::/0"]
-  }
-
-  # HTTP
-  inbound_rule {
-    protocol         = "tcp"
-    port_range       = "80"
-    source_addresses = ["0.0.0.0/0", "::/0"]
-  }
-
-  # HTTPS
-  inbound_rule {
-    protocol         = "tcp"
-    port_range       = "443"
-    source_addresses = ["0.0.0.0/0", "::/0"]
-  }
-
-  # All outbound
-  outbound_rule {
-    protocol              = "tcp"
-    port_range            = "1-65535"
-    destination_addresses = ["0.0.0.0/0", "::/0"]
-  }
-
-  outbound_rule {
-    protocol              = "udp"
-    port_range            = "1-65535"
-    destination_addresses = ["0.0.0.0/0", "::/0"]
-  }
-
-  outbound_rule {
-    protocol              = "icmp"
-    destination_addresses = ["0.0.0.0/0", "::/0"]
   }
 }
 
@@ -107,14 +43,74 @@ resource "digitalocean_database_cluster" "redis" {
   tags = [var.project_name, "prod"]
 }
 
-# --- DB firewalls: restrict access to the Droplet only ---
+# --- App Platform ---
+
+resource "digitalocean_app" "backend" {
+  spec {
+    name   = "${var.project_name}-backend"
+    region = var.region
+
+    # --- Web service (gunicorn) ---
+    service {
+      name               = "server"
+      instance_count     = 1
+      instance_size_slug = var.app_instance_size
+      http_port          = 8000
+
+      image {
+        registry_type = "DOCKER_HUB"
+        registry      = var.dockerhub_username
+        repository    = var.dockerhub_repository
+        tag           = "latest"
+      }
+
+      health_check {
+        http_path            = "/health/"
+        initial_delay_seconds = 15
+        period_seconds        = 30
+      }
+    }
+
+    # --- OCR worker ---
+    worker {
+      name               = "ocr-worker"
+      instance_count     = 1
+      instance_size_slug = var.app_instance_size
+      run_command         = "uv run python manage.py run_analysis_workers --queue ocr"
+
+      image {
+        registry_type = "DOCKER_HUB"
+        registry      = var.dockerhub_username
+        repository    = var.dockerhub_repository
+        tag           = "latest"
+      }
+    }
+
+    # --- AI analysis worker ---
+    worker {
+      name               = "ai-analysis-worker"
+      instance_count     = 1
+      instance_size_slug = var.app_instance_size
+      run_command         = "uv run python manage.py run_analysis_workers --queue ai_analysis"
+
+      image {
+        registry_type = "DOCKER_HUB"
+        registry      = var.dockerhub_username
+        repository    = var.dockerhub_repository
+        tag           = "latest"
+      }
+    }
+  }
+}
+
+# --- DB firewalls: restrict access to App Platform ---
 
 resource "digitalocean_database_firewall" "postgres_fw" {
   cluster_id = digitalocean_database_cluster.postgres.id
 
   rule {
-    type  = "droplet"
-    value = digitalocean_droplet.app.id
+    type  = "app"
+    value = digitalocean_app.backend.id
   }
 }
 
@@ -122,7 +118,7 @@ resource "digitalocean_database_firewall" "redis_fw" {
   cluster_id = digitalocean_database_cluster.redis.id
 
   rule {
-    type  = "droplet"
-    value = digitalocean_droplet.app.id
+    type  = "app"
+    value = digitalocean_app.backend.id
   }
 }

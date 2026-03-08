@@ -6,12 +6,15 @@ cors_allowed_origins = [
   "https://talentika.vercel.app",
 ]
 
-# --- DigitalOcean Droplet ---
+# --- DigitalOcean region ---
 
-do_region     = "sgp1"
-ssh_key_name  = "roice-machine" # name of the SSH key in your DO account
-droplet_size  = "s-2vcpu-4gb"
-droplet_image = "ubuntu-24-04-x64"
+do_region = "sgp1"
+
+# --- App Platform ---
+
+dockerhub_username   = "roiceee" # your DockerHub username
+dockerhub_repository = "talentika-backend"
+app_instance_size    = "apps-s-1vcpu-1gb"
 
 # --- Managed Postgres ---
 

@@ -9,23 +9,23 @@ variable "region" {
   default     = "sgp1"
 }
 
-# --- Droplet ---
+# --- App Platform ---
 
-variable "ssh_key_name" {
-  description = "Name of the SSH key registered in your DigitalOcean account"
+variable "dockerhub_username" {
+  description = "DockerHub username / namespace"
   type        = string
 }
 
-variable "droplet_size" {
-  description = "Droplet size slug (e.g. s-1vcpu-1gb, s-2vcpu-2gb)"
+variable "dockerhub_repository" {
+  description = "DockerHub repository name (e.g. talentika-backend)"
   type        = string
-  default     = "s-1vcpu-1gb"
+  default     = "talentika-backend"
 }
 
-variable "droplet_image" {
-  description = "Droplet OS image slug"
+variable "app_instance_size" {
+  description = "App Platform instance size slug"
   type        = string
-  default     = "ubuntu-24-04-x64"
+  default     = "apps-s-1vcpu-1gb"
 }
 
 # --- Managed Postgres ---

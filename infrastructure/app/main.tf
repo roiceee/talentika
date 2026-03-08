@@ -34,22 +34,22 @@ variable "do_region" {
   default     = "sgp1"
 }
 
-variable "ssh_key_name" {
-  description = "Name of the SSH key registered in your DigitalOcean account. Only used in prod."
+variable "dockerhub_username" {
+  description = "DockerHub username / namespace for pulling images. Only used in prod."
   type        = string
   default     = ""
 }
 
-variable "droplet_size" {
-  description = "Droplet size slug (e.g. s-1vcpu-1gb). Only used in prod."
+variable "dockerhub_repository" {
+  description = "DockerHub repository name. Only used in prod."
   type        = string
-  default     = "s-1vcpu-1gb"
+  default     = "talentika-backend"
 }
 
-variable "droplet_image" {
-  description = "Droplet OS image slug. Only used in prod."
+variable "app_instance_size" {
+  description = "App Platform instance size slug. Only used in prod."
   type        = string
-  default     = "ubuntu-24-04-x64"
+  default     = "apps-s-1vcpu-1gb"
 }
 
 variable "db_size" {
@@ -101,7 +101,7 @@ module "s3" {
 }
 
 # =================================================================
-# Module: Prod (Managed Postgres + Redis on DigitalOcean)
+# Module: Prod (App Platform + Managed Postgres + Redis on DigitalOcean)
 # =================================================================
 
 module "prod" {
@@ -109,17 +109,17 @@ module "prod" {
 
   count = var.environment == "prod" ? 1 : 0
 
-  project_name  = var.project_name
-  region        = var.do_region
-  ssh_key_name  = var.ssh_key_name
-  droplet_size  = var.droplet_size
-  droplet_image = var.droplet_image
-  db_size       = var.db_size
-  db_node_count      = var.db_node_count
-  db_version         = var.db_version
-  db_name            = var.db_name
-  redis_size         = var.redis_size
-  redis_version      = var.redis_version
+  project_name         = var.project_name
+  region               = var.do_region
+  dockerhub_username   = var.dockerhub_username
+  dockerhub_repository = var.dockerhub_repository
+  app_instance_size    = var.app_instance_size
+  db_size              = var.db_size
+  db_node_count        = var.db_node_count
+  db_version           = var.db_version
+  db_name              = var.db_name
+  redis_size           = var.redis_size
+  redis_version        = var.redis_version
 }
 
 # =================================================================
@@ -167,9 +167,14 @@ output "backend_secret_access_key" {
 # Outputs — Prod (null in dev)
 # =================================================================
 
-output "droplet_ipv4" {
-  description = "Prod Droplet public IPv4 (null in dev)"
-  value       = try(module.prod[0].droplet_ipv4, null)
+output "app_id" {
+  description = "Prod App Platform app ID (null in dev)"
+  value       = try(module.prod[0].app_id, null)
+}
+
+output "app_default_url" {
+  description = "Prod App Platform default URL (null in dev)"
+  value       = try(module.prod[0].app_default_url, null)
 }
 
 output "db_host" {

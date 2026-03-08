@@ -27,4 +27,5 @@ RUN chmod +x /app/docker-entrypoint.sh
 EXPOSE 8000
 
 ENTRYPOINT ["/app/docker-entrypoint.sh"]
-CMD ["uv", "run", "python", "manage.py", "runserver", "0.0.0.0:8000"]
+# Production: gunicorn. Override with the desired command for workers.
+CMD ["uv", "run", "gunicorn", "app.wsgi:application", "--bind", "0.0.0.0:8000", "--workers", "4", "--timeout", "120"]
