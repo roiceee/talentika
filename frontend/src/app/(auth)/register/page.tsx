@@ -26,6 +26,7 @@ function RegisterForm() {
   const searchParams = useSearchParams();
   const invitationToken = searchParams.get("token") || "";
   const invitationEmail = searchParams.get("email") || "";
+  const redirect = searchParams.get("redirect") || "";
 
   const { register } = useAuth();
   const [form, setForm] = useState({
@@ -58,7 +59,10 @@ function RegisterForm() {
         ...(invitationToken ? { invitation_token: invitationToken } : {}),
       });
       toast.success("Account created successfully!");
-      router.push("/organizations");
+      // If registration included an invitation token, the user was
+      // automatically joined to the org on the backend — go to orgs.
+      // If there's an explicit redirect, honour it.
+      router.push(redirect || "/organizations");
     } catch (error) {
       if (error instanceof AxiosError) {
         const data = error.response?.data;
@@ -175,7 +179,16 @@ function RegisterForm() {
           </Button>
           <p className="text-sm text-muted-foreground">
             Already have an account?{" "}
-            <Link href="/login" className="text-primary hover:underline">
+            <Link
+              href={
+                invitationToken
+                  ? `/login?redirect=${encodeURIComponent(`/invite/accept?token=${invitationToken}`)}`
+                  : redirect
+                    ? `/login?redirect=${encodeURIComponent(redirect)}`
+                    : "/login"
+              }
+              className="text-primary hover:underline"
+            >
               Sign in
             </Link>
           </p>

@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { useAuth } from "@/contexts/auth-context";
@@ -20,20 +20,23 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Loader2 } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 
-export default function LoginPage() {
+function LoginForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirect = searchParams.get("redirect") || "/dashboard";
   const { login, isAuthenticated, isLoading } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Redirect already-authenticated users away from login
+  // Redirect already-authenticated users
   useEffect(() => {
     if (!isLoading && isAuthenticated) {
-      router.replace("/dashboard");
+      router.replace(redirect);
     }
-  }, [isLoading, isAuthenticated, router]);
+  }, [isLoading, isAuthenticated, router, redirect]);
 
   // Don't render the form while checking auth or redirecting
   if (isLoading || isAuthenticated) {
@@ -47,7 +50,7 @@ export default function LoginPage() {
     try {
       await login({ email, password });
       toast.success("Logged in successfully");
-      router.push("/dashboard");
+      router.push(redirect);
     } catch (error) {
       if (error instanceof AxiosError) {
         const detail =
@@ -124,7 +127,14 @@ export default function LoginPage() {
             </Button>
             <p className="text-sm text-muted-foreground">
               Don&apos;t have an account?{" "}
-              <Link href="/register" className="text-primary hover:underline">
+              <Link
+                href={
+                  redirect !== "/dashboard"
+                    ? `/register?redirect=${encodeURIComponent(redirect)}`
+                    : "/register"
+                }
+                className="text-primary hover:underline"
+              >
                 Sign up
               </Link>
             </p>
@@ -132,5 +142,21 @@ export default function LoginPage() {
         </form>
       </Card>
     </>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense
+      fallback={
+        <Card>
+          <CardContent className="py-12">
+            <Skeleton className="h-64 w-full" />
+          </CardContent>
+        </Card>
+      }
+    >
+      <LoginForm />
+    </Suspense>
   );
 }

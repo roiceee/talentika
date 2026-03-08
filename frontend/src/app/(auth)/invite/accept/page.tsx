@@ -170,7 +170,7 @@ function InviteAcceptContent() {
         </CardContent>
         <CardFooter className="flex flex-col gap-3">
           <Link
-            href={`/login?redirect=/invite/accept?token=${token}`}
+            href={`/login?redirect=${encodeURIComponent(`/invite/accept?token=${token}`)}`}
             className="w-full"
           >
             <Button className="w-full">
