@@ -644,7 +644,8 @@ function InvitationsTab({
   const [inviteRole, setInviteRole] = useState<MemberRole>("MEMBER");
   const [actionLoading, setActionLoading] = useState<string | null>(null);
 
-  async function handleCancel(invitationId: string) {
+  async function handleCancel(invitationId: string | undefined) {
+    if (!invitationId) return;
     setActionLoading(`cancel-${invitationId}`);
     try {
       await cancelInvitation(orgId, invitationId);
@@ -661,7 +662,8 @@ function InvitationsTab({
     }
   }
 
-  async function handleResend(invitationId: string) {
+  async function handleResend(invitationId: string | undefined) {
+    if (!invitationId) return;
     setActionLoading(`resend-${invitationId}`);
     try {
       const result = await resendInvitation(orgId, invitationId);
