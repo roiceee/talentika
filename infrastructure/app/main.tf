@@ -35,8 +35,15 @@ variable "do_region" {
 }
 
 variable "dockerhub_username" {
-  description = "DockerHub username / namespace for pulling images. Only used in prod."
+  description = "DockerHub username / namespace. Only used in prod."
   type        = string
+  default     = ""
+}
+
+variable "dockerhub_token" {
+  description = "DockerHub personal access token. Only used in prod."
+  type        = string
+  sensitive   = true
   default     = ""
 }
 
@@ -88,6 +95,7 @@ variable "redis_version" {
   default     = "7"
 }
 
+
 # =================================================================
 # Module: S3 + IAM (both environments)
 # =================================================================
@@ -101,7 +109,7 @@ module "s3" {
 }
 
 # =================================================================
-# Module: Prod (App Platform + Managed Postgres + Redis on DigitalOcean)
+# Module: Prod (Managed Postgres + Redis on DigitalOcean)
 # =================================================================
 
 module "prod" {
@@ -112,6 +120,7 @@ module "prod" {
   project_name         = var.project_name
   region               = var.do_region
   dockerhub_username   = var.dockerhub_username
+  dockerhub_token      = var.dockerhub_token
   dockerhub_repository = var.dockerhub_repository
   app_instance_size    = var.app_instance_size
   db_size              = var.db_size
@@ -168,7 +177,7 @@ output "backend_secret_access_key" {
 # =================================================================
 
 output "app_id" {
-  description = "Prod App Platform app ID (null in dev)"
+  description = "Prod App Platform app ID — use as DIGITALOCEAN_APP_ID in CI (null in dev)"
   value       = try(module.prod[0].app_id, null)
 }
 

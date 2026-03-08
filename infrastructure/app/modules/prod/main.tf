@@ -62,6 +62,7 @@ resource "digitalocean_app" "backend" {
         registry      = var.dockerhub_username
         repository    = var.dockerhub_repository
         tag           = "latest"
+        registry_credentials = "${var.dockerhub_username}:${var.dockerhub_token}"
       }
 
       health_check {
@@ -83,6 +84,7 @@ resource "digitalocean_app" "backend" {
         registry      = var.dockerhub_username
         repository    = var.dockerhub_repository
         tag           = "latest"
+        registry_credentials = "${var.dockerhub_username}:${var.dockerhub_token}"
       }
     }
 
@@ -98,6 +100,7 @@ resource "digitalocean_app" "backend" {
         registry      = var.dockerhub_username
         repository    = var.dockerhub_repository
         tag           = "latest"
+        registry_credentials = "${var.dockerhub_username}:${var.dockerhub_token}"
       }
     }
   }
