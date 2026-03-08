@@ -14,6 +14,10 @@ fi
 echo "Applying database migrations..."
 uv run python manage.py migrate --noinput
 
+# Seed reference data (idempotent - uses get_or_create)
+echo "Seeding job categories and experience levels..."
+uv run python manage.py seed_job_data
+
 # Reset any analyses stuck in processing states from a previous interrupted run
 echo "Resetting stuck analyses..."
 uv run python manage.py reset_stuck_analyses
