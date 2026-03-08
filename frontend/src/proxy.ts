@@ -30,6 +30,12 @@ export function proxy(request: NextRequest) {
         return NextResponse.next();
       }
 
+      // Skip CSRF check for public invitation endpoints — these are accessed by
+      // unauthenticated users who don't have a CSRF cookie yet.
+      if (pathname === "/api/invitations/validate") {
+        return NextResponse.next();
+      }
+
       const csrfCookie = request.cookies.get("csrf_token")?.value;
       const csrfHeader = request.headers.get("x-csrf-token");
 
