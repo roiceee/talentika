@@ -1,15 +1,3 @@
-# --- App Platform ---
-
-output "app_id" {
-  description = "ID of the App Platform app (use as DIGITALOCEAN_APP_ID in CI)"
-  value       = digitalocean_app.backend.id
-}
-
-output "app_default_url" {
-  description = "Default URL assigned by App Platform"
-  value       = digitalocean_app.backend.default_ingress
-}
-
 # --- Postgres ---
 
 output "db_cluster_id" {

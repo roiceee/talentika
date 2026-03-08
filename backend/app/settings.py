@@ -104,6 +104,10 @@ DATABASES = {
     }
 }
 
+_db_sslmode = os.getenv("DB_SSLMODE", "")
+if _db_sslmode:
+    DATABASES["default"]["OPTIONS"] = {"sslmode": _db_sslmode}
+
 
 # Password validation
 # https://docs.djangoproject.com/en/6.0/ref/settings/#auth-password-validators

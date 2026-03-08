@@ -34,31 +34,6 @@ variable "do_region" {
   default     = "sgp1"
 }
 
-variable "dockerhub_username" {
-  description = "DockerHub username / namespace. Only used in prod."
-  type        = string
-  default     = ""
-}
-
-variable "dockerhub_token" {
-  description = "DockerHub personal access token. Only used in prod."
-  type        = string
-  sensitive   = true
-  default     = ""
-}
-
-variable "dockerhub_repository" {
-  description = "DockerHub repository name. Only used in prod."
-  type        = string
-  default     = "talentika-backend"
-}
-
-variable "app_instance_size" {
-  description = "App Platform instance size slug. Only used in prod."
-  type        = string
-  default     = "apps-s-1vcpu-1gb"
-}
-
 variable "db_size" {
   description = "Managed Postgres node size slug. Only used in prod."
   type        = string
@@ -119,10 +94,6 @@ module "prod" {
 
   project_name         = var.project_name
   region               = var.do_region
-  dockerhub_username   = var.dockerhub_username
-  dockerhub_token      = var.dockerhub_token
-  dockerhub_repository = var.dockerhub_repository
-  app_instance_size    = var.app_instance_size
   db_size              = var.db_size
   db_node_count        = var.db_node_count
   db_version           = var.db_version
@@ -175,16 +146,6 @@ output "backend_secret_access_key" {
 # =================================================================
 # Outputs — Prod (null in dev)
 # =================================================================
-
-output "app_id" {
-  description = "Prod App Platform app ID — use as DIGITALOCEAN_APP_ID in CI (null in dev)"
-  value       = try(module.prod[0].app_id, null)
-}
-
-output "app_default_url" {
-  description = "Prod App Platform default URL (null in dev)"
-  value       = try(module.prod[0].app_default_url, null)
-}
 
 output "db_host" {
   description = "Prod Postgres host (null in dev)"

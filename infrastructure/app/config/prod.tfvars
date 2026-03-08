@@ -3,18 +3,12 @@ project_name = "talentika"
 
 # CORS: origins allowed to access S3 (for presigned URL uploads)
 cors_allowed_origins = [
-  "https://talentika.vercel.app",
+  "https://talentika.vercel.app", "http://talentika.tech"
 ]
 
 # --- DigitalOcean region ---
 
 do_region = "sgp1"
-
-# --- App Platform ---
-
-dockerhub_username   = "roiceee" # your DockerHub username
-dockerhub_repository = "talentika-backend"
-app_instance_size    = "apps-s-1vcpu-1gb"
 
 # --- Managed Postgres ---
 
