@@ -9,7 +9,8 @@ import "dotenv/config";
  *
  * The `runtimeConfigPath` in openapi-ts.config.ts references this file.
  */
+
 export const createClientConfig: CreateClientConfig = (override) => ({
-  baseURL: process.env.BACKEND_URL || "http://localhost:8000/",
   ...override,
+  baseURL: process.env.BACKEND_URL || "http://localhost:8000/",
 });
