@@ -459,6 +459,7 @@ function MembersTab({
   onUpdate: () => Promise<void>;
 }) {
   const router = useRouter();
+  const { refreshUser } = useAuth();
   const [removingId, setRemovingId] = useState<string | null>(null);
   const [isLeaving, setIsLeaving] = useState(false);
 
@@ -481,6 +482,7 @@ function MembersTab({
     setIsLeaving(true);
     try {
       await leaveOrganization(orgId);
+      await refreshUser();
       toast.success(`Left ${orgName}`);
       router.push("/organizations");
     } catch (error) {

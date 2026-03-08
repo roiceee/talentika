@@ -32,7 +32,12 @@ import {
 function InviteAcceptContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const { isAuthenticated, isLoading: authLoading, user } = useAuth();
+  const {
+    isAuthenticated,
+    isLoading: authLoading,
+    user,
+    refreshUser,
+  } = useAuth();
   const token = searchParams.get("token") || "";
 
   const [invitation, setInvitation] =
@@ -73,6 +78,7 @@ function InviteAcceptContent() {
     setIsAccepting(true);
     try {
       await acceptInvitation(token);
+      await refreshUser();
       setAccepted(true);
       toast.success("Successfully joined the organization!");
     } catch (error) {
