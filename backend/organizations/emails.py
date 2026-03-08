@@ -17,7 +17,7 @@ def send_invitation_email(invited_user, organization, invited_by):
         organization: Organization instance they're being invited to
         invited_by: User instance who sent the invitation
     """
-    frontend_url = getattr(settings, "FRONTEND_WEB_URL", "http://localhost:3000")
+    frontend_url = settings.FRONTEND_WEB_URL
 
     subject = f"You've been invited to join {organization.name} on Talentika"
 
@@ -167,7 +167,7 @@ def send_invitation_token_email(invitation):
         bool: True if email sent successfully, False otherwise
     """
     # Get frontend URL from settings (with fallback)
-    frontend_url = getattr(settings, "FRONTEND_WEB_URL", "http://localhost:3000")
+    frontend_url = settings.FRONTEND_WEB_URL
 
     # Construct invitation acceptance URL (front-end URL with token)
     invitation_url = f"{frontend_url}/invite/accept?token={invitation.token}"

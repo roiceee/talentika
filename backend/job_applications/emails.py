@@ -10,7 +10,7 @@ def send_application_confirmation_email(job_application):
     """
     Send a confirmation email to the applicant after they submit a job application.
     """
-    frontend_url = getattr(settings, "FRONTEND_WEB_URL", "http://localhost:3000")
+    frontend_url = settings.FRONTEND_WEB_URL
     job_profile = job_application.job_profile
     organization = job_profile.organization
 

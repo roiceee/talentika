@@ -187,6 +187,7 @@ DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL", EMAIL_HOST_USER)
 
 # Frontend Configuration
 FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:3000")
+FRONTEND_WEB_URL = os.getenv("FRONTEND_WEB_URL", "http://localhost:3000")
 
 
 # JWT Settings

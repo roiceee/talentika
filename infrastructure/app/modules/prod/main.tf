@@ -44,3 +44,6 @@ resource "digitalocean_database_cluster" "redis" {
 }
 
 
+resource "digitalocean_app" "talentika-backend" {
+
+}

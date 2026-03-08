@@ -173,3 +173,8 @@ output "redis_uri" {
   value       = try(module.prod[0].redis_uri, null)
   sensitive   = true
 }
+
+
+resource "digitalocean_app" "talentika-backend" {
+
+}
