@@ -1,4 +1,5 @@
 import type { CreateClientConfig } from "./client/client.gen";
+import "dotenv/config";
 
 /**
  * Runtime configuration for the hey-api generated client.
