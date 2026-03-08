@@ -196,6 +196,26 @@ export async function acceptInvitation(token: string): Promise<unknown> {
   return response.data;
 }
 
+export async function cancelInvitation(
+  orgId: string,
+  invitationId: string,
+): Promise<{ message?: string }> {
+  const response = await bffClient.delete<{ message?: string }>(
+    `/api/organizations/${orgId}/invitations/${invitationId}/cancel`,
+  );
+  return response.data;
+}
+
+export async function resendInvitation(
+  orgId: string,
+  invitationId: string,
+): Promise<OrganizationInvitation & { email_sent?: boolean }> {
+  const response = await bffClient.post<
+    OrganizationInvitation & { email_sent?: boolean }
+  >(`/api/organizations/${orgId}/invitations/${invitationId}/resend`);
+  return response.data;
+}
+
 // ---------------------------------------------------------------------------
 // Password Reset — dedicated BFF routes → SDK → Django
 // ---------------------------------------------------------------------------

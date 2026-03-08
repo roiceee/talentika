@@ -19,6 +19,8 @@ import {
   leaveOrganization,
   listInvitations,
   createInvitation,
+  cancelInvitation,
+  resendInvitation,
   uploadOrgProfilePicture,
   deleteOrgProfilePicture,
 } from "@/lib/api";
@@ -86,6 +88,8 @@ import {
   Check,
   Clock,
   X,
+  RotateCw,
+  Ban,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -638,6 +642,45 @@ function InvitationsTab({
   const [isSending, setIsSending] = useState(false);
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviteRole, setInviteRole] = useState<MemberRole>("MEMBER");
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
+
+  async function handleCancel(invitationId: string) {
+    setActionLoading(`cancel-${invitationId}`);
+    try {
+      await cancelInvitation(orgId, invitationId);
+      toast.success("Invitation cancelled");
+      onUpdate();
+    } catch (error) {
+      if (error instanceof AxiosError) {
+        toast.error(
+          error.response?.data?.error || "Failed to cancel invitation",
+        );
+      }
+    } finally {
+      setActionLoading(null);
+    }
+  }
+
+  async function handleResend(invitationId: string) {
+    setActionLoading(`resend-${invitationId}`);
+    try {
+      const result = await resendInvitation(orgId, invitationId);
+      if ((result as { email_sent?: boolean })?.email_sent) {
+        toast.success("Invitation resent");
+      } else {
+        toast.success("Invitation refreshed (email delivery pending)");
+      }
+      onUpdate();
+    } catch (error) {
+      if (error instanceof AxiosError) {
+        toast.error(
+          error.response?.data?.error || "Failed to resend invitation",
+        );
+      }
+    } finally {
+      setActionLoading(null);
+    }
+  }
 
   async function handleInvite(e: React.FormEvent) {
     e.preventDefault();
@@ -759,6 +802,9 @@ function InvitationsTab({
                 <TableHead>Status</TableHead>
                 <TableHead>Invited by</TableHead>
                 <TableHead>Sent</TableHead>
+                {isAdmin && (
+                  <TableHead className="text-right">Actions</TableHead>
+                )}
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -798,6 +844,67 @@ function InvitationsTab({
                       ? new Date(inv.created_at).toLocaleDateString()
                       : "—"}
                   </TableCell>
+                  {isAdmin && (
+                    <TableCell className="text-right">
+                      {!inv.accepted_at && (
+                        <div className="flex items-center justify-end gap-1">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8"
+                            title="Resend invitation"
+                            disabled={actionLoading !== null}
+                            onClick={() => handleResend(inv.id)}
+                          >
+                            {actionLoading === `resend-${inv.id}` ? (
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                              <RotateCw className="h-4 w-4" />
+                            )}
+                          </Button>
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 text-destructive hover:text-destructive"
+                                title="Cancel invitation"
+                                disabled={actionLoading !== null}
+                              >
+                                {actionLoading === `cancel-${inv.id}` ? (
+                                  <Loader2 className="h-4 w-4 animate-spin" />
+                                ) : (
+                                  <Ban className="h-4 w-4" />
+                                )}
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>
+                                  Cancel invitation?
+                                </AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  This will cancel the invitation sent to{" "}
+                                  <strong>{inv.email}</strong>. They will no
+                                  longer be able to join using the invitation
+                                  link.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Keep</AlertDialogCancel>
+                                <AlertDialogAction
+                                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                  onClick={() => handleCancel(inv.id)}
+                                >
+                                  Cancel invitation
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        </div>
+                      )}
+                    </TableCell>
+                  )}
                 </TableRow>
               ))}
             </TableBody>

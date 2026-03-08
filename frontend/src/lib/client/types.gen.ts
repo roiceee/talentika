@@ -1874,6 +1874,84 @@ export type ApiOrganizationsInvitationsListListResponses = {
 
 export type ApiOrganizationsInvitationsListListResponse = ApiOrganizationsInvitationsListListResponses[keyof ApiOrganizationsInvitationsListListResponses];
 
+export type ApiOrganizationsInvitationsCancelDeleteData = {
+    body?: never;
+    path: {
+        /**
+         * UUID of the organization
+         */
+        org_id: string;
+        /**
+         * UUID of the invitation to cancel
+         */
+        invitation_id: string;
+    };
+    query?: never;
+    url: '/api/organizations/{org_id}/invitations/{invitation_id}/cancel/';
+};
+
+export type ApiOrganizationsInvitationsCancelDeleteErrors = {
+    /**
+     * Invitation already accepted
+     */
+    400: unknown;
+    /**
+     * Only organization admins can cancel invitations
+     */
+    403: unknown;
+    /**
+     * Invitation not found
+     */
+    404: unknown;
+};
+
+export type ApiOrganizationsInvitationsCancelDeleteResponses = {
+    /**
+     * Invitation cancelled successfully
+     */
+    200: unknown;
+};
+
+export type ApiOrganizationsInvitationsResendCreateData = {
+    body?: never;
+    path: {
+        /**
+         * UUID of the organization
+         */
+        org_id: string;
+        /**
+         * UUID of the invitation to resend
+         */
+        invitation_id: string;
+    };
+    query?: never;
+    url: '/api/organizations/{org_id}/invitations/{invitation_id}/resend/';
+};
+
+export type ApiOrganizationsInvitationsResendCreateErrors = {
+    /**
+     * Invitation already accepted
+     */
+    400: unknown;
+    /**
+     * Only organization admins can resend invitations
+     */
+    403: unknown;
+    /**
+     * Invitation not found
+     */
+    404: unknown;
+};
+
+export type ApiOrganizationsInvitationsResendCreateResponses = {
+    /**
+     * Invitation resent successfully
+     */
+    200: OrganizationInvitation;
+};
+
+export type ApiOrganizationsInvitationsResendCreateResponse = ApiOrganizationsInvitationsResendCreateResponses[keyof ApiOrganizationsInvitationsResendCreateResponses];
+
 export type ApiOrganizationsJobProfilesListData = {
     body?: never;
     path: {

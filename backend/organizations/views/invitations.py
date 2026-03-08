@@ -21,7 +21,7 @@ from ..serializers import (
     InvitationAcceptSerializer,
 )
 from ..emails import send_invitation_token_email
-from ..permissions import IsOrgAdminOfOwnOrganization, IsOrganizationMember
+from ..permissions import IsOrgAdminOfOwnOrganization, IsOrganizationAdmin, IsOrganizationMember
 
 
 @swagger_auto_schema(
@@ -384,3 +384,149 @@ def accept_invitation(request):
             "membership": membership_serializer.data,
         }
     )
+
+
+@swagger_auto_schema(
+    method="delete",
+    operation_description="""
+    Cancel a pending invitation.
+    Only organization admins can cancel invitations.
+    Only pending (not yet accepted) invitations can be cancelled.
+    """,
+    manual_parameters=[
+        openapi.Parameter(
+            "org_id",
+            openapi.IN_PATH,
+            description="UUID of the organization",
+            type=openapi.TYPE_STRING,
+            format="uuid",
+            required=True,
+        ),
+        openapi.Parameter(
+            "invitation_id",
+            openapi.IN_PATH,
+            description="UUID of the invitation to cancel",
+            type=openapi.TYPE_STRING,
+            format="uuid",
+            required=True,
+        ),
+    ],
+    responses={
+        200: "Invitation cancelled successfully",
+        400: "Invitation already accepted",
+        403: "Only organization admins can cancel invitations",
+        404: "Invitation not found",
+    },
+    tags=["Invitations"],
+)
+@api_view(["DELETE"])
+@permission_classes([IsAuthenticated, IsOrganizationAdmin])
+def cancel_invitation(request, org_id, invitation_id):
+    """
+    Cancel a pending invitation.
+
+    Business Rules:
+    - Only org admins can cancel invitations
+    - Cannot cancel invitations that have already been accepted
+    - Deletes the invitation record entirely
+    """
+    try:
+        invitation = OrganizationInvitation.objects.get(
+            id=invitation_id, organization_id=org_id
+        )
+    except OrganizationInvitation.DoesNotExist:
+        return Response(
+            {"error": "Invitation not found."},
+            status=status.HTTP_404_NOT_FOUND,
+        )
+
+    if invitation.accepted_at:
+        return Response(
+            {"error": "Cannot cancel an invitation that has already been accepted."},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    invitation.delete()
+    return Response({"message": "Invitation cancelled successfully."})
+
+
+@swagger_auto_schema(
+    method="post",
+    operation_description="""
+    Resend an invitation email.
+    Only organization admins can resend invitations.
+    Only pending (not yet accepted) invitations can be resent.
+    A new token and expiration date will be generated.
+    """,
+    manual_parameters=[
+        openapi.Parameter(
+            "org_id",
+            openapi.IN_PATH,
+            description="UUID of the organization",
+            type=openapi.TYPE_STRING,
+            format="uuid",
+            required=True,
+        ),
+        openapi.Parameter(
+            "invitation_id",
+            openapi.IN_PATH,
+            description="UUID of the invitation to resend",
+            type=openapi.TYPE_STRING,
+            format="uuid",
+            required=True,
+        ),
+    ],
+    responses={
+        200: openapi.Response(
+            "Invitation resent successfully", OrganizationInvitationSerializer
+        ),
+        400: "Invitation already accepted",
+        403: "Only organization admins can resend invitations",
+        404: "Invitation not found",
+    },
+    tags=["Invitations"],
+)
+@api_view(["POST"])
+@permission_classes([IsAuthenticated, IsOrganizationAdmin])
+def resend_invitation(request, org_id, invitation_id):
+    """
+    Resend an invitation email with a fresh token and expiration.
+
+    Business Rules:
+    - Only org admins can resend invitations
+    - Cannot resend invitations that have already been accepted
+    - Generates a new token and resets the expiration date
+    - Sends a new invitation email
+    """
+    try:
+        invitation = OrganizationInvitation.objects.get(
+            id=invitation_id, organization_id=org_id
+        )
+    except OrganizationInvitation.DoesNotExist:
+        return Response(
+            {"error": "Invitation not found."},
+            status=status.HTTP_404_NOT_FOUND,
+        )
+
+    if invitation.accepted_at:
+        return Response(
+            {"error": "Cannot resend an invitation that has already been accepted."},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    # Generate new token and reset expiration
+    from datetime import timedelta
+    from django.utils import timezone
+    from django.conf import settings
+
+    invitation.token = OrganizationInvitation._generate_token()
+    expiration_days = getattr(settings, "INVITATION_EXPIRY_DAYS", 7)
+    invitation.expires_at = timezone.now() + timedelta(days=expiration_days)
+    invitation.save()
+
+    # Send new invitation email
+    email_sent = send_invitation_token_email(invitation)
+
+    response_serializer = OrganizationInvitationSerializer(invitation)
+    response_data = {**response_serializer.data, "email_sent": email_sent}
+    return Response(response_data)

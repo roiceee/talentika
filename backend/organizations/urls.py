@@ -9,6 +9,8 @@ from .views import (
     leave_organization,
     create_invitation,
     list_organization_invitations,
+    cancel_invitation,
+    resend_invitation,
     validate_invitation,
     accept_invitation,
     upload_org_profile_picture,
@@ -52,6 +54,16 @@ urlpatterns = [
         "organizations/<uuid:org_id>/invitations/list/",
         list_organization_invitations,
         name="list-invitations",
+    ),
+    path(
+        "organizations/<uuid:org_id>/invitations/<uuid:invitation_id>/cancel/",
+        cancel_invitation,
+        name="cancel-invitation",
+    ),
+    path(
+        "organizations/<uuid:org_id>/invitations/<uuid:invitation_id>/resend/",
+        resend_invitation,
+        name="resend-invitation",
     ),
     path(
         "invitations/validate/",
