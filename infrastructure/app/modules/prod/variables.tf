@@ -48,3 +48,55 @@ variable "redis_version" {
   type        = string
   default     = "8"
 }
+
+# --- App Platform ---
+
+variable "app_env" {
+  description = "Map of environment variables for the app"
+  type        = map(string)
+  sensitive   = true
+  default     = {}
+}
+
+variable "dockerhub_registry_credentials" {
+  description = "Docker Hub credentials (username:token)"
+  type        = string
+  sensitive   = true
+  default     = ""
+}
+
+variable "app_domain" {
+  description = "Custom domain for the backend app"
+  type        = string
+  default     = "api.talentika.tech"
+}
+
+variable "app_instance_size" {
+  description = "Instance size slug for all app components"
+  type        = string
+  default     = "apps-s-1vcpu-1gb"
+}
+
+variable "app_instance_count" {
+  description = "Number of instances for the web service"
+  type        = number
+  default     = 1
+}
+
+variable "dockerhub_image_repo" {
+  description = "Docker Hub image repository name"
+  type        = string
+  default     = "talentika-backend"
+}
+
+variable "dockerhub_image_tag" {
+  description = "Docker image tag"
+  type        = string
+  default     = "latest"
+}
+
+variable "dockerhub_registry" {
+  description = "Docker Hub registry (username)"
+  type        = string
+  default     = "roiceee"
+}

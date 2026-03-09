@@ -100,6 +100,16 @@ module "prod" {
   db_name              = var.db_name
   redis_size           = var.redis_size
   redis_version        = var.redis_version
+
+  # App Platform
+  app_env                        = var.app_env
+  dockerhub_registry_credentials = var.dockerhub_registry_credentials
+  app_domain                     = var.app_domain
+  app_instance_size              = var.app_instance_size
+  app_instance_count             = var.app_instance_count
+  dockerhub_image_repo           = var.dockerhub_image_repo
+  dockerhub_image_tag            = var.dockerhub_image_tag
+  dockerhub_registry             = var.dockerhub_registry
 }
 
 # =================================================================
@@ -175,6 +185,70 @@ output "redis_uri" {
 }
 
 
-resource "digitalocean_app" "talentika-backend" {
+# =================================================================
+# App-level variables (passed through to prod module)
+# =================================================================
 
+variable "app_env" {
+  description = "Map of environment variables for the DigitalOcean App Platform app"
+  type        = map(string)
+  sensitive   = true
+  default     = {}
+}
+
+variable "dockerhub_registry_credentials" {
+  description = "Docker Hub credentials in the format username:token"
+  type        = string
+  sensitive   = true
+  default     = ""
+}
+
+variable "app_domain" {
+  description = "Custom domain for the backend app"
+  type        = string
+  default     = "api.talentika.tech"
+}
+
+variable "app_instance_size" {
+  description = "Instance size slug for all app components"
+  type        = string
+  default     = "apps-s-1vcpu-1gb"
+}
+
+variable "app_instance_count" {
+  description = "Number of instances for the web service"
+  type        = number
+  default     = 1
+}
+
+variable "dockerhub_image_repo" {
+  description = "Docker Hub repository (owner/repo format without tag)"
+  type        = string
+  default     = "talentika-backend"
+}
+
+variable "dockerhub_image_tag" {
+  description = "Docker image tag"
+  type        = string
+  default     = "latest"
+}
+
+variable "dockerhub_registry" {
+  description = "Docker Hub registry (username)"
+  type        = string
+  default     = "roiceee"
+}
+
+# =================================================================
+# Outputs — App (null in dev)
+# =================================================================
+
+output "app_live_url" {
+  description = "Live URL of the backend app (null in dev)"
+  value       = try(module.prod[0].app_live_url, null)
+}
+
+output "app_default_ingress" {
+  description = "Default ingress URL of the backend app (null in dev)"
+  value       = try(module.prod[0].app_default_ingress, null)
 }

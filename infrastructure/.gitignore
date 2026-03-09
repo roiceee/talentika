@@ -22,3 +22,4 @@ terraform.rc
 # Lock file (commit this)
 # .terraform.lock.hcl
 prod-secrets.tfvars
+app-env.auto.tfvars

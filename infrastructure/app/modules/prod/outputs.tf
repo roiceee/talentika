@@ -54,3 +54,15 @@ output "redis_uri" {
   value       = digitalocean_database_cluster.redis.uri
   sensitive   = true
 }
+
+# --- App Platform ---
+
+output "app_live_url" {
+  description = "Live URL of the backend app"
+  value       = digitalocean_app.talentika-backend.live_url
+}
+
+output "app_default_ingress" {
+  description = "Default ingress URL of the backend app"
+  value       = digitalocean_app.talentika-backend.default_ingress
+}
