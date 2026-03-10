@@ -370,6 +370,11 @@ def accept_invitation(request):
         user=request.user, organization=invitation.organization, role=invitation.role
     )
 
+    # Auto-select this org if the user has no default organization yet
+    if request.user.default_organization is None:
+        request.user.default_organization = invitation.organization
+        request.user.save(update_fields=["default_organization"])
+
     # Mark invitation as accepted
     invitation.accept()
 

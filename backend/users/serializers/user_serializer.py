@@ -95,6 +95,9 @@ class UserSerializer(serializers.ModelSerializer):
                 role=invitation.role,
             )
             invitation.accept()
+            # Auto-select the invited org as the user's default
+            user.default_organization = invitation.organization
+            user.save(update_fields=["default_organization"])
 
         return user
 

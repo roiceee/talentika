@@ -564,6 +564,10 @@ class InvitationAcceptanceAPITests(APITestCase):
         invitation.refresh_from_db()
         self.assertIsNotNone(invitation.accepted_at)
 
+        # Verify default_organization is auto-set
+        self.invited_user.refresh_from_db()
+        self.assertEqual(self.invited_user.default_organization, self.org)
+
     def test_accept_invitation_as_admin(self):
         """Test accepting invitation with ORG_ADMIN role"""
         invitation = OrganizationInvitation.objects.create(
@@ -706,7 +710,39 @@ class InvitationAcceptanceAPITests(APITestCase):
 
         # Should fail because user already has membership
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertIn("already belong to an organization", str(response.data).lower())
+        self.assertIn("already a member", str(response.data).lower())
+
+    def test_accept_invitation_does_not_overwrite_existing_default_org(self):
+        """Test that accepting an invitation does not overwrite an existing default_organization"""
+        # Create a second org and set it as the user's default
+        other_org = Organization.objects.create(
+            name="Other Org", status=Organization.Status.APPROVED
+        )
+        OrganizationMembership.objects.create(
+            user=self.invited_user,
+            organization=other_org,
+            role=OrganizationMembership.Role.MEMBER,
+        )
+        self.invited_user.default_organization = other_org
+        self.invited_user.save(update_fields=["default_organization"])
+
+        invitation = OrganizationInvitation.objects.create(
+            organization=self.org,
+            email="invited@example.com",
+            role=OrganizationInvitation.Role.MEMBER,
+            invited_by=self.admin_user,
+        )
+
+        url = reverse("accept-invitation")
+        self.client.force_authenticate(user=self.invited_user)
+        data = {"token": invitation.token}
+        response = self.client.post(url, data, format="json")
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        # default_organization should still be the other org
+        self.invited_user.refresh_from_db()
+        self.assertEqual(self.invited_user.default_organization, other_org)
 
 
 class InvitationEmailTests(TestCase):
