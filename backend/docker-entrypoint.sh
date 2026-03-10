@@ -10,6 +10,10 @@ if [ -n "$DB_HOST" ]; then
   echo "PostgreSQL is ready."
 fi
 
+# Verify all external services are reachable before proceeding
+echo "Checking external service health..."
+uv run python manage.py check_services
+
 # Run migrations
 echo "Applying database migrations..."
 uv run python manage.py migrate --noinput

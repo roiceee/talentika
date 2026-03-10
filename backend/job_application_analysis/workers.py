@@ -216,6 +216,13 @@ def _get_redis_connection():
     import redis
     from django.conf import settings
 
+    ssl_enabled = getattr(settings, "REDIS_SSL", False)
+    if ssl_enabled:
+        import ssl as ssl_module
+        return redis.Redis.from_url(
+            settings.REDIS_URL,
+            ssl_cert_reqs=ssl_module.CERT_NONE,
+        )
     return redis.Redis.from_url(settings.REDIS_URL)
 
 

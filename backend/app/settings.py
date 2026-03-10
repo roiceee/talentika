@@ -147,6 +147,8 @@ AWS_S3_REGION_NAME = os.getenv("AWS_S3_REGION_NAME", "us-east-1")
 
 # Redis Configuration (used by RQ workers for the analysis pipeline)
 REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379/0")
+# Set REDIS_SSL=True in production when using a TLS-enabled Redis (e.g. Upstash, ElastiCache)
+REDIS_SSL = os.getenv("REDIS_SSL", "False") == "True"
 
 # AI Provider Configuration
 # Set AI_PROVIDER to 'openai' or 'gemini' to choose the LLM backend

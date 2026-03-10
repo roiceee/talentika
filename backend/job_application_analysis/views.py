@@ -151,7 +151,8 @@ def get_analysis(request, application_id):
 @swagger_auto_schema(
     method="post",
     operation_description=(
-        "Re-trigger the analysis pipeline for a FAILED application analysis.  "
+        "Re-trigger the analysis pipeline for a FAILED or UPLOADED application analysis.  "
+        "UPLOADED analyses may be stuck when Redis was unavailable during submission.  "
         "Resets the status to UPLOADED and re-enqueues the OCR task."
     ),
     manual_parameters=[
@@ -204,10 +205,11 @@ def retry_analysis(request, application_id):
             status=status.HTTP_404_NOT_FOUND,
         )
 
-    if (
-        analysis.status != ApplicationAnalysis.Status.FAILED
-        or analysis.status != ApplicationAnalysis.Status.OCR_PENDING
-    ):
+    retryable_statuses = (
+        ApplicationAnalysis.Status.FAILED,
+        ApplicationAnalysis.Status.UPLOADED,
+    )
+    if analysis.status not in retryable_statuses:
         return Response(
             {
                 "detail": f"Analysis is in '{analysis.status}' state, not subject for retry."
