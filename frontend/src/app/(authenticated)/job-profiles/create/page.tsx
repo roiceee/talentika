@@ -11,10 +11,7 @@ import {
   listExperienceLevels,
   createJobProfile,
 } from "@/lib/api";
-import type {
-  JobCategory,
-  ExperienceLevel,
-} from "@/lib/client";
+import type { JobCategory, ExperienceLevel } from "@/lib/client";
 import {
   JobProfileForm,
   type JobProfileFormValues,
@@ -39,10 +36,7 @@ export default function CreateJobProfilePage() {
       router.replace("/organizations");
       return;
     }
-    Promise.all([
-      listJobCategories(),
-      listExperienceLevels(),
-    ])
+    Promise.all([listJobCategories(), listExperienceLevels()])
       .then(([cats, levels]) => {
         setCategories(cats ?? []);
         setExperienceLevels(levels ?? []);

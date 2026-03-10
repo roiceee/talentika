@@ -6,7 +6,8 @@ from rest_framework import status
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
 
-from organizations.models import Organization, is_org_admin
+from organizations.models import Organization
+from organizations.models.organization_membership import OrganizationMembership
 from .models import (
     JobCategory,
     ExperienceLevel,
@@ -78,9 +79,15 @@ def create_job_profile(request):
             status=status.HTTP_400_BAD_REQUEST,
         )
 
-    if not is_org_admin(request.user, organization):
+    is_member = (
+        request.user.is_superuser
+        or OrganizationMembership.objects.filter(
+            user=request.user, organization=organization
+        ).exists()
+    )
+    if not is_member:
         return Response(
-            {"error": "Only organization admins can create job profiles."},
+            {"error": "You must be a member of this organization to create job profiles."},
             status=status.HTTP_403_FORBIDDEN,
         )
 
@@ -166,7 +173,7 @@ def get_job_profile(request, job_id):
 
 @swagger_auto_schema(
     method="patch",
-    operation_description="Update a job profile.",
+    operation_description="Update a job profile. Any organization member can update a job profile.",
     manual_parameters=[
         openapi.Parameter(
             "job_id",
@@ -197,9 +204,15 @@ def update_job_profile(request, job_id):
         JobProfile.objects.select_related("organization"), id=job_id
     )
 
-    if not is_org_admin(request.user, job_profile.organization):
+    is_member = (
+        request.user.is_superuser
+        or OrganizationMembership.objects.filter(
+            user=request.user, organization=job_profile.organization
+        ).exists()
+    )
+    if not is_member:
         return Response(
-            {"error": "Only organization admins can update job profiles."},
+            {"error": "You must be a member of this organization to update job profiles."},
             status=status.HTTP_403_FORBIDDEN,
         )
 
