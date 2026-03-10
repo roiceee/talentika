@@ -601,6 +601,7 @@ export default function PublicJobProfilePage({
             <CardTitle className="flex items-center gap-2 text-base">
               <Upload className="h-4 w-4" />
               Resume
+              <span className="text-destructive">*</span>
             </CardTitle>
             <CardDescription>
               Upload your resume (PDF, DOC, DOCX — max 10MB)
@@ -615,6 +616,7 @@ export default function PublicJobProfilePage({
                 onChange={handleResumeChange}
                 disabled={isUploading}
                 className="cursor-pointer"
+                required
               />
               {isUploading && (
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">

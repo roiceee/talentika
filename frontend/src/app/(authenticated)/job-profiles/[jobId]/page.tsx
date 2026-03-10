@@ -50,6 +50,11 @@ import {
   Loader2,
   Lock,
 } from "lucide-react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 export default function JobProfileDetailPage({
   params,
@@ -293,14 +298,20 @@ export default function JobProfileDetailPage({
               Copy Public URL
             </Button>
             {hasSubmissions ? (
-              <Button
-                variant="outline"
-                disabled
-                title="Editing is disabled because this job profile has submissions"
-              >
-                <Lock className="mr-2 h-4 w-4" />
-                Edit
-              </Button>
+              <Tooltip>
+                <TooltipTrigger>
+                  <Button variant="outline" disabled>
+                    <Lock className="mr-2 h-4 w-4" />
+                    Edit
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>
+                    Editing is disabled because this job profile has
+                    submissions.
+                  </p>
+                </TooltipContent>
+              </Tooltip>
             ) : (
               <Button variant="outline" onClick={() => setIsEditMode(true)}>
                 <Pencil className="mr-2 h-4 w-4" />
