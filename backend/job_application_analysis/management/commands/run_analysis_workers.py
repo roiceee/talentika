@@ -25,7 +25,15 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options):
-        conn = redis.Redis.from_url(settings.REDIS_URL)
+        import ssl as ssl_module
+
+        ssl_enabled = getattr(settings, "REDIS_SSL", False)
+        if ssl_enabled:
+            conn = redis.Redis.from_url(
+                settings.REDIS_URL, ssl_cert_reqs=ssl_module.CERT_NONE
+            )
+        else:
+            conn = redis.Redis.from_url(settings.REDIS_URL)
 
         queue_name = options.get("queue")
         if queue_name:
