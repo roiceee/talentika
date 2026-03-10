@@ -299,8 +299,11 @@ export default function JobProfileDetailPage({
             </Button>
             {hasSubmissions ? (
               <Tooltip>
-                <TooltipTrigger>
-                  <Button variant="outline" disabled>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className="text-muted-foreground cursor-not-allowed"
+                  >
                     <Lock className="mr-2 h-4 w-4" />
                     Edit
                   </Button>
