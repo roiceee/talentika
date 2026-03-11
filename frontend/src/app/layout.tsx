@@ -21,7 +21,6 @@ export const metadata: Metadata = {
   title: "Talentika",
   description: "AI-Powered Talent Management Platform",
 };
-
 export default function RootLayout({
   children,
 }: Readonly<{
