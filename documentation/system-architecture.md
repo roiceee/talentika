@@ -25,7 +25,11 @@ graph TB
             AIWorker["AI Worker<br/>rqworker ai_queue"]
         end
 
-        LocalStorage["Local File Storage"]
+    end
+
+    subgraph AWS
+        S3Dev["S3 Bucket<br/>talentika-dev-bucket<br/>(ap-southeast-1)"]
+        IAMDev["IAM User<br/>Backend S3 Access"]
     end
 
     subgraph External Services
@@ -33,14 +37,17 @@ graph TB
         SMTP["Gmail SMTP"]
     end
 
-    ApiRoutes -- "HTTP (JWT)" --> Django
+    APIRoutes -- "HTTP (JWT)" --> Django
     Django --> Postgres
     Django --> Redis
     Redis --> OCRWorker
     Redis --> AIWorker
-    OCRWorker -- "doctr OCR" --> Django
+    OCRWorker --> Postgres
+    AIWorker --> Postgres
     AIWorker --> OpenAI
-    Django --> LocalStorage
+    Django --> S3Dev
+    OCRWorker --> S3Dev
+    IAMDev -.->|credentials| S3Dev
     Django --> SMTP
 
     Browser["Browser"] --> NextJS
@@ -56,8 +63,8 @@ graph TB
 
     subgraph Vercel
         NextJS["Next.js Frontend<br/>talentika.vercel.app"]
-        BFF["API Routes"]
-        NextJS --> BFF
+        APIRoutes["API Routes"]
+        NextJS --> APIRoutes
     end
 
     subgraph DigitalOcean["DigitalOcean (sgp1)"]
@@ -84,7 +91,7 @@ graph TB
     end
 
     Browser --> NextJS
-    BFF -- "HTTPS (JWT)" --> Gunicorn
+    APIRoutes -- "HTTPS (JWT)" --> Gunicorn
     Gunicorn --> ManagedPostgres
     Gunicorn --> ManagedRedis
     ManagedRedis --> OCRWorker
@@ -94,7 +101,6 @@ graph TB
     AIWorker --> OpenAI
     Gunicorn --> S3
     OCRWorker --> S3
-    AIWorker --> S3
     IAM -.->|credentials| S3
     Gunicorn --> SMTP
 ```
