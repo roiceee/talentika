@@ -81,8 +81,6 @@ graph TB
     subgraph AWS
         S3["S3 Bucket<br/>File Storage<br/>(resumes, exports)"]
         IAM["IAM User<br/>Backend S3 Access"]
-        S3State["S3 Bucket<br/>Terraform State"]
-        DynamoDB["DynamoDB<br/>Terraform Locks"]
     end
 
     subgraph External
