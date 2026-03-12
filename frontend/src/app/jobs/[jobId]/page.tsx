@@ -148,13 +148,15 @@ export default function PublicJobProfilePage({
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Validate file type
+    // Validate file type (check MIME type AND extension — MIME can be unreliable)
     const allowedTypes = [
       "application/pdf",
       "application/msword",
       "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
     ];
-    if (!allowedTypes.includes(file.type)) {
+    const allowedExtensions = [".pdf", ".doc", ".docx"];
+    const ext = "." + file.name.split(".").pop()?.toLowerCase();
+    if (!allowedTypes.includes(file.type) && !allowedExtensions.includes(ext)) {
       setUploadError("Only PDF, DOC, and DOCX files are allowed");
       return;
     }

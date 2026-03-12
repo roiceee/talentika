@@ -27,7 +27,7 @@ services:
         "manage.py",
         "run_analysis_workers",
         "--queue",
-        "ocr",
+        "ocr_queue",
       ]
     volumes:
       - .:/app
@@ -51,7 +51,7 @@ services:
         "manage.py",
         "run_analysis_workers",
         "--queue",
-        "ai_analysis",
+        "ai_queue",
       ]
     volumes:
       - .:/app

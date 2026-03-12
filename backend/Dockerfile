@@ -1,12 +1,14 @@
 FROM python:3.13-slim
 
 # System deps: tesseract-ocr (OCR engine), poppler-utils (pdf2image),
-# libpq-dev (psycopg2), netcat-openbsd (DB readiness check)
+# libpq-dev (psycopg2), netcat-openbsd (DB readiness check),
+# libreoffice (DOCX → PDF conversion)
 RUN apt-get update && apt-get install -y --no-install-recommends \
     tesseract-ocr \
     poppler-utils \
     libpq-dev \
     netcat-openbsd \
+    libreoffice \
   && rm -rf /var/lib/apt/lists/*
 
 # Install uv (fast Python package manager)

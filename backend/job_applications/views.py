@@ -1,3 +1,5 @@
+import os
+
 from django.db.models import F, IntegerField, OuterRef, Subquery
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
@@ -184,6 +186,22 @@ def upload_resume(request):
                     f"Current size: {uploaded_file.size / (1024 * 1024):.2f} MB"
                 )
             },
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    allowed_extensions = {".pdf", ".doc", ".docx"}
+    allowed_content_types = {
+        "application/pdf",
+        "application/msword",
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    }
+    file_ext = os.path.splitext(uploaded_file.name)[1].lower()
+    if (
+        file_ext not in allowed_extensions
+        and uploaded_file.content_type not in allowed_content_types
+    ):
+        return Response(
+            {"file": "Only PDF, DOC, and DOCX files are allowed."},
             status=status.HTTP_400_BAD_REQUEST,
         )
 

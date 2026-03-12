@@ -78,6 +78,70 @@ def _collect_qa_pairs(job_application):
     return pairs
 
 
+def _replace_resume_with_pdf(
+    job_application, docx_storage_path: str, pdf_bytes: bytes
+) -> str:
+    """
+    Persist converted PDF bytes to storage, delete the original DOCX,
+    and update the ApplicationAttachment DB record.
+
+    Returns the new PDF storage path.
+    """
+    from django.conf import settings
+    from job_applications.models import ApplicationAttachment
+
+    # Derive new path — preserve original casing of the base name
+    base = docx_storage_path[:-5]  # strip the 5-char ".docx" (or ".DOCX")
+    pdf_storage_path = base + ".pdf"
+
+    backend_type = getattr(settings, "STORAGE_BACKEND", "local").lower()
+
+    if backend_type == "s3":
+        import boto3
+
+        client = boto3.client(
+            "s3",
+            region_name=settings.AWS_S3_REGION_NAME,
+            aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
+            aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
+        )
+        bucket = settings.AWS_STORAGE_BUCKET_NAME
+        client.put_object(
+            Bucket=bucket,
+            Key=pdf_storage_path,
+            Body=pdf_bytes,
+            ContentType="application/pdf",
+        )
+        client.delete_object(Bucket=bucket, Key=docx_storage_path)
+    else:
+        from pathlib import Path
+
+        media_root = Path(settings.MEDIA_ROOT)
+        pdf_full_path = media_root / pdf_storage_path
+        pdf_full_path.parent.mkdir(parents=True, exist_ok=True)
+        pdf_full_path.write_bytes(pdf_bytes)
+        docx_full_path = media_root / docx_storage_path
+        docx_full_path.unlink(missing_ok=True)
+
+    # Update the attachment record
+    attachment = ApplicationAttachment.objects.filter(
+        job_application=job_application,
+        file_type=ApplicationAttachment.FileType.RESUME,
+    ).first()
+    if attachment:
+        old_name = attachment.file_name
+        if old_name.lower().endswith(".docx"):
+            attachment.file_name = old_name[:-5] + ".pdf"
+        attachment.file = pdf_storage_path
+        attachment.file_size = len(pdf_bytes)
+        attachment.save(update_fields=["file", "file_name", "file_size"])
+
+    logger.info(
+        "Replaced DOCX with PDF: %s → %s", docx_storage_path, pdf_storage_path
+    )
+    return pdf_storage_path
+
+
 # ---------------------------------------------------------------------------
 # Queue tasks
 # ---------------------------------------------------------------------------
@@ -88,13 +152,17 @@ def process_ocr(application_analysis_id: str):
     OCR worker task — runs on the ``ocr_queue``.
 
     1. Set status → OCR_PENDING
-    2. Download the resume PDF from storage
-    3. Extract text via doctr
-    4. Save extracted text, set status → OCR_DONE
-    5. Enqueue the AI analysis task on ``ai_queue``
+    2. Download the resume from storage
+    3. If DOCX, convert to PDF via LibreOffice first
+    4. Extract text via pytesseract
+    5. Save extracted text, set status → OCR_DONE
+    6. Enqueue the AI analysis task on ``ai_queue``
     """
     from job_application_analysis.models import ApplicationAnalysis
-    from job_application_analysis.ocr_service import extract_text_from_pdf_bytes
+    from job_application_analysis.ocr_service import (
+        convert_docx_to_pdf_bytes,
+        extract_text_from_pdf_bytes,
+    )
 
     analysis = ApplicationAnalysis.objects.select_related("job_application").get(
         id=application_analysis_id
@@ -108,7 +176,21 @@ def process_ocr(application_analysis_id: str):
 
         # 2. Download resume
         storage_path = _get_resume_storage_path(analysis.job_application)
-        pdf_bytes = _download_resume_bytes(storage_path)
+        file_bytes = _download_resume_bytes(storage_path)
+
+        # 2a. Convert DOCX → PDF if necessary
+        storage_path_lower = str(storage_path).lower()
+        if storage_path_lower.endswith(".docx"):
+            logger.info(
+                "DOCX detected for analysis %s — converting to PDF via LibreOffice",
+                analysis.id,
+            )
+            file_bytes = convert_docx_to_pdf_bytes(file_bytes)
+            storage_path = _replace_resume_with_pdf(
+                analysis.job_application, str(storage_path), file_bytes
+            )
+
+        pdf_bytes = file_bytes
 
         # 3. Extract text
         extracted = extract_text_from_pdf_bytes(pdf_bytes)
