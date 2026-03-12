@@ -319,7 +319,11 @@ export default function ApplicationDetailPage({
                   )}
                 </SelectTrigger>
                 <SelectContent>
-                  {UPDATABLE_STATUSES.map((s) => (
+                  {UPDATABLE_STATUSES.filter(
+                    (s) =>
+                      s.value !== "to_be_reviewed" ||
+                      application.status === "to_be_reviewed",
+                  ).map((s) => (
                     <SelectItem
                       key={s.value}
                       value={s.value}

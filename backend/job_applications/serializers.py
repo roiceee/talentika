@@ -202,6 +202,7 @@ class JobApplicationCreateSerializer(serializers.ModelSerializer):
             first_name=attrs.get("first_name", ""),
             last_name=attrs.get("last_name", ""),
             phone=attrs.get("phone", ""),
+            email=attrs.get("email", ""),
             sha256_hash=sha256_hash,
             threshold=DUPLICATE_THRESHOLD,
         )

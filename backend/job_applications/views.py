@@ -616,8 +616,11 @@ def download_resume(request, org_id, job_profile_id, job_application_id):
     Allowed status transitions:
     - to_be_reviewed → reviewed, shortlisted, rejected
     - reviewed → shortlisted, rejected
-    - shortlisted → rejected
+    - shortlisted → reviewed, rejected
     - rejected → reviewed, shortlisted
+
+    Once an application has moved away from ``to_be_reviewed`` it cannot be
+    reverted back to that status.
     """,
     manual_parameters=[
         openapi.Parameter(
@@ -702,6 +705,16 @@ def update_application_status(request, org_id, job_profile_id, job_application_i
             {
                 "detail": f"Invalid status. Must be one of: {', '.join(sorted(valid_statuses))}"
             },
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    # Once an application has left 'to_be_reviewed' it cannot be reverted.
+    if (
+        new_status == JobApplication.Status.TO_BE_REVIEWED
+        and job_application.status != JobApplication.Status.TO_BE_REVIEWED
+    ):
+        return Response(
+            {"detail": "Cannot revert status back to 'to_be_reviewed' once it has been reviewed."},
             status=status.HTTP_400_BAD_REQUEST,
         )
 

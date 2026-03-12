@@ -22,8 +22,9 @@ from rapidfuzz import fuzz
 # Weights must sum to 1.0
 # ---------------------------------------------------------------------------
 _WEIGHTS: dict[str, float] = {
-    "name": 0.40,
-    "phone": 0.35,
+    "name": 0.30,
+    "phone": 0.25,
+    "email": 0.20,
     "file_hash": 0.25,
 }
 
@@ -71,6 +72,13 @@ def _file_hash_score(incoming_hash: Optional[str], candidate) -> float:
     return 1.0 if matched else 0.0
 
 
+def _email_score(incoming_email: str, candidate) -> float:
+    """1.0 if email matches (case-insensitive)."""
+    if not incoming_email:
+        return 0.0
+    return 1.0 if (candidate.email or "").lower() == incoming_email.lower() else 0.0
+
+
 # ---------------------------------------------------------------------------
 # Public API
 # ---------------------------------------------------------------------------
@@ -82,6 +90,7 @@ def find_duplicates(
     first_name: str,
     last_name: str,
     phone: str,
+    email: str = "",
     sha256_hash: Optional[str] = None,
     exclude_id=None,
     threshold: float = DUPLICATE_THRESHOLD,
@@ -99,6 +108,8 @@ def find_duplicates(
         Applicant name from the incoming submission.
     phone:
         Applicant phone (empty string is fine).
+    email:
+        Applicant email (empty string is fine).
     sha256_hash:
         SHA-256 hex digest of the uploaded resume (if any).
     exclude_id:
@@ -124,12 +135,14 @@ def find_duplicates(
     if exclude_id:
         candidates_qs = candidates_qs.exclude(id=exclude_id)
 
-    # Narrow: exact phone OR file hash match.
+    # Narrow: exact phone OR file hash OR email match.
     narrowing_filter = Q()
     if phone:
         narrowing_filter |= Q(phone=phone)
     if sha256_hash:
         narrowing_filter |= Q(attachments__sha256_hash=sha256_hash)
+    if email:
+        narrowing_filter |= Q(email__iexact=email)
 
     if narrowing_filter:
         candidates_qs = candidates_qs.filter(narrowing_filter).distinct()
@@ -145,6 +158,7 @@ def find_duplicates(
             "phone": (
                 1.0 if phone and (candidate.phone or "").strip() == phone else 0.0
             ),
+            "email": _email_score(email, candidate),
             "file_hash": _file_hash_score(sha256_hash, candidate),
         }
 
@@ -169,6 +183,7 @@ def is_duplicate(
     first_name: str,
     last_name: str,
     phone: str,
+    email: str = "",
     sha256_hash: Optional[str] = None,
     exclude_id=None,
     threshold: float = DUPLICATE_THRESHOLD,
@@ -180,6 +195,7 @@ def is_duplicate(
             first_name=first_name,
             last_name=last_name,
             phone=phone,
+            email=email,
             sha256_hash=sha256_hash,
             exclude_id=exclude_id,
             threshold=threshold,
