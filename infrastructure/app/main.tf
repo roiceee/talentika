@@ -239,18 +239,7 @@ variable "dockerhub_registry" {
   default     = "roiceee"
 }
 
-# =================================================================
-# Module: Vercel (frontend — both environments)
-# =================================================================
 
-module "vercel" {
-  source = "./modules/vercel"
-
-  project_name    = var.project_name
-  backend_url     = var.vercel_backend_url
-  frontend_domain = var.vercel_frontend_domain
-  vercel_team_id  = var.vercel_team_id
-}
 
 # =================================================================
 # Outputs — App (null in dev)
@@ -264,48 +253,4 @@ output "app_live_url" {
 output "app_default_ingress" {
   description = "Default ingress URL of the backend app (null in dev)"
   value       = try(module.prod[0].app_default_ingress, null)
-}
-
-# =================================================================
-# Vercel variables
-# =================================================================
-
-variable "vercel_api_token" {
-  description = "Vercel API token"
-  type        = string
-  sensitive   = true
-  default     = ""
-}
-
-variable "vercel_team_id" {
-  description = "Vercel team ID (leave empty for personal accounts)"
-  type        = string
-  default     = ""
-}
-
-variable "vercel_backend_url" {
-  description = "Backend API URL to inject as BACKEND_URL on Vercel"
-  type        = string
-  sensitive   = true
-  default     = ""
-}
-
-variable "vercel_frontend_domain" {
-  description = "Custom domain for the Vercel frontend (e.g. talentika.tech)"
-  type        = string
-  default     = ""
-}
-
-# =================================================================
-# Outputs — Vercel
-# =================================================================
-
-output "vercel_project_id" {
-  description = "Vercel project ID"
-  value       = module.vercel.project_id
-}
-
-output "vercel_deployment_url" {
-  description = "Default Vercel deployment URL"
-  value       = module.vercel.deployment_url
 }

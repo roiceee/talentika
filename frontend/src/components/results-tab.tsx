@@ -31,6 +31,11 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import {
   Mail,
   User,
   Brain,
@@ -273,6 +278,19 @@ export function ResultsTab({ orgId, jobProfileId }: ResultsTabProps) {
 
   const totalApplications = categories.reduce((sum, c) => sum + c.count, 0);
 
+  const PENDING_ANALYSIS_STATUSES = new Set([
+    "uploaded",
+    "ocr_pending",
+    "ocr_done",
+    "ai_pending",
+  ]);
+  const hasPendingAnalysis = categories.some((c) =>
+    c.preview.some((app) => {
+      const analysis = (app.analysis ?? null) as AnalysisData | null;
+      return analysis?.status && PENDING_ANALYSIS_STATUSES.has(analysis.status);
+    }),
+  );
+
   if (totalApplications === 0) {
     return (
       <Card>
@@ -297,6 +315,11 @@ export function ResultsTab({ orgId, jobProfileId }: ResultsTabProps) {
           label="Export All"
           isExporting={(fmt) => exportingStatuses.has(`_${fmt}`)}
           onExport={(fmt) => handleExport("", fmt)}
+          disabledReason={
+            hasPendingAnalysis
+              ? "Some applications are still being processed. Wait for all analyses to complete before exporting."
+              : undefined
+          }
         />
       </div>
 
@@ -336,6 +359,11 @@ export function ResultsTab({ orgId, jobProfileId }: ResultsTabProps) {
                         exportingStatuses.has(`${category.status}_${fmt}`)
                       }
                       onExport={(fmt) => handleExport(category.status, fmt)}
+                      disabledReason={
+                        hasPendingAnalysis
+                          ? "Some applications are still being processed. Wait for all analyses to complete before exporting."
+                          : undefined
+                      }
                     />
                   </div>
                 )}
@@ -347,6 +375,7 @@ export function ResultsTab({ orgId, jobProfileId }: ResultsTabProps) {
                 <PreviewTable
                   applications={category.preview}
                   onRowClick={goToApplication}
+                  highlightStatus="shortlisted"
                 />
                 {category.count > category.preview.length && (
                   <p className="mt-3 text-xs text-muted-foreground text-center">
@@ -377,27 +406,43 @@ function ExportDropdown({
   label,
   isExporting,
   onExport,
+  disabledReason,
 }: {
   label: string;
   isExporting: (format: "csv" | "xlsx") => boolean;
   onExport: (format: "csv" | "xlsx") => void;
+  disabledReason?: string;
 }) {
   const csvBusy = isExporting("csv");
   const xlsxBusy = isExporting("xlsx");
   const anyBusy = csvBusy || xlsxBusy;
+  const isDisabled = anyBusy || !!disabledReason;
+
+  const trigger = (
+    <Button variant="outline" size="sm" disabled={isDisabled}>
+      {anyBusy ? (
+        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+      ) : (
+        <Download className="mr-2 h-4 w-4" />
+      )}
+      {anyBusy ? "Exporting…" : label}
+    </Button>
+  );
 
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button variant="outline" size="sm" disabled={anyBusy}>
-          {anyBusy ? (
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-          ) : (
-            <Download className="mr-2 h-4 w-4" />
-          )}
-          {anyBusy ? "Exporting…" : label}
-        </Button>
-      </DropdownMenuTrigger>
+      {disabledReason && !anyBusy ? (
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <span tabIndex={0}>{trigger}</span>
+          </TooltipTrigger>
+          <TooltipContent side="left" className="max-w-64">
+            {disabledReason}
+          </TooltipContent>
+        </Tooltip>
+      ) : (
+        <DropdownMenuTrigger asChild>{trigger}</DropdownMenuTrigger>
+      )}
       <DropdownMenuContent align="end">
         <DropdownMenuItem disabled={csvBusy} onClick={() => onExport("csv")}>
           <FileText className="mr-2 h-4 w-4" />
@@ -417,9 +462,11 @@ function ExportDropdown({
 function PreviewTable({
   applications,
   onRowClick,
+  highlightStatus,
 }: {
   applications: JobApplicationDetailWithAnalysis[];
   onRowClick: (id: string) => void;
+  highlightStatus?: string;
 }) {
   return (
     <div className="rounded-md border">
@@ -437,11 +484,12 @@ function PreviewTable({
           {applications.map((app) => {
             const analysis = (app.analysis ??
               null) as unknown as AnalysisData | null;
+            const isHighlighted = highlightStatus && app.status === highlightStatus;
 
             return (
               <TableRow
                 key={app.id}
-                className="cursor-pointer hover:bg-muted/50"
+                className={`cursor-pointer ${isHighlighted ? "bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/30 dark:hover:bg-emerald-950/50" : "hover:bg-muted/50"}`}
                 onClick={() => app.id && onRowClick(app.id)}
               >
                 {/* Applicant */}

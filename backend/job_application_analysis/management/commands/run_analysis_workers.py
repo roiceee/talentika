@@ -2,9 +2,10 @@
 Django management command to start the RQ workers for the analysis pipeline.
 
 Usage:
-    uv run python manage.py run_analysis_workers          # both queues
+    uv run python manage.py run_analysis_workers                      # all queues
     uv run python manage.py run_analysis_workers --queue ocr_queue
     uv run python manage.py run_analysis_workers --queue ai_queue
+    uv run python manage.py run_analysis_workers --queue export_queue
 """
 
 from django.core.management.base import BaseCommand
@@ -14,14 +15,14 @@ from job_application_analysis.workers import _get_redis_connection
 
 
 class Command(BaseCommand):
-    help = "Start RQ workers for the OCR and AI analysis queues"
+    help = "Start RQ workers for the OCR, AI analysis, and export queues"
 
     def add_arguments(self, parser):
         parser.add_argument(
             "--queue",
             type=str,
             default=None,
-            help="Listen on a specific queue only (ocr_queue or ai_queue). Default: both.",
+            help="Listen on a specific queue only (ocr_queue, ai_queue, export_queue). Default: all.",
         )
 
     def handle(self, *args, **options):
@@ -35,8 +36,9 @@ class Command(BaseCommand):
             queues = [
                 Queue("ocr_queue", connection=conn),
                 Queue("ai_queue", connection=conn),
+                Queue("export_queue", connection=conn),
             ]
-            self.stdout.write("Starting worker on queues: ocr_queue, ai_queue")
+            self.stdout.write("Starting worker on queues: ocr_queue, ai_queue, export_queue")
 
         worker = Worker(queues, connection=conn)
         worker.work(with_scheduler=False)

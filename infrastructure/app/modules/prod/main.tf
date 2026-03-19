@@ -125,6 +125,22 @@ resource "digitalocean_app" "talentika-backend" {
       }
     }
 
+    # ── Export worker ──
+    worker {
+      name               = "export-worker"
+      instance_count     = 1
+      instance_size_slug = var.app_instance_size
+      run_command        = "uv run python manage.py run_analysis_workers --queue export_queue"
+
+      image {
+        registry_type        = "DOCKER_HUB"
+        registry             = var.dockerhub_registry
+        repository           = var.dockerhub_image_repo
+        tag                  = var.dockerhub_image_tag
+        registry_credentials = var.dockerhub_registry_credentials
+      }
+    }
+
     # ── Ingress routing ──
     ingress {
       rule {

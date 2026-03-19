@@ -64,6 +64,30 @@ services:
       redis:
         condition: service_healthy
 
+  export-worker:
+    build: .
+    container_name: talentika_export_worker
+    command:
+      [
+        "uv",
+        "run",
+        "python",
+        "manage.py",
+        "run_analysis_workers",
+        "--queue",
+        "export_queue",
+      ]
+    volumes:
+      - .:/app
+      - /app/.venv
+    env_file:
+      - .env
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
   postgres:
     image: postgres:16-alpine
     container_name: talentika_postgres

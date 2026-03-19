@@ -22,17 +22,10 @@ logger = logging.getLogger(__name__)
 # ---------------------------------------------------------------------------
 
 
-def _get_redis_connection():
-    """Return a Redis connection from Django settings."""
-    import redis
-    from django.conf import settings
-
-    return redis.Redis.from_url(settings.REDIS_URL)
-
-
 def enqueue_export(export_job_id: str):
     """Enqueue an export task on ``export_queue``."""
     from rq import Queue
+    from job_application_analysis.workers import _get_redis_connection
 
     q = Queue("export_queue", connection=_get_redis_connection())
     q.enqueue(process_export, export_job_id)
