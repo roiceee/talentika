@@ -33,9 +33,8 @@ resource "vercel_project" "frontend" {
     production_branch = "main"
   }
 
-  root_directory             = "frontend"
-  ignore_command             = "git diff HEAD^ HEAD --quiet -- frontend/"
-  serverless_function_region = "sin1"
+  root_directory = "frontend"
+  ignore_command = "git diff HEAD^ HEAD --quiet -- frontend/"
 }
 
 # -----------------------------------------------------------------
