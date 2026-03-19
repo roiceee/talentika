@@ -8,6 +8,10 @@ terraform {
       source  = "digitalocean/digitalocean"
       version = "~> 2.0"
     }
+    vercel = {
+      source  = "vercel/vercel"
+      version = "~> 2.0"
+    }
   }
 
   # Backend is configured per environment via -backend-config flag:
@@ -24,4 +28,9 @@ provider "digitalocean" {
   # Token is only set in prod (config/prod.tfvars).
   # Leave empty in dev — the provider won't authenticate unless DO resources are used.
   token = var.do_token
+}
+
+provider "vercel" {
+  # Set VERCEL_API_TOKEN env var or pass via vercel_api_token variable.
+  api_token = var.vercel_api_token
 }
