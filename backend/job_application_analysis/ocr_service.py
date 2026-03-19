@@ -11,8 +11,13 @@ import time
 
 import pytesseract
 from pdf2image import convert_from_bytes
+from PIL import Image
 
 logger = logging.getLogger(__name__)
+
+# Cap total pixels per page before handing to Tesseract.
+# A 4MP image is plenty for OCR (~2000×2000) and keeps memory predictable.
+_MAX_IMAGE_PIXELS = 4_000_000
 
 
 def warmup():
@@ -36,11 +41,23 @@ def extract_text_from_pdf_bytes(pdf_bytes: bytes) -> str:
     """
     logger.info("OCR: converting PDF to images (size=%d bytes)", len(pdf_bytes))
     t0 = time.monotonic()
-    images = convert_from_bytes(pdf_bytes)
+    # Cap DPI at 200 — enough for OCR, prevents OOM on high-res scans.
+    images = convert_from_bytes(pdf_bytes, dpi=200)
     logger.info("OCR: PDF rendered to %d page(s) in %.2fs", len(images), time.monotonic() - t0)
 
     pages: list[str] = []
     for page_idx, image in enumerate(images):
+        w, h = image.size
+        pixels = w * h
+        if pixels > _MAX_IMAGE_PIXELS:
+            scale = (_MAX_IMAGE_PIXELS / pixels) ** 0.5
+            new_size = (int(w * scale), int(h * scale))
+            logger.warning(
+                "OCR: page %d is %dx%d (%dMP) — downscaling to %dx%d to avoid OOM",
+                page_idx + 1, w, h, pixels // 1_000_000, *new_size,
+            )
+            image = image.resize(new_size, Image.LANCZOS)
+
         logger.debug(
             "OCR: extracting text from page %d/%d (image size=%s)",
             page_idx + 1,
