@@ -8,9 +8,9 @@ Usage:
 """
 
 from django.core.management.base import BaseCommand
-from django.conf import settings
-import redis
 from rq import Worker, Queue
+
+from job_application_analysis.workers import _get_redis_connection
 
 
 class Command(BaseCommand):
@@ -25,15 +25,7 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options):
-        import ssl as ssl_module
-
-        ssl_enabled = getattr(settings, "REDIS_SSL", False)
-        if ssl_enabled:
-            conn = redis.Redis.from_url(
-                settings.REDIS_URL, ssl_cert_reqs=ssl_module.CERT_NONE
-            )
-        else:
-            conn = redis.Redis.from_url(settings.REDIS_URL)
+        conn = _get_redis_connection()
 
         queue_name = options.get("queue")
         if queue_name:

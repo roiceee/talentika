@@ -208,6 +208,7 @@ def retry_analysis(request, application_id):
     retryable_statuses = (
         ApplicationAnalysis.Status.FAILED,
         ApplicationAnalysis.Status.UPLOADED,
+        ApplicationAnalysis.Status.OCR_PENDING,  # stuck if worker died mid-job
     )
     if analysis.status not in retryable_statuses:
         return Response(

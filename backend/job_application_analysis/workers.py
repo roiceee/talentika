@@ -176,7 +176,11 @@ def process_ocr(application_analysis_id: str):
 
         # 2. Download resume
         storage_path = _get_resume_storage_path(analysis.job_application)
+        logger.info("OCR worker: downloading resume from %s", storage_path)
         file_bytes = _download_resume_bytes(storage_path)
+        logger.info(
+            "OCR worker: downloaded %d bytes from %s", len(file_bytes), storage_path
+        )
 
         # 2a. Convert DOCX → PDF if necessary
         storage_path_lower = str(storage_path).lower()
@@ -298,14 +302,18 @@ def _get_redis_connection():
     import redis
     from django.conf import settings
 
+    # health_check_interval sends a periodic PING to prevent the server from
+    # closing idle connections (common with managed providers like Upstash).
+    kwargs = {
+        "socket_keepalive": True,
+        "health_check_interval": 30,
+    }
+
     ssl_enabled = getattr(settings, "REDIS_SSL", False)
     if ssl_enabled:
         import ssl as ssl_module
-        return redis.Redis.from_url(
-            settings.REDIS_URL,
-            ssl_cert_reqs=ssl_module.CERT_NONE,
-        )
-    return redis.Redis.from_url(settings.REDIS_URL)
+        kwargs["ssl_cert_reqs"] = ssl_module.CERT_NONE
+    return redis.Redis.from_url(settings.REDIS_URL, **kwargs)
 
 
 def _enqueue_ai(application_analysis_id: str):
@@ -325,7 +333,12 @@ def enqueue_ocr(application_analysis_id: str):
     ``ApplicationAnalysis`` row.
     """
     from rq import Queue
+    from rq.job import Retry
 
     q = Queue("ocr_queue", connection=_get_redis_connection())
-    q.enqueue(process_ocr, application_analysis_id)
+    q.enqueue(
+        process_ocr,
+        application_analysis_id,
+        retry=Retry(max=3, interval=[30, 60, 120]),
+    )
     logger.info("Enqueued OCR task for analysis %s", application_analysis_id)
