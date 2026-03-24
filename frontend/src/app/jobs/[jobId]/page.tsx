@@ -112,6 +112,7 @@ export default function PublicJobProfilePage({
   const [resumeId, setResumeId] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
+  const [isDraggingOver, setIsDraggingOver] = useState(false);
 
   // Submission
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -144,10 +145,7 @@ export default function PublicJobProfilePage({
   }, [fetchProfile]);
 
   // Handle resume file selection & upload
-  async function handleResumeChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
+  async function processResumeFile(file: File) {
     // Validate file type (check MIME type AND extension — MIME can be unreliable)
     const allowedTypes = [
       "application/pdf",
@@ -190,6 +188,30 @@ export default function PublicJobProfilePage({
     } finally {
       setIsUploading(false);
     }
+  }
+
+  async function handleResumeChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    await processResumeFile(file);
+  }
+
+  function handleDragOver(e: React.DragEvent<HTMLLabelElement>) {
+    e.preventDefault();
+    setIsDraggingOver(true);
+  }
+
+  function handleDragLeave(e: React.DragEvent<HTMLLabelElement>) {
+    e.preventDefault();
+    setIsDraggingOver(false);
+  }
+
+  async function handleDrop(e: React.DragEvent<HTMLLabelElement>) {
+    e.preventDefault();
+    setIsDraggingOver(false);
+    const file = e.dataTransfer.files?.[0];
+    if (!file) return;
+    await processResumeFile(file);
   }
 
   function setTextAnswer(questionId: string, value: string) {
@@ -611,27 +633,56 @@ export default function PublicJobProfilePage({
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              <Input
-                id="resume"
-                type="file"
-                accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-                onChange={handleResumeChange}
-                disabled={isUploading}
-                className="cursor-pointer"
-                required
-              />
-              {isUploading && (
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  Uploading resume...
-                </div>
-              )}
-              {resumeFile && resumeId && (
-                <div className="flex items-center gap-2 text-sm text-green-600">
-                  <FileText className="h-4 w-4" />
-                  {resumeFile.name} — uploaded
-                </div>
-              )}
+              <label
+                htmlFor="resume"
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                onDrop={handleDrop}
+                className={`flex flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed px-6 py-8 text-center cursor-pointer transition-colors ${
+                  isDraggingOver
+                    ? "border-primary bg-primary/5 text-primary"
+                    : "border-muted-foreground/30 text-muted-foreground hover:border-muted-foreground/50"
+                }`}
+              >
+                {isDraggingOver ? (
+                  <>
+                    <Upload className="h-8 w-8" />
+                    <span className="text-sm font-medium">Drop file here</span>
+                  </>
+                ) : isUploading ? (
+                  <>
+                    <Loader2 className="h-8 w-8 animate-spin" />
+                    <span className="text-sm">Uploading resume...</span>
+                  </>
+                ) : resumeFile && resumeId ? (
+                  <>
+                    <FileText className="h-8 w-8 text-green-600" />
+                    <span className="text-sm text-green-600 font-medium">
+                      {resumeFile.name}
+                    </span>
+                    <span className="text-xs text-muted-foreground">
+                      Click or drag to replace
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    <Upload className="h-8 w-8" />
+                    <span className="text-sm font-medium">
+                      Click to upload or drag and drop
+                    </span>
+                    <span className="text-xs">PDF, DOC, DOCX — max 10MB</span>
+                  </>
+                )}
+                <input
+                  id="resume"
+                  type="file"
+                  accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                  onChange={handleResumeChange}
+                  disabled={isUploading}
+                  className="sr-only"
+                  required
+                />
+              </label>
               {uploadError && (
                 <p className="text-sm text-destructive">{uploadError}</p>
               )}
