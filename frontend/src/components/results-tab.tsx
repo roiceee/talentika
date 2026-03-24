@@ -60,7 +60,7 @@ const STATUS_CONFIG: Record<
   }
 > = {
   to_be_reviewed: { label: "To Be Reviewed", badgeVariant: "secondary" },
-  reviewed: { label: "Reviewed", badgeVariant: "default" },
+  reviewed: { label: "Hold", badgeVariant: "default" },
   shortlisted: {
     label: "Shortlisted",
     badgeVariant: "default",

@@ -68,7 +68,7 @@ const STATUS_CONFIG: Record<
   }
 > = {
   to_be_reviewed: { label: "To Be Reviewed", variant: "secondary" },
-  reviewed: { label: "Reviewed", variant: "default" },
+  reviewed: { label: "Hold", variant: "default" },
   shortlisted: {
     label: "Shortlisted",
     variant: "default",
@@ -80,7 +80,7 @@ const STATUS_CONFIG: Record<
 const STATUS_OPTIONS = [
   { value: "", label: "All Statuses" },
   { value: "to_be_reviewed", label: "To Be Reviewed" },
-  { value: "reviewed", label: "Reviewed" },
+  { value: "reviewed", label: "Hold" },
   { value: "shortlisted", label: "Shortlisted" },
   { value: "rejected", label: "Rejected" },
 ];

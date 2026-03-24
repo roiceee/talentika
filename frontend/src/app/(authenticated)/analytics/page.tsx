@@ -25,7 +25,7 @@ import {
 
 const STATUS_LABELS: Record<string, { label: string; color: string }> = {
   to_be_reviewed: { label: "To Be Reviewed", color: "#9ca3af" },
-  reviewed: { label: "Reviewed", color: "#3b82f6" },
+  reviewed: { label: "Hold", color: "#3b82f6" },
   shortlisted: { label: "Shortlisted", color: "#059669" },
   rejected: { label: "Rejected", color: "#ef4444" },
 };

@@ -23,7 +23,7 @@ const STATUS_LABELS: Record<string, { label: string; color: string }> = {
     label: "To Be Reviewed",
     color: "bg-gray-200 text-gray-800",
   },
-  reviewed: { label: "Reviewed", color: "bg-blue-100 text-blue-800" },
+  reviewed: { label: "Hold", color: "bg-blue-100 text-blue-800" },
   shortlisted: {
     label: "Shortlisted",
     color: "bg-emerald-100 text-emerald-800",
