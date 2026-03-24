@@ -2,6 +2,11 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Git Commits
+
+- Commit per feature — one logical change per commit
+- No co-author signatures in commit messages
+
 ## Project Overview
 
 **Talentika** is a multi-tenant HR SaaS platform where organizations post job profiles, collect applications, and run AI-powered resume screening. It is a decision-support tool — final hiring decisions remain with HR.

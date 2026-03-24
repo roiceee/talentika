@@ -11,6 +11,7 @@ import {
   getResumeDownloadUrl,
   updateApplicationStatus,
   retryAnalysis,
+  listJobApplications,
 } from "@/lib/api";
 import type {
   JobApplicationDetailWithAnalysis,
@@ -30,6 +31,10 @@ import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   ArrowLeft,
+  ChevronLeft,
+  ChevronRight,
+  ChevronDown,
+  ChevronUp,
   Mail,
   Phone,
   MapPin,
@@ -49,12 +54,13 @@ import {
   Award,
   TrendingUp,
   TrendingDown,
+  SlidersHorizontal,
 } from "lucide-react";
 import { QUESTION_TYPE_LABELS } from "@/lib/constants/job-profile";
 
 const UPDATABLE_STATUSES = [
   { value: "to_be_reviewed", label: "To Be Reviewed" },
-  { value: "reviewed", label: "Reviewed" },
+  { value: "reviewed", label: "Hold" },
   { value: "shortlisted", label: "Shortlisted" },
   { value: "rejected", label: "Rejected" },
 ] as const;
@@ -105,6 +111,38 @@ export default function ApplicationDetailPage({
   const [orgId, setOrgId] = useState<string>("");
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
   const [isRetrying, setIsRetrying] = useState(false);
+  // undefined = not yet fetched, null = none, string = app id
+  const [nextApplicationId, setNextApplicationId] = useState<string | null | undefined>(undefined);
+  const [prevApplicationId, setPrevApplicationId] = useState<string | null | undefined>(undefined);
+  const [analysisCollapsed, setAnalysisCollapsed] = useState(false);
+
+  async function fetchNextUnreviewed(resolvedOrgId: string) {
+    try {
+      const result = await listJobApplications(resolvedOrgId, jobId, {
+        status: "to_be_reviewed",
+        page_size: 100,
+        ordering: "submitted_at",
+      });
+      const apps = result.results;
+      if (apps.length === 0) {
+        setPrevApplicationId(null);
+        setNextApplicationId(null);
+        return;
+      }
+      const idx = apps.findIndex((a) => a.id === applicationId);
+      if (idx === -1) {
+        setPrevApplicationId(null);
+        setNextApplicationId(apps[0]?.id ?? null);
+      } else {
+        setPrevApplicationId(apps[idx - 1]?.id ?? null);
+        // Wrap around to first if at end
+        setNextApplicationId(apps[idx + 1]?.id ?? apps[0]?.id ?? null);
+      }
+    } catch {
+      setPrevApplicationId(null);
+      setNextApplicationId(null);
+    }
+  }
 
   async function handleDownload(fileName: string) {
     if (!resumeUrl || isDownloading) return;
@@ -135,6 +173,7 @@ export default function ApplicationDetailPage({
       setOrgId(resolvedOrgId);
       const data = await getJobApplication(resolvedOrgId, jobId, applicationId);
       setApplication(data);
+      fetchNextUnreviewed(resolvedOrgId);
 
       const resume = data.attachments?.find((a) => a.file_type === "resume");
       if (resume) {
@@ -224,6 +263,7 @@ export default function ApplicationDetailPage({
         prev ? { ...prev, status: updated.status } : prev,
       );
       toast.success("Status updated");
+      fetchNextUnreviewed(orgId);
     } catch {
       toast.error("Failed to update status");
     } finally {
@@ -276,6 +316,38 @@ export default function ApplicationDetailPage({
           <ArrowLeft className="h-4 w-4" />
           Back to {profile.title}
         </Link>
+        <div className="flex items-center gap-2">
+          <Button
+            size="sm"
+            variant="outline"
+            disabled={!prevApplicationId}
+            onClick={() =>
+              router.push(`/job-profiles/${jobId}/applications/${prevApplicationId}`)
+            }
+          >
+            <ChevronLeft className="h-4 w-4 mr-1" />
+            Prev
+          </Button>
+          <Button
+            size="sm"
+            variant={nextApplicationId === null ? "outline" : "default"}
+            disabled={nextApplicationId === undefined}
+            onClick={() =>
+              nextApplicationId
+                ? router.push(`/job-profiles/${jobId}/applications/${nextApplicationId}`)
+                : router.push(`/job-profiles/${jobId}?tab=results`)
+            }
+          >
+            {nextApplicationId === undefined ? (
+              <Loader2 className="h-4 w-4 animate-spin mr-1" />
+            ) : (
+              <>
+                {nextApplicationId === null ? "View Results" : "Next"}
+                <ChevronRight className="h-4 w-4 ml-1" />
+              </>
+            )}
+          </Button>
+        </div>
       </div>
 
       {/* Applicant Info */}
@@ -306,40 +378,63 @@ export default function ApplicationDetailPage({
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <Select
-                value={application.status ?? "to_be_reviewed"}
-                onValueChange={handleStatusChange}
-                disabled={isUpdatingStatus}
-              >
-                <SelectTrigger className="h-8 w-40 text-xs">
-                  {isUpdatingStatus ? (
-                    <span className="text-muted-foreground">Updating…</span>
-                  ) : (
+              {isUpdatingStatus ? (
+                <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+              ) : application.status === "to_be_reviewed" ? (
+                <>
+                  <Button
+                    size="sm"
+                    variant="destructive"
+                    disabled={isUpdatingStatus}
+                    onClick={() => handleStatusChange("rejected")}
+                  >
+                    Reject
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    disabled={isUpdatingStatus}
+                    onClick={() => handleStatusChange("reviewed")}
+                  >
+                    Hold
+                  </Button>
+                  <Button
+                    size="sm"
+                    className="bg-emerald-600 hover:bg-emerald-700 text-white"
+                    disabled={isUpdatingStatus}
+                    onClick={() => handleStatusChange("shortlisted")}
+                  >
+                    Shortlist
+                  </Button>
+                </>
+              ) : (
+                <Select
+                  value={application.status ?? "to_be_reviewed"}
+                  onValueChange={handleStatusChange}
+                  disabled={isUpdatingStatus}
+                >
+                  <SelectTrigger className="h-8 w-40 text-xs">
                     <SelectValue />
-                  )}
-                </SelectTrigger>
-                <SelectContent>
-                  {UPDATABLE_STATUSES.filter(
-                    (s) =>
-                      s.value !== "to_be_reviewed" ||
-                      application.status === "to_be_reviewed",
-                  ).map((s) => (
-                    <SelectItem
-                      key={s.value}
-                      value={s.value}
-                      className={
-                        s.value === "shortlisted"
-                          ? "text-emerald-600 font-medium focus:text-emerald-600"
-                          : s.value === "rejected"
-                            ? "text-destructive focus:text-destructive"
-                            : ""
-                      }
-                    >
-                      {s.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                  </SelectTrigger>
+                  <SelectContent>
+                    {UPDATABLE_STATUSES.map((s) => (
+                      <SelectItem
+                        key={s.value}
+                        value={s.value}
+                        className={
+                          s.value === "shortlisted"
+                            ? "text-emerald-600 font-medium focus:text-emerald-600"
+                            : s.value === "rejected"
+                              ? "text-destructive focus:text-destructive"
+                              : ""
+                        }
+                      >
+                        {s.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
             </div>
           </div>
         </CardHeader>
@@ -460,13 +555,45 @@ export default function ApplicationDetailPage({
       {/* AI Analysis */}
       {analysis && (
         <Card>
-          <CardHeader className="pb-4">
+          <CardHeader
+            className="pb-4 cursor-pointer select-none"
+            onClick={() => setAnalysisCollapsed((v) => !v)}
+          >
             <div className="flex items-center justify-between">
               <CardTitle className="flex items-center gap-2 text-base">
                 <Brain className="h-4 w-4" />
                 AI Analysis
+                {analysis.status === "done" ? (
+                  <Badge className="bg-emerald-600 text-white hover:bg-emerald-700 text-xs">
+                    Complete
+                  </Badge>
+                ) : analysis.status === "failed" ? (
+                  <Badge variant="destructive" className="text-xs">Failed</Badge>
+                ) : (
+                  <Badge variant="secondary" className="flex items-center gap-1 text-xs">
+                    {analysis.status === "ocr_pending" || analysis.status === "ai_pending" ? (
+                      <Loader2 className="h-3 w-3 animate-spin" />
+                    ) : (
+                      <Clock className="h-3 w-3" />
+                    )}
+                    {analysis.status === "uploaded"
+                      ? "Queued"
+                      : analysis.status === "ocr_pending"
+                        ? "OCR Processing"
+                        : analysis.status === "ocr_done"
+                          ? "OCR Done"
+                          : analysis.status === "ai_pending"
+                            ? "AI Analyzing"
+                            : analysis.status}
+                  </Badge>
+                )}
               </CardTitle>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+                {analysisCollapsed ? (
+                  <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                ) : (
+                  <ChevronUp className="h-4 w-4 text-muted-foreground" />
+                )}
                 {analysis.status === "failed" && (
                   <Button
                     variant="outline"
@@ -503,34 +630,9 @@ export default function ApplicationDetailPage({
               </div>
             </div>
           </CardHeader>
-          <CardContent className="space-y-6">
-            {/* Status + Category hero row */}
+          {!analysisCollapsed && <CardContent className="space-y-6">
+            {/* Category hero row */}
             <div className="flex items-center gap-4">
-              {analysis.status === "done" ? (
-                <Badge className="bg-emerald-600 text-white hover:bg-emerald-700">
-                  Complete
-                </Badge>
-              ) : analysis.status === "failed" ? (
-                <Badge variant="destructive">Failed</Badge>
-              ) : (
-                <Badge variant="secondary" className="flex items-center gap-1">
-                  {analysis.status === "ocr_pending" ||
-                  analysis.status === "ai_pending" ? (
-                    <Loader2 className="h-3 w-3 animate-spin" />
-                  ) : (
-                    <Clock className="h-3 w-3" />
-                  )}
-                  {analysis.status === "uploaded"
-                    ? "Queued"
-                    : analysis.status === "ocr_pending"
-                      ? "OCR Processing"
-                      : analysis.status === "ocr_done"
-                        ? "OCR Done"
-                        : analysis.status === "ai_pending"
-                          ? "AI Analyzing"
-                          : analysis.status}
-                </Badge>
-              )}
               {analysis.status === "done" && analysis.score_category && (
                 <div className="flex items-center gap-3">
                   <div
@@ -813,7 +915,7 @@ export default function ApplicationDetailPage({
                 )}
               </>
             )}
-          </CardContent>
+          </CardContent>}
         </Card>
       )}
 
@@ -893,6 +995,90 @@ export default function ApplicationDetailPage({
           </CardContent>
         </Card>
       )}
+
+      {/* Floating action panel */}
+      <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end gap-2 group/fab">
+        {/* Expanded panel — visible on hover */}
+        <div className="pointer-events-none opacity-0 translate-y-2 group-hover/fab:pointer-events-auto group-hover/fab:opacity-100 group-hover/fab:translate-y-0 transition-all duration-200">
+          <Card className="shadow-xl border w-52">
+            <CardContent className="p-3 flex flex-col gap-2">
+              {/* Navigation */}
+              <div className="flex gap-2">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="flex-1"
+                  disabled={!prevApplicationId}
+                  onClick={() =>
+                    router.push(`/job-profiles/${jobId}/applications/${prevApplicationId}`)
+                  }
+                >
+                  <ChevronLeft className="h-4 w-4 mr-1" />
+                  Prev
+                </Button>
+                <Button
+                  size="sm"
+                  variant={nextApplicationId === null ? "outline" : "default"}
+                  className="flex-1"
+                  disabled={nextApplicationId === undefined}
+                  onClick={() =>
+                    nextApplicationId
+                      ? router.push(`/job-profiles/${jobId}/applications/${nextApplicationId}`)
+                      : router.push(`/job-profiles/${jobId}?tab=results`)
+                  }
+                >
+                  {nextApplicationId === null ? "Results" : "Next"}
+                  <ChevronRight className="h-4 w-4 ml-1" />
+                </Button>
+              </div>
+
+              <Separator />
+
+              {/* Status actions */}
+              <div className="flex flex-col gap-1.5">
+                <Button
+                  size="sm"
+                  variant="destructive"
+                  className="w-full"
+                  disabled={isUpdatingStatus}
+                  onClick={() => handleStatusChange("rejected")}
+                >
+                  Reject
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="w-full"
+                  disabled={isUpdatingStatus}
+                  onClick={() => handleStatusChange("reviewed")}
+                >
+                  Hold
+                </Button>
+                <Button
+                  size="sm"
+                  className="w-full bg-emerald-600 hover:bg-emerald-700 text-white"
+                  disabled={isUpdatingStatus}
+                  onClick={() => handleStatusChange("shortlisted")}
+                >
+                  Shortlist
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Trigger button */}
+        <Button
+          size="icon"
+          className="h-12 w-12 rounded-full shadow-lg"
+        >
+          {isUpdatingStatus ? (
+            <Loader2 className="h-5 w-5 animate-spin" />
+          ) : (
+            <SlidersHorizontal className="h-5 w-5" />
+          )}
+        </Button>
+      </div>
     </div>
   );
 }
