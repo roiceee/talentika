@@ -86,39 +86,58 @@ export function AppNavbar() {
   const analyticsActive = pathname.startsWith("/analytics");
 
   return (
-    <header className="sticky top-0 z-50 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+    <header className="sticky top-0 z-50 bg-white border-b border-border shadow-sm">
       <div className="mx-auto w-full max-w-300 flex h-14 items-center justify-between px-6">
-        <div className="flex items-center gap-4">
-          <Link href="/dashboard" className="flex items-center">
+        <div className="flex items-center gap-5">
+          <Link href="/dashboard" className="flex items-center gap-2.5">
             <Image
               src="/icon.png"
               alt="Talentika"
-              width={32}
-              height={32}
+              width={30}
+              height={30}
               priority
             />
+            <span className="font-heading text-base text-foreground hidden sm:block">
+              Talentika
+            </span>
           </Link>
 
+          <div className="h-5 w-px bg-border hidden md:block" />
+
           {/* Main nav links */}
-          <nav className="hidden items-center gap-1 md:flex">
+          <nav className="hidden items-center gap-0.5 md:flex">
             <Link href="/job-profiles">
               <Button
-                variant={jobProfilesActive ? "secondary" : "ghost"}
+                variant="ghost"
                 size="sm"
-                className="gap-2"
+                className={`gap-2 relative ${
+                  jobProfilesActive
+                    ? "text-primary font-semibold bg-primary/8 hover:bg-primary/12"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
               >
                 <Briefcase className="h-4 w-4" />
                 Job Profiles
+                {jobProfilesActive && (
+                  <span className="absolute bottom-0 left-2 right-2 h-0.5 bg-primary rounded-full" />
+                )}
               </Button>
             </Link>
             <Link href="/analytics">
               <Button
-                variant={analyticsActive ? "secondary" : "ghost"}
+                variant="ghost"
                 size="sm"
-                className="gap-2"
+                className={`gap-2 relative ${
+                  analyticsActive
+                    ? "text-primary font-semibold bg-primary/8 hover:bg-primary/12"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
               >
                 <BarChart3 className="h-4 w-4" />
                 Analytics
+                {analyticsActive && (
+                  <span className="absolute bottom-0 left-2 right-2 h-0.5 bg-primary rounded-full" />
+                )}
               </Button>
             </Link>
           </nav>
@@ -142,7 +161,7 @@ export function AppNavbar() {
               <Button
                 variant="outline"
                 size="sm"
-                className="gap-2 max-w-52 h-9"
+                className="gap-2 max-w-52 h-9 border-border/80 hover:border-primary/40 hover:bg-primary/5 transition-colors"
               >
                 <Avatar className="h-5 w-5 shrink-0">
                   {currentOrg?.profile_picture_url && (

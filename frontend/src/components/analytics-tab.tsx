@@ -21,9 +21,9 @@ import {
 const STATUS_LABELS: Record<string, { label: string; color: string }> = {
   to_be_reviewed: {
     label: "To Be Reviewed",
-    color: "bg-gray-200 text-gray-800",
+    color: "bg-primary/10 text-primary",
   },
-  reviewed: { label: "Hold", color: "bg-blue-100 text-blue-800" },
+  reviewed: { label: "Hold", color: "bg-amber-100 text-amber-800" },
   shortlisted: {
     label: "Shortlisted",
     color: "bg-emerald-100 text-emerald-800",
@@ -98,24 +98,28 @@ export function AnalyticsTab({ orgId, jobProfileId }: AnalyticsTabProps) {
     <div className="space-y-6">
       {/* ─── KPI Cards ──────────────────────────────────────────────── */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Card>
+        <Card className="border-l-4 border-l-primary">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
               Total Applications
             </CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
+            <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
+              <Users className="h-4 w-4 text-primary" />
+            </div>
           </CardHeader>
           <CardContent>
-            <p className="text-3xl font-bold">{totalApps}</p>
+            <p className="text-3xl font-bold text-primary">{totalApps}</p>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="border-l-4 border-l-blue-500">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
               Average Category
             </CardTitle>
-            <Brain className="h-4 w-4 text-muted-foreground" />
+            <div className="h-8 w-8 rounded-full bg-blue-50 flex items-center justify-center">
+              <Brain className="h-4 w-4 text-blue-500" />
+            </div>
           </CardHeader>
           <CardContent>
             {data.average_category ? (
@@ -137,12 +141,14 @@ export function AnalyticsTab({ orgId, jobProfileId }: AnalyticsTabProps) {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="border-l-4 border-l-emerald-500">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
               Shortlisted
             </CardTitle>
-            <Star className="h-4 w-4 text-muted-foreground" />
+            <div className="h-8 w-8 rounded-full bg-emerald-50 flex items-center justify-center">
+              <Star className="h-4 w-4 text-emerald-600" />
+            </div>
           </CardHeader>
           <CardContent>
             <p className="text-3xl font-bold text-emerald-600">
@@ -159,12 +165,14 @@ export function AnalyticsTab({ orgId, jobProfileId }: AnalyticsTabProps) {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="border-l-4 border-l-destructive">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
               Rejected
             </CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+            <div className="h-8 w-8 rounded-full bg-destructive/10 flex items-center justify-center">
+              <TrendingUp className="h-4 w-4 text-destructive" />
+            </div>
           </CardHeader>
           <CardContent>
             <p className="text-3xl font-bold text-destructive">

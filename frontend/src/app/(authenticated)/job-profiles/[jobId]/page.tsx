@@ -265,46 +265,60 @@ export default function JobProfileDetailPage({
   return (
     <div className="w-full py-8">
       {/* Header */}
-      <div className="mb-6">
+      <div className="page-header">
         <Link
           href="/job-profiles"
-          className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground mb-4"
+          className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground mb-4 transition-colors"
         >
-          <ArrowLeft className="h-4 w-4" />
+          <ArrowLeft className="h-3.5 w-3.5" />
           Back to Job Profiles
         </Link>
 
         <div className="flex items-start justify-between gap-4">
-          <div className="space-y-1">
-            <div className="flex items-center gap-2 flex-wrap">
-              <h1 className="font-heading text-2xl font-semibold">
+          <div className="space-y-1.5">
+            <div className="flex items-center gap-2.5 flex-wrap">
+              <h1 className="font-heading text-2xl">
                 {profile.title}
               </h1>
+              <Badge
+                variant={isActive ? "default" : "secondary"}
+                className={isActive ? "bg-emerald-600 text-white hover:bg-emerald-700" : ""}
+              >
+                {isActive ? "Accepting" : "Closed"}
+              </Badge>
             </div>
             <p className="text-muted-foreground text-sm">
               {(profile.organization as { name?: string })?.name}
+              {applicationCount > 0 && (
+                <span className="ml-2 text-primary font-medium">
+                  · {applicationCount} application{applicationCount !== 1 ? "s" : ""}
+                </span>
+              )}
             </p>
           </div>
-          <div className="flex gap-2 shrink">
+          <div className="flex gap-2 shrink-0 flex-wrap justify-end">
             <Button
               variant="outline"
+              size="sm"
               onClick={() => {
                 const url = `${window.location.origin}/jobs/${jobId}`;
                 navigator.clipboard.writeText(url);
                 toast.success("Public URL copied to clipboard");
               }}
+              className="gap-2"
             >
-              <LinkIcon className="mr-2 h-4 w-4" />
-              Copy Public URL
+              <LinkIcon className="h-3.5 w-3.5" />
+              Copy URL
             </Button>
             {hasSubmissions ? (
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
                     variant="outline"
-                    className="text-muted-foreground cursor-not-allowed"
+                    size="sm"
+                    className="text-muted-foreground cursor-not-allowed gap-2"
                   >
-                    <Lock className="mr-2 h-4 w-4" />
+                    <Lock className="h-3.5 w-3.5" />
                     Edit
                   </Button>
                 </TooltipTrigger>
@@ -316,12 +330,12 @@ export default function JobProfileDetailPage({
                 </TooltipContent>
               </Tooltip>
             ) : (
-              <Button variant="outline" onClick={() => setIsEditMode(true)}>
-                <Pencil className="mr-2 h-4 w-4" />
+              <Button variant="outline" size="sm" onClick={() => setIsEditMode(true)} className="gap-2">
+                <Pencil className="h-3.5 w-3.5" />
                 Edit
               </Button>
             )}
-            <div className="flex items-center gap-2 border rounded-md px-3 h-9">
+            <div className={`flex items-center gap-2 border rounded-md px-3 h-9 transition-colors ${isActive ? "border-emerald-200 bg-emerald-50" : ""}`}>
               {isTogglingActive ? (
                 <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
               ) : (
@@ -336,7 +350,7 @@ export default function JobProfileDetailPage({
                 htmlFor="is_active_toggle"
                 className="text-sm cursor-pointer select-none"
               >
-                Accepting applications
+                {isActive ? "Accepting" : "Closed"}
               </Label>
             </div>
           </div>
@@ -349,21 +363,26 @@ export default function JobProfileDetailPage({
         onValueChange={(val) => router.replace(`?tab=${val}`)}
         className="mt-2"
       >
-        <TabsList>
-          <TabsTrigger value="details">
-            <List className="h-4 w-4 mr-1.5" />
+        <TabsList className="bg-muted/60 border border-border/50">
+          <TabsTrigger value="details" className="gap-1.5 data-[state=active]:text-primary">
+            <List className="h-3.5 w-3.5" />
             Details
           </TabsTrigger>
-          <TabsTrigger value="applications">
-            <FileText className="h-4 w-4 mr-1.5" />
+          <TabsTrigger value="applications" className="gap-1.5 data-[state=active]:text-primary">
+            <FileText className="h-3.5 w-3.5" />
             Applications
+            {applicationCount > 0 && (
+              <span className="ml-0.5 rounded-full bg-primary/15 text-primary text-[10px] px-1.5 py-0.5 font-medium leading-none">
+                {applicationCount}
+              </span>
+            )}
           </TabsTrigger>
-          <TabsTrigger value="results">
-            <Star className="h-4 w-4 mr-1.5" />
+          <TabsTrigger value="results" className="gap-1.5 data-[state=active]:text-primary">
+            <Star className="h-3.5 w-3.5" />
             Results
           </TabsTrigger>
-          <TabsTrigger value="analytics">
-            <BarChart3 className="h-4 w-4 mr-1.5" />
+          <TabsTrigger value="analytics" className="gap-1.5 data-[state=active]:text-primary">
+            <BarChart3 className="h-3.5 w-3.5" />
             Analytics
           </TabsTrigger>
         </TabsList>

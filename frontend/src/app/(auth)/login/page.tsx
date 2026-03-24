@@ -3,7 +3,6 @@
 import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import Image from "next/image";
 import { useAuth } from "@/contexts/auth-context";
 import { toast } from "sonner";
 import { AxiosError } from "axios";
@@ -12,10 +11,7 @@ import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
-  CardDescription,
   CardFooter,
-  CardHeader,
-  CardTitle,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -68,24 +64,15 @@ function LoginForm() {
 
   return (
     <>
-      <div className="mb-6 flex justify-center">
-        <Image
-          src="/icon.png"
-          alt="Talentika"
-          width={56}
-          height={56}
-          priority
-        />
+      <div className="mb-8">
+        <h1 className="font-heading text-2xl text-foreground mb-1">Welcome back</h1>
+        <p className="text-muted-foreground text-sm">Sign in to your Talentika account</p>
       </div>
-      <Card>
-        <CardHeader className="text-center">
-          <CardTitle className="text-2xl font-heading">Welcome back</CardTitle>
-          <CardDescription>Sign in to your Talentika account</CardDescription>
-        </CardHeader>
+      <Card className="shadow-md border-border/60">
         <form onSubmit={handleSubmit}>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-4 pt-6">
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email" className="text-sm font-medium">Email</Label>
               <Input
                 id="email"
                 type="email"
@@ -95,14 +82,15 @@ function LoginForm() {
                 required
                 autoComplete="email"
                 autoFocus
+                className="h-10"
               />
             </div>
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <Label htmlFor="password">Password</Label>
+                <Label htmlFor="password" className="text-sm font-medium">Password</Label>
                 <Link
                   href="/password-reset"
-                  className="text-sm text-primary hover:underline"
+                  className="text-xs text-primary hover:underline font-medium"
                 >
                   Forgot password?
                 </Link>
@@ -115,17 +103,18 @@ function LoginForm() {
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 autoComplete="current-password"
+                className="h-10"
               />
             </div>
           </CardContent>
-          <CardFooter className="flex flex-col gap-4">
-            <Button type="submit" className="w-full" disabled={isSubmitting}>
+          <CardFooter className="flex flex-col gap-4 pb-6">
+            <Button type="submit" className="w-full h-10 font-semibold" disabled={isSubmitting}>
               {isSubmitting && (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               )}
               Sign in
             </Button>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-sm text-muted-foreground text-center">
               Don&apos;t have an account?{" "}
               <Link
                 href={
@@ -133,7 +122,7 @@ function LoginForm() {
                     ? `/register?redirect=${encodeURIComponent(redirect)}`
                     : "/register"
                 }
-                className="text-primary hover:underline"
+                className="text-primary hover:underline font-medium"
               >
                 Sign up
               </Link>

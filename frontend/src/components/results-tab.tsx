@@ -59,8 +59,16 @@ const STATUS_CONFIG: Record<
     badgeClass?: string;
   }
 > = {
-  to_be_reviewed: { label: "To Be Reviewed", badgeVariant: "secondary" },
-  reviewed: { label: "Hold", badgeVariant: "default" },
+  to_be_reviewed: {
+    label: "To Be Reviewed",
+    badgeVariant: "secondary",
+    badgeClass: "bg-primary/10 text-primary border-primary/20",
+  },
+  reviewed: {
+    label: "Hold",
+    badgeVariant: "default",
+    badgeClass: "bg-amber-100 text-amber-800 border-amber-200",
+  },
   shortlisted: {
     label: "Shortlisted",
     badgeVariant: "default",
@@ -332,9 +340,9 @@ export function ResultsTab({ orgId, jobProfileId }: ResultsTabProps) {
         const isExpanded = expandedStatuses.has(category.status);
 
         return (
-          <Card key={category.status}>
+          <Card key={category.status} className="overflow-hidden">
             <CardHeader
-              className="cursor-pointer select-none py-3"
+              className="cursor-pointer select-none py-3 hover:bg-muted/30 transition-colors"
               onClick={() => toggleExpanded(category.status)}
             >
               <div className="flex items-center justify-between">
@@ -344,10 +352,13 @@ export function ResultsTab({ orgId, jobProfileId }: ResultsTabProps) {
                   ) : (
                     <ChevronRight className="h-4 w-4 text-muted-foreground" />
                   )}
-                  <CardTitle className="text-base font-medium">
+                  <CardTitle className="text-sm font-semibold">
                     {config.label}
                   </CardTitle>
-                  <Badge variant="secondary" className="text-xs">
+                  <Badge
+                    variant={config.badgeVariant}
+                    className={`text-xs ${config.badgeClass ?? ""}`}
+                  >
                     {category.count}
                   </Badge>
                 </div>
@@ -469,15 +480,15 @@ function PreviewTable({
   highlightStatus?: string;
 }) {
   return (
-    <div className="rounded-md border">
+    <div className="rounded-lg border overflow-hidden">
       <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Applicant</TableHead>
-            <TableHead>Contact</TableHead>
-            <TableHead>AI Analysis</TableHead>
-            <TableHead>Score</TableHead>
-            <TableHead>Submitted</TableHead>
+        <TableHeader className="bg-muted/40">
+          <TableRow className="hover:bg-transparent border-b border-border/60">
+            <TableHead className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Applicant</TableHead>
+            <TableHead className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Contact</TableHead>
+            <TableHead className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">AI Analysis</TableHead>
+            <TableHead className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Score</TableHead>
+            <TableHead className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Submitted</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -489,13 +500,15 @@ function PreviewTable({
             return (
               <TableRow
                 key={app.id}
-                className={`cursor-pointer ${isHighlighted ? "bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/30 dark:hover:bg-emerald-950/50" : "hover:bg-muted/50"}`}
+                className={`cursor-pointer transition-colors ${isHighlighted ? "bg-emerald-50 hover:bg-emerald-100" : "hover:bg-primary/4"}`}
                 onClick={() => app.id && onRowClick(app.id)}
               >
                 {/* Applicant */}
                 <TableCell>
-                  <div className="flex items-center gap-2">
-                    <User className="h-4 w-4 text-muted-foreground shrink-0" />
+                  <div className="flex items-center gap-2.5">
+                    <div className="flex h-7 w-7 items-center justify-center rounded-full bg-primary/10 shrink-0">
+                      <User className="h-3.5 w-3.5 text-primary" />
+                    </div>
                     <span className="font-medium text-sm">
                       {app.first_name} {app.last_name}
                     </span>

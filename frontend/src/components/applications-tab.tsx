@@ -67,8 +67,16 @@ const STATUS_CONFIG: Record<
     className?: string;
   }
 > = {
-  to_be_reviewed: { label: "To Be Reviewed", variant: "secondary" },
-  reviewed: { label: "Hold", variant: "default" },
+  to_be_reviewed: {
+    label: "To Be Reviewed",
+    variant: "secondary",
+    className: "bg-primary/10 text-primary border-primary/20",
+  },
+  reviewed: {
+    label: "Hold",
+    variant: "default",
+    className: "bg-amber-100 text-amber-800 border-amber-200",
+  },
   shortlisted: {
     label: "Shortlisted",
     variant: "default",
@@ -325,9 +333,9 @@ export function ApplicationsTab({ orgId, jobProfileId }: ApplicationsTabProps) {
           />
         ),
         cell: ({ row }) => (
-          <div className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-muted shrink-0">
-              <User className="h-4 w-4 text-muted-foreground" />
+          <div className="flex items-center gap-2.5">
+            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 shrink-0">
+              <User className="h-4 w-4 text-primary" />
             </div>
             <p className="font-medium text-sm">
               {row.original.first_name} {row.original.last_name}
@@ -524,11 +532,13 @@ export function ApplicationsTab({ orgId, jobProfileId }: ApplicationsTabProps) {
 
   if (isEmpty) {
     return (
-      <Card>
-        <CardContent className="flex flex-col items-center justify-center py-12 text-center">
-          <FileText className="h-12 w-12 text-muted-foreground/40 mb-4" />
-          <h3 className="text-lg font-medium mb-1">No applications yet</h3>
-          <p className="text-sm text-muted-foreground">
+      <Card className="border-dashed">
+        <CardContent className="flex flex-col items-center justify-center py-16 text-center">
+          <div className="h-14 w-14 rounded-full bg-primary/10 flex items-center justify-center mb-4">
+            <FileText className="h-7 w-7 text-primary" />
+          </div>
+          <h3 className="text-base font-semibold mb-1">No applications yet</h3>
+          <p className="text-sm text-muted-foreground max-w-sm">
             Applications will appear here once candidates apply for this job
             profile.
           </p>
@@ -595,13 +605,13 @@ export function ApplicationsTab({ orgId, jobProfileId }: ApplicationsTabProps) {
       </div>
 
       {/* Table */}
-      <div className="rounded-md border">
+      <div className="rounded-lg border border-border overflow-hidden shadow-sm">
         <Table>
-          <TableHeader>
+          <TableHeader className="bg-muted/40">
             {table.getHeaderGroups().map((hg) => (
-              <TableRow key={hg.id}>
+              <TableRow key={hg.id} className="border-b border-border/60 hover:bg-transparent">
                 {hg.headers.map((header) => (
-                  <TableHead key={header.id}>
+                  <TableHead key={header.id} className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
                     {header.isPlaceholder
                       ? null
                       : flexRender(
@@ -640,7 +650,7 @@ export function ApplicationsTab({ orgId, jobProfileId }: ApplicationsTabProps) {
                 return (
                   <TableRow
                     key={row.id}
-                    className="cursor-pointer hover:bg-muted/50"
+                    className="cursor-pointer hover:bg-primary/4 transition-colors"
                     onClick={(e) => {
                       if (e.ctrlKey || e.metaKey) {
                         e.preventDefault();

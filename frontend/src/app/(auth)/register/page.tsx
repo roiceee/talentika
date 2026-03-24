@@ -11,10 +11,7 @@ import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
-  CardDescription,
   CardFooter,
-  CardHeader,
-  CardTitle,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -87,114 +84,122 @@ function RegisterForm() {
   }
 
   return (
-    <Card>
-      <CardHeader className="text-center">
-        <CardTitle className="text-2xl font-heading">Create account</CardTitle>
-        <CardDescription>
+    <>
+      <div className="mb-8">
+        <h1 className="font-heading text-2xl text-foreground mb-1">Create account</h1>
+        <p className="text-muted-foreground text-sm">
           {invitationToken
             ? "Complete your registration to join the organization"
             : "Sign up for a Talentika account"}
-        </CardDescription>
-      </CardHeader>
-      <form onSubmit={handleSubmit}>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
-            <Input
-              id="email"
-              type="email"
-              placeholder="you@example.com"
-              value={form.email}
-              onChange={(e) => updateField("email", e.target.value)}
-              required
-              autoComplete="email"
-              disabled={!!invitationEmail}
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="username">Username</Label>
-            <Input
-              id="username"
-              type="text"
-              placeholder="johndoe"
-              value={form.username}
-              onChange={(e) => updateField("username", e.target.value)}
-              required
-              autoComplete="username"
-            />
-          </div>
-          <div className="grid grid-cols-2 gap-4">
+        </p>
+      </div>
+      <Card className="shadow-md border-border/60">
+        <form onSubmit={handleSubmit}>
+          <CardContent className="space-y-4 pt-6">
             <div className="space-y-2">
-              <Label htmlFor="first_name">First name</Label>
+              <Label htmlFor="email" className="text-sm font-medium">Email</Label>
               <Input
-                id="first_name"
-                type="text"
-                placeholder="John"
-                value={form.first_name}
-                onChange={(e) => updateField("first_name", e.target.value)}
+                id="email"
+                type="email"
+                placeholder="you@example.com"
+                value={form.email}
+                onChange={(e) => updateField("email", e.target.value)}
                 required
+                autoComplete="email"
+                disabled={!!invitationEmail}
+                className="h-10"
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="last_name">Last name</Label>
+              <Label htmlFor="username" className="text-sm font-medium">Username</Label>
               <Input
-                id="last_name"
+                id="username"
                 type="text"
-                placeholder="Doe"
-                value={form.last_name}
-                onChange={(e) => updateField("last_name", e.target.value)}
+                placeholder="johndoe"
+                value={form.username}
+                onChange={(e) => updateField("username", e.target.value)}
                 required
+                autoComplete="username"
+                className="h-10"
               />
             </div>
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="password">Password</Label>
-            <Input
-              id="password"
-              type="password"
-              placeholder="Create a password"
-              value={form.password}
-              onChange={(e) => updateField("password", e.target.value)}
-              required
-              autoComplete="new-password"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="password_confirm">Confirm password</Label>
-            <Input
-              id="password_confirm"
-              type="password"
-              placeholder="Confirm your password"
-              value={form.password_confirm}
-              onChange={(e) => updateField("password_confirm", e.target.value)}
-              required
-              autoComplete="new-password"
-            />
-          </div>
-        </CardContent>
-        <CardFooter className="flex flex-col gap-4">
-          <Button type="submit" className="w-full" disabled={isSubmitting}>
-            {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Create account
-          </Button>
-          <p className="text-sm text-muted-foreground">
-            Already have an account?{" "}
-            <Link
-              href={
-                invitationToken
-                  ? `/login?redirect=${encodeURIComponent(`/invite/accept?token=${invitationToken}`)}`
-                  : redirect
-                    ? `/login?redirect=${encodeURIComponent(redirect)}`
-                    : "/login"
-              }
-              className="text-primary hover:underline"
-            >
-              Sign in
-            </Link>
-          </p>
-        </CardFooter>
-      </form>
-    </Card>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="first_name" className="text-sm font-medium">First name</Label>
+                <Input
+                  id="first_name"
+                  type="text"
+                  placeholder="John"
+                  value={form.first_name}
+                  onChange={(e) => updateField("first_name", e.target.value)}
+                  required
+                  className="h-10"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="last_name" className="text-sm font-medium">Last name</Label>
+                <Input
+                  id="last_name"
+                  type="text"
+                  placeholder="Doe"
+                  value={form.last_name}
+                  onChange={(e) => updateField("last_name", e.target.value)}
+                  required
+                  className="h-10"
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="password" className="text-sm font-medium">Password</Label>
+              <Input
+                id="password"
+                type="password"
+                placeholder="Create a password"
+                value={form.password}
+                onChange={(e) => updateField("password", e.target.value)}
+                required
+                autoComplete="new-password"
+                className="h-10"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="password_confirm" className="text-sm font-medium">Confirm password</Label>
+              <Input
+                id="password_confirm"
+                type="password"
+                placeholder="Confirm your password"
+                value={form.password_confirm}
+                onChange={(e) => updateField("password_confirm", e.target.value)}
+                required
+                autoComplete="new-password"
+                className="h-10"
+              />
+            </div>
+          </CardContent>
+          <CardFooter className="flex flex-col gap-4 pb-6">
+            <Button type="submit" className="w-full h-10 font-semibold" disabled={isSubmitting}>
+              {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Create account
+            </Button>
+            <p className="text-sm text-muted-foreground text-center">
+              Already have an account?{" "}
+              <Link
+                href={
+                  invitationToken
+                    ? `/login?redirect=${encodeURIComponent(`/invite/accept?token=${invitationToken}`)}`
+                    : redirect
+                      ? `/login?redirect=${encodeURIComponent(redirect)}`
+                      : "/login"
+                }
+                className="text-primary hover:underline font-medium"
+              >
+                Sign in
+              </Link>
+            </p>
+          </CardFooter>
+        </form>
+      </Card>
+    </>
   );
 }
 
