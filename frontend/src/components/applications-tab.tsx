@@ -634,26 +634,33 @@ export function ApplicationsTab({ orgId, jobProfileId }: ApplicationsTabProps) {
                 </TableCell>
               </TableRow>
             ) : (
-              table.getRowModel().rows.map((row) => (
-                <TableRow
-                  key={row.id}
-                  className="cursor-pointer hover:bg-muted/50"
-                  onClick={() =>
-                    router.push(
-                      `/job-profiles/${jobProfileId}/applications/${row.original.id}`,
-                    )
-                  }
-                >
-                  {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id}>
-                      {flexRender(
-                        cell.column.columnDef.cell,
-                        cell.getContext(),
-                      )}
-                    </TableCell>
-                  ))}
-                </TableRow>
-              ))
+              table.getRowModel().rows.map((row) => {
+                const appId = row.original.id ?? "";
+                const href = `/job-profiles/${jobProfileId}/applications/${appId}`;
+                return (
+                  <TableRow
+                    key={row.id}
+                    className="cursor-pointer hover:bg-muted/50"
+                    onClick={(e) => {
+                      if (e.ctrlKey || e.metaKey) {
+                        e.preventDefault();
+                        window.open(href, "_blank");
+                      } else {
+                        router.push(href);
+                      }
+                    }}
+                  >
+                    {row.getVisibleCells().map((cell) => (
+                      <TableCell key={cell.id}>
+                        {flexRender(
+                          cell.column.columnDef.cell,
+                          cell.getContext(),
+                        )}
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                );
+              })
             )}
           </TableBody>
         </Table>
