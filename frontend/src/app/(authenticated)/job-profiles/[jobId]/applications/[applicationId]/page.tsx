@@ -19,14 +19,8 @@ import type {
 } from "@/lib/client";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { ApplicationStatusActions } from "@/components/application-status-actions";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -58,12 +52,6 @@ import {
 } from "lucide-react";
 import { QUESTION_TYPE_LABELS } from "@/lib/constants/job-profile";
 
-const UPDATABLE_STATUSES = [
-  { value: "to_be_reviewed", label: "To Be Reviewed" },
-  { value: "reviewed", label: "Hold" },
-  { value: "shortlisted", label: "Shortlisted" },
-  { value: "rejected", label: "Rejected" },
-] as const;
 
 type AnalysisData = {
   id?: string;
@@ -280,6 +268,17 @@ export default function ApplicationDetailPage({
     (a) => a.file_type === "resume",
   );
 
+  async function handleStatusAction(status: string, andNext: boolean) {
+    await handleStatusChange(status);
+    if (andNext) {
+      if (nextApplicationId) {
+        router.push(`/job-profiles/${jobId}/applications/${nextApplicationId}`);
+      } else {
+        router.push(`/job-profiles/${jobId}?tab=results`);
+      }
+    }
+  }
+
   async function handleRetryAnalysis() {
     if (!application?.id || isRetrying) return;
     setIsRetrying(true);
@@ -377,65 +376,11 @@ export default function ApplicationDetailPage({
                 </p>
               </div>
             </div>
-            <div className="flex items-center gap-2">
-              {isUpdatingStatus ? (
-                <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-              ) : application.status === "to_be_reviewed" ? (
-                <>
-                  <Button
-                    size="sm"
-                    variant="destructive"
-                    disabled={isUpdatingStatus}
-                    onClick={() => handleStatusChange("rejected")}
-                  >
-                    Reject
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    disabled={isUpdatingStatus}
-                    onClick={() => handleStatusChange("reviewed")}
-                  >
-                    Hold
-                  </Button>
-                  <Button
-                    size="sm"
-                    className="bg-emerald-600 hover:bg-emerald-700 text-white"
-                    disabled={isUpdatingStatus}
-                    onClick={() => handleStatusChange("shortlisted")}
-                  >
-                    Shortlist
-                  </Button>
-                </>
-              ) : (
-                <Select
-                  value={application.status ?? "to_be_reviewed"}
-                  onValueChange={handleStatusChange}
-                  disabled={isUpdatingStatus}
-                >
-                  <SelectTrigger className="h-8 w-40 text-xs">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {UPDATABLE_STATUSES.map((s) => (
-                      <SelectItem
-                        key={s.value}
-                        value={s.value}
-                        className={
-                          s.value === "shortlisted"
-                            ? "text-emerald-600 font-medium focus:text-emerald-600"
-                            : s.value === "rejected"
-                              ? "text-destructive focus:text-destructive"
-                              : ""
-                        }
-                      >
-                        {s.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              )}
-            </div>
+            <ApplicationStatusActions
+              currentStatus={application.status}
+              isUpdating={isUpdatingStatus}
+              onAction={handleStatusAction}
+            />
           </div>
         </CardHeader>
         <CardContent className="space-y-3">
@@ -1035,34 +980,12 @@ export default function ApplicationDetailPage({
               <Separator />
 
               {/* Status actions */}
-              <div className="flex flex-col gap-1.5">
-                <Button
-                  size="sm"
-                  variant="destructive"
-                  className="w-full"
-                  disabled={isUpdatingStatus}
-                  onClick={() => handleStatusChange("rejected")}
-                >
-                  Reject
-                </Button>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="w-full"
-                  disabled={isUpdatingStatus}
-                  onClick={() => handleStatusChange("reviewed")}
-                >
-                  Hold
-                </Button>
-                <Button
-                  size="sm"
-                  className="w-full bg-emerald-600 hover:bg-emerald-700 text-white"
-                  disabled={isUpdatingStatus}
-                  onClick={() => handleStatusChange("shortlisted")}
-                >
-                  Shortlist
-                </Button>
-              </div>
+              <ApplicationStatusActions
+                currentStatus={application.status}
+                isUpdating={isUpdatingStatus}
+                onAction={handleStatusAction}
+                vertical
+              />
             </CardContent>
           </Card>
         </div>
