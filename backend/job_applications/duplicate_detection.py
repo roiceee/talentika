@@ -1,11 +1,17 @@
 """
 Duplicate detection service for job applications.
 
-Scores existing applications against incoming submission data using:
-  - Fuzzy name matching            (rapidfuzz, weight 0.30)
-  - Exact phone match              (weight 0.25)
-  - Address field similarity       (rapidfuzz, weight 0.20)
+Email uniqueness is enforced as a hard constraint in the serializer before
+this service is called. This service scores the remaining signals:
+
+  - Fuzzy name matching            (rapidfuzz, weight 0.55)
+  - Exact phone match              (weight 0.20)
   - SHA-256 file hash match        (weight 0.25)
+
+Weights are calibrated so that either combination alone crosses the 0.75
+threshold:
+  - name + phone  (0.55 + 0.20 = 0.75): same person, different file
+  - name + file   (0.55 + 0.25 = 0.80): same person, different phone
 
 Candidates are pre-filtered at the database level (same job_profile + at least
 one strong signal present) before any Python-level scoring, keeping this
@@ -20,11 +26,12 @@ from rapidfuzz import fuzz
 
 # ---------------------------------------------------------------------------
 # Weights must sum to 1.0
+# Email is intentionally excluded — it is enforced as a unique hard constraint
+# in the serializer before this scoring runs.
 # ---------------------------------------------------------------------------
 _WEIGHTS: dict[str, float] = {
-    "name": 0.30,
-    "phone": 0.25,
-    "email": 0.20,
+    "name": 0.55,
+    "phone": 0.20,
     "file_hash": 0.25,
 }
 
@@ -72,13 +79,6 @@ def _file_hash_score(incoming_hash: Optional[str], candidate) -> float:
     return 1.0 if matched else 0.0
 
 
-def _email_score(incoming_email: str, candidate) -> float:
-    """1.0 if email matches (case-insensitive)."""
-    if not incoming_email:
-        return 0.0
-    return 1.0 if (candidate.email or "").lower() == incoming_email.lower() else 0.0
-
-
 # ---------------------------------------------------------------------------
 # Public API
 # ---------------------------------------------------------------------------
@@ -90,7 +90,6 @@ def find_duplicates(
     first_name: str,
     last_name: str,
     phone: str,
-    email: str = "",
     sha256_hash: Optional[str] = None,
     exclude_id=None,
     threshold: float = DUPLICATE_THRESHOLD,
@@ -100,6 +99,9 @@ def find_duplicates(
     of :class:`ScoredApplication` objects (score >= *threshold*), sorted
     descending by score.
 
+    Email uniqueness must be checked separately as a hard constraint before
+    calling this function.
+
     Parameters
     ----------
     job_profile:
@@ -108,8 +110,6 @@ def find_duplicates(
         Applicant name from the incoming submission.
     phone:
         Applicant phone (empty string is fine).
-    email:
-        Applicant email (empty string is fine).
     sha256_hash:
         SHA-256 hex digest of the uploaded resume (if any).
     exclude_id:
@@ -135,14 +135,12 @@ def find_duplicates(
     if exclude_id:
         candidates_qs = candidates_qs.exclude(id=exclude_id)
 
-    # Narrow: exact phone OR file hash OR email match.
+    # Narrow: exact phone OR file hash match.
     narrowing_filter = Q()
     if phone:
         narrowing_filter |= Q(phone=phone)
     if sha256_hash:
         narrowing_filter |= Q(attachments__sha256_hash=sha256_hash)
-    if email:
-        narrowing_filter |= Q(email__iexact=email)
 
     if narrowing_filter:
         candidates_qs = candidates_qs.filter(narrowing_filter).distinct()
@@ -158,7 +156,6 @@ def find_duplicates(
             "phone": (
                 1.0 if phone and (candidate.phone or "").strip() == phone else 0.0
             ),
-            "email": _email_score(email, candidate),
             "file_hash": _file_hash_score(sha256_hash, candidate),
         }
 
@@ -183,7 +180,6 @@ def is_duplicate(
     first_name: str,
     last_name: str,
     phone: str,
-    email: str = "",
     sha256_hash: Optional[str] = None,
     exclude_id=None,
     threshold: float = DUPLICATE_THRESHOLD,
@@ -195,7 +191,6 @@ def is_duplicate(
             first_name=first_name,
             last_name=last_name,
             phone=phone,
-            email=email,
             sha256_hash=sha256_hash,
             exclude_id=exclude_id,
             threshold=threshold,
