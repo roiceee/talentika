@@ -187,7 +187,24 @@ class JobApplicationCreateSerializer(serializers.ModelSerializer):
 
     def _check_duplicates(self, attrs):
         """Run duplicate detection and raise if a duplicate is found."""
+        from .models import JobApplication
+
         job_profile = attrs.get("job_profile")
+        email = attrs.get("email", "")
+
+        # Hard constraint: one application per email per job profile.
+        if email and JobApplication.objects.filter(
+            job_profile=job_profile, email__iexact=email
+        ).exists():
+            raise serializers.ValidationError(
+                {
+                    "email": (
+                        "An application with this email address has already "
+                        "been submitted for this position."
+                    )
+                }
+            )
+
         resume_id = attrs.get("resume_id")
         sha256_hash = None
         if resume_id:
@@ -202,7 +219,6 @@ class JobApplicationCreateSerializer(serializers.ModelSerializer):
             first_name=attrs.get("first_name", ""),
             last_name=attrs.get("last_name", ""),
             phone=attrs.get("phone", ""),
-            email=attrs.get("email", ""),
             sha256_hash=sha256_hash,
             threshold=DUPLICATE_THRESHOLD,
         )
