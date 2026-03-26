@@ -84,7 +84,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { AvatarUpload } from "@/components/avatar-upload";
 import {
   ArrowLeft,
-  Building2,
   Users,
   Mail,
   Loader2,
@@ -99,6 +98,7 @@ import {
   Ban,
   Settings,
   Plus,
+  Calendar,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -231,12 +231,7 @@ export default function OrganizationDetailPage({
       <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">
         <TabsList>
           <TabsTrigger value="overview" className="gap-2">
-            <Building2 className="h-4 w-4" />
             Overview
-          </TabsTrigger>
-          <TabsTrigger value="members" className="gap-2">
-            <Users className="h-4 w-4" />
-            Members ({members.length})
           </TabsTrigger>
           <TabsTrigger value="invitations" className="gap-2">
             <Mail className="h-4 w-4" />
@@ -256,17 +251,8 @@ export default function OrganizationDetailPage({
             isAdmin={isAdmin}
             onUpdate={fetchData}
             orgId={orgId}
-          />
-        </TabsContent>
-
-        <TabsContent value="members">
-          <MembersTab
             members={members}
-            isAdmin={isAdmin}
             currentUserId={user?.id}
-            orgId={orgId}
-            orgName={org.name}
-            onUpdate={fetchData}
           />
         </TabsContent>
 
@@ -297,18 +283,30 @@ function OverviewTab({
   isAdmin,
   onUpdate,
   orgId,
+  members,
+  currentUserId,
 }: {
   org: Organization;
   isAdmin: boolean;
   onUpdate: () => Promise<void>;
   orgId: string;
+  members: OrganizationMembership[];
+  currentUserId?: string;
 }) {
+  const router = useRouter();
+  const { refreshUser } = useAuth();
+
+  // Edit org state
   const [editing, setEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [form, setForm] = useState({
     name: org.name,
     description: org.description || "",
   });
+
+  // Members state
+  const [removingId, setRemovingId] = useState<string | null>(null);
+  const [isLeaving, setIsLeaving] = useState(false);
 
   async function handleSave(e: React.FormEvent) {
     e.preventDefault();
@@ -328,154 +326,6 @@ function OverviewTab({
       setIsSaving(false);
     }
   }
-
-  return (
-    <Card>
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <CardTitle>Organization details</CardTitle>
-          {isAdmin && !editing && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setEditing(true)}
-            >
-              <Pencil className="mr-2 h-4 w-4" />
-              Edit
-            </Button>
-          )}
-        </div>
-      </CardHeader>
-      <CardContent>
-        {editing ? (
-          <form onSubmit={handleSave} className="space-y-4">
-            <div className="space-y-2">
-              <Label>Name</Label>
-              <Input
-                value={form.name}
-                onChange={(e) =>
-                  setForm((prev) => ({ ...prev, name: e.target.value }))
-                }
-                required
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>Description</Label>
-              <Textarea
-                value={form.description}
-                onChange={(e) =>
-                  setForm((prev) => ({
-                    ...prev,
-                    description: e.target.value,
-                  }))
-                }
-                rows={3}
-              />
-            </div>
-            <div className="flex gap-2">
-              <Button type="submit" disabled={isSaving}>
-                {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Save
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => {
-                  setEditing(false);
-                  setForm({
-                    name: org.name,
-                    description: org.description || "",
-                  });
-                }}
-              >
-                Cancel
-              </Button>
-            </div>
-          </form>
-        ) : (
-          <div className="space-y-4">
-            <div>
-              <p className="text-sm font-medium text-muted-foreground">Name</p>
-              <p>{org.name}</p>
-            </div>
-            {org.description && (
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">
-                  Description
-                </p>
-                <p>{org.description}</p>
-              </div>
-            )}
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">
-                  Members
-                </p>
-                <p>{org.member_count}</p>
-              </div>
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">
-                  Created
-                </p>
-                <p>
-                  {org.created_at
-                    ? new Date(org.created_at).toLocaleDateString()
-                    : "—"}
-                </p>
-              </div>
-              {org.approved_at && (
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">
-                    Approved
-                  </p>
-                  <p>{new Date(org.approved_at).toLocaleDateString()}</p>
-                </div>
-              )}
-            </div>
-            {org.address && (
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">
-                  Address
-                </p>
-                <p>
-                  {org.address.line1}
-                  {org.address.line2 && `, ${org.address.line2}`}
-                  <br />
-                  {org.address.city}, {org.address.province_state}{" "}
-                  {org.address.postal_code}
-                  <br />
-                  {org.address.country}
-                </p>
-              </div>
-            )}
-          </div>
-        )}
-      </CardContent>
-    </Card>
-  );
-}
-
-// ─── Members Tab ────────────────────────────────────────────────────
-
-function MembersTab({
-  members,
-  isAdmin,
-  currentUserId,
-  orgId,
-  orgName,
-  onUpdate,
-}: {
-  members: OrganizationMembership[];
-  isAdmin: boolean;
-  currentUserId?: string;
-  orgId: string;
-  orgName: string;
-  onUpdate: () => Promise<void>;
-}) {
-  const router = useRouter();
-  const { refreshUser } = useAuth();
-  const [removingId, setRemovingId] = useState<string | null>(null);
-  const [isLeaving, setIsLeaving] = useState(false);
 
   async function handleRemove(membershipId: string) {
     setRemovingId(membershipId);
@@ -497,7 +347,7 @@ function MembersTab({
     try {
       await leaveOrganization(orgId);
       await refreshUser();
-      toast.success(`Left ${orgName}`);
+      toast.success(`Left ${org.name}`);
       router.push("/organizations");
     } catch (error) {
       if (error instanceof AxiosError) {
@@ -510,132 +360,251 @@ function MembersTab({
     }
   }
 
+  const createdDate = org.created_at
+    ? new Date(org.created_at).toLocaleDateString("en-US", {
+        month: "short",
+        year: "numeric",
+      })
+    : null;
+
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <div>
-            <CardTitle>Members</CardTitle>
-            <CardDescription>
-              {members.length} member{members.length !== 1 ? "s" : ""} in this
-              organization
-            </CardDescription>
-          </div>
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <Button variant="outline" size="sm" className="text-destructive">
-                <LogOut className="mr-2 h-4 w-4" />
-                Leave
+    <div className="space-y-6">
+      {/* Org Details Card */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <CardTitle>Organization</CardTitle>
+            {isAdmin && !editing && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setEditing(true)}
+              >
+                <Pencil className="mr-2 h-4 w-4" />
+                Edit
               </Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Leave organization?</AlertDialogTitle>
-                <AlertDialogDescription>
-                  You will lose access to {orgName}. You&apos;ll need a new
-                  invitation to rejoin.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction
-                  onClick={handleLeave}
-                  disabled={isLeaving}
-                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            )}
+          </div>
+        </CardHeader>
+        <CardContent>
+          {editing ? (
+            <form onSubmit={handleSave} className="space-y-4">
+              <div className="space-y-2">
+                <Label>Name</Label>
+                <Input
+                  value={form.name}
+                  onChange={(e) =>
+                    setForm((prev) => ({ ...prev, name: e.target.value }))
+                  }
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Description</Label>
+                <Textarea
+                  value={form.description}
+                  onChange={(e) =>
+                    setForm((prev) => ({
+                      ...prev,
+                      description: e.target.value,
+                    }))
+                  }
+                  rows={3}
+                />
+              </div>
+              <div className="flex gap-2">
+                <Button type="submit" disabled={isSaving}>
+                  {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  Save
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    setEditing(false);
+                    setForm({
+                      name: org.name,
+                      description: org.description || "",
+                    });
+                  }}
                 >
-                  {isLeaving && (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  )}
+                  Cancel
+                </Button>
+              </div>
+            </form>
+          ) : (
+            <div className="space-y-4">
+              <div>
+                <p className="text-lg font-semibold">{org.name}</p>
+                {org.description && (
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    {org.description}
+                  </p>
+                )}
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <span className="inline-flex items-center gap-1.5 rounded-full border bg-muted/50 px-3 py-1 text-sm font-medium">
+                  <Users className="h-3.5 w-3.5 text-muted-foreground" />
+                  {org.member_count ?? members.length}{" "}
+                  {(org.member_count ?? members.length) === 1
+                    ? "member"
+                    : "members"}
+                </span>
+                {createdDate && (
+                  <span className="inline-flex items-center gap-1.5 rounded-full border bg-muted/50 px-3 py-1 text-sm font-medium">
+                    <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
+                    Created {createdDate}
+                  </span>
+                )}
+              </div>
+              {org.address && (
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground mb-1">
+                    Address
+                  </p>
+                  <p className="text-sm">
+                    {org.address.line1}
+                    {org.address.line2 && `, ${org.address.line2}`}
+                    <br />
+                    {org.address.city}, {org.address.province_state}{" "}
+                    {org.address.postal_code}
+                    <br />
+                    {org.address.country}
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Members Card */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle>Members</CardTitle>
+              <CardDescription>
+                {members.length} member{members.length !== 1 ? "s" : ""} in
+                this organization
+              </CardDescription>
+            </div>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="outline" size="sm" className="text-destructive">
+                  <LogOut className="mr-2 h-4 w-4" />
                   Leave
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
-        </div>
-      </CardHeader>
-      <CardContent>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Name</TableHead>
-              <TableHead>Email</TableHead>
-              <TableHead>Role</TableHead>
-              <TableHead>Joined</TableHead>
-              {isAdmin && <TableHead className="w-12" />}
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {members.map((membership) => (
-              <TableRow key={membership.id}>
-                <TableCell className="font-medium">
-                  {membership.user?.first_name} {membership.user?.last_name}
-                  {membership.user?.id === currentUserId && (
-                    <span className="ml-2 text-xs text-muted-foreground">
-                      (you)
-                    </span>
-                  )}
-                </TableCell>
-                <TableCell>{membership.user?.email}</TableCell>
-                <TableCell>
-                  <Badge
-                    variant={
-                      membership.role === "ORG_ADMIN" ? "default" : "secondary"
-                    }
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Leave organization?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    You will lose access to {org.name}. You&apos;ll need a new
+                    invitation to rejoin.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={handleLeave}
+                    disabled={isLeaving}
+                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                   >
-                    {membership.role === "ORG_ADMIN" ? "Admin" : "Member"}
-                  </Badge>
-                </TableCell>
-                <TableCell>
-                  {membership.created_at
-                    ? new Date(membership.created_at).toLocaleDateString()
-                    : "—"}
-                </TableCell>
-                {isAdmin && (
-                  <TableCell>
-                    {membership.user?.id !== currentUserId && (
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="text-destructive"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>Remove member?</AlertDialogTitle>
-                            <AlertDialogDescription>
-                              Remove {membership.user?.first_name}{" "}
-                              {membership.user?.last_name} from the
-                              organization?
-                            </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel>Cancel</AlertDialogCancel>
-                            <AlertDialogAction
-                              onClick={() => handleRemove(membership.id!)}
-                              disabled={removingId === membership.id}
-                              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                            >
-                              {removingId === membership.id && (
-                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                              )}
-                              Remove
-                            </AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
+                    {isLeaving && (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    )}
+                    Leave
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Name</TableHead>
+                <TableHead>Email</TableHead>
+                <TableHead>Role</TableHead>
+                <TableHead>Joined</TableHead>
+                {isAdmin && <TableHead className="w-12" />}
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {members.map((membership) => (
+                <TableRow key={membership.id}>
+                  <TableCell className="font-medium">
+                    {membership.user?.first_name} {membership.user?.last_name}
+                    {membership.user?.id === currentUserId && (
+                      <span className="ml-2 text-xs text-muted-foreground">
+                        (you)
+                      </span>
                     )}
                   </TableCell>
-                )}
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </CardContent>
-    </Card>
+                  <TableCell>{membership.user?.email}</TableCell>
+                  <TableCell>
+                    <Badge
+                      variant={
+                        membership.role === "ORG_ADMIN" ? "default" : "secondary"
+                      }
+                    >
+                      {membership.role === "ORG_ADMIN" ? "Admin" : "Member"}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
+                    {membership.created_at
+                      ? new Date(membership.created_at).toLocaleDateString()
+                      : "—"}
+                  </TableCell>
+                  {isAdmin && (
+                    <TableCell>
+                      {membership.user?.id !== currentUserId && (
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="text-destructive"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Remove member?</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Remove {membership.user?.first_name}{" "}
+                                {membership.user?.last_name} from the
+                                organization?
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                              <AlertDialogAction
+                                onClick={() => handleRemove(membership.id!)}
+                                disabled={removingId === membership.id}
+                                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                              >
+                                {removingId === membership.id && (
+                                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                )}
+                                Remove
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      )}
+                    </TableCell>
+                  )}
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+    </div>
   );
 }
 
