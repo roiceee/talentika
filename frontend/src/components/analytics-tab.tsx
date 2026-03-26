@@ -111,10 +111,9 @@ export function AnalyticsTab({ orgId, jobProfileId, basePath }: AnalyticsTabProp
               <p
                 className={`text-3xl font-bold ${
                   {
-                    excellent: "text-emerald-600",
-                    good: "text-blue-600",
-                    moderate: "text-amber-600",
-                    bad: "text-destructive",
+                    suitable: "text-emerald-600",
+                    potentially_suitable: "text-amber-600",
+                    unsuitable: "text-destructive",
                   }[data.average_category.key] ?? ""
                 }`}
               >

@@ -44,17 +44,15 @@ export const CATEGORY_CONFIG: Record<
   string,
   { label: string; color: string; hover: string }
 > = {
-  excellent: { label: "Excellent", color: "#059669", hover: "#047857" },
-  good: { label: "Good", color: "#3b82f6", hover: "#2563eb" },
-  moderate: { label: "Moderate", color: "#f59e0b", hover: "#d97706" },
-  bad: { label: "Bad", color: "#ef4444", hover: "#dc2626" },
+  suitable: { label: "Suitable", color: "#059669", hover: "#047857" },
+  potentially_suitable: { label: "Potentially Suitable", color: "#f59e0b", hover: "#d97706" },
+  unsuitable: { label: "Unsuitable", color: "#ef4444", hover: "#dc2626" },
 };
 
 export const SCORE_CATEGORY_COLORS: Record<string, string> = {
-  excellent: "text-emerald-600",
-  good: "text-blue-600",
-  moderate: "text-amber-600",
-  bad: "text-destructive",
+  suitable: "text-emerald-600",
+  potentially_suitable: "text-amber-600",
+  unsuitable: "text-destructive",
 };
 
 // ─── StatusBreakdownChart ─────────────────────────────────────────────────────
