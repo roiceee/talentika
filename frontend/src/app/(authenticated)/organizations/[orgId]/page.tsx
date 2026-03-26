@@ -99,6 +99,7 @@ import {
   Settings,
   Plus,
   Calendar,
+  Building,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -228,9 +229,14 @@ export default function OrganizationDetailPage({
         </div>
       </div>
 
-      <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">
+      <Tabs
+        value={activeTab}
+        onValueChange={handleTabChange}
+        className="space-y-6"
+      >
         <TabsList>
           <TabsTrigger value="overview" className="gap-2">
+            <Building className="h-4 w-4" />
             Overview
           </TabsTrigger>
           <TabsTrigger value="invitations" className="gap-2">
@@ -414,7 +420,9 @@ function OverviewTab({
               </div>
               <div className="flex gap-2">
                 <Button type="submit" disabled={isSaving}>
-                  {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  {isSaving && (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  )}
                   Save
                 </Button>
                 <Button
@@ -485,13 +493,17 @@ function OverviewTab({
             <div>
               <CardTitle>Members</CardTitle>
               <CardDescription>
-                {members.length} member{members.length !== 1 ? "s" : ""} in
-                this organization
+                {members.length} member{members.length !== 1 ? "s" : ""} in this
+                organization
               </CardDescription>
             </div>
             <AlertDialog>
               <AlertDialogTrigger asChild>
-                <Button variant="outline" size="sm" className="text-destructive">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="text-destructive"
+                >
                   <LogOut className="mr-2 h-4 w-4" />
                   Leave
                 </Button>
@@ -547,7 +559,9 @@ function OverviewTab({
                   <TableCell>
                     <Badge
                       variant={
-                        membership.role === "ORG_ADMIN" ? "default" : "secondary"
+                        membership.role === "ORG_ADMIN"
+                          ? "default"
+                          : "secondary"
                       }
                     >
                       {membership.role === "ORG_ADMIN" ? "Admin" : "Member"}
@@ -573,7 +587,9 @@ function OverviewTab({
                           </AlertDialogTrigger>
                           <AlertDialogContent>
                             <AlertDialogHeader>
-                              <AlertDialogTitle>Remove member?</AlertDialogTitle>
+                              <AlertDialogTitle>
+                                Remove member?
+                              </AlertDialogTitle>
                               <AlertDialogDescription>
                                 Remove {membership.user?.first_name}{" "}
                                 {membership.user?.last_name} from the
@@ -638,7 +654,9 @@ function SettingsTab({ orgId }: { orgId: string }) {
     setIsAddingCategory(true);
     try {
       const created = await createOrgJobCategory(orgId, title);
-      setOrgCategories((prev) => [...prev, created].sort((a, b) => a.title.localeCompare(b.title)));
+      setOrgCategories((prev) =>
+        [...prev, created].sort((a, b) => a.title.localeCompare(b.title)),
+      );
       setNewCategoryTitle("");
       toast.success(`Category "${created.title}" added`);
     } catch (error) {
@@ -662,8 +680,7 @@ function SettingsTab({ orgId }: { orgId: string }) {
       toast.success(`Category "${title}" deleted`);
     } catch (error) {
       if (error instanceof AxiosError) {
-        const msg =
-          error.response?.data?.detail || "Failed to delete category";
+        const msg = error.response?.data?.detail || "Failed to delete category";
         toast.error(msg);
       } else {
         toast.error("Failed to delete category");
@@ -680,7 +697,9 @@ function SettingsTab({ orgId }: { orgId: string }) {
     setIsAddingLevel(true);
     try {
       const created = await createOrgExperienceLevel(orgId, title);
-      setOrgLevels((prev) => [...prev, created].sort((a, b) => a.title.localeCompare(b.title)));
+      setOrgLevels((prev) =>
+        [...prev, created].sort((a, b) => a.title.localeCompare(b.title)),
+      );
       setNewLevelTitle("");
       toast.success(`Experience level "${created.title}" added`);
     } catch (error) {
@@ -734,7 +753,11 @@ function SettingsTab({ orgId }: { orgId: string }) {
               onChange={(e) => setNewCategoryTitle(e.target.value)}
               className="flex-1"
             />
-            <Button type="submit" disabled={isAddingCategory || !newCategoryTitle.trim()} size="sm">
+            <Button
+              type="submit"
+              disabled={isAddingCategory || !newCategoryTitle.trim()}
+              size="sm"
+            >
               {isAddingCategory ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
               ) : (
@@ -791,7 +814,9 @@ function SettingsTab({ orgId }: { orgId: string }) {
                           <AlertDialogCancel>Cancel</AlertDialogCancel>
                           <AlertDialogAction
                             className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                            onClick={() => handleDeleteCategory(cat.id, cat.title)}
+                            onClick={() =>
+                              handleDeleteCategory(cat.id, cat.title)
+                            }
                           >
                             Delete
                           </AlertDialogAction>
@@ -823,7 +848,11 @@ function SettingsTab({ orgId }: { orgId: string }) {
               onChange={(e) => setNewLevelTitle(e.target.value)}
               className="flex-1"
             />
-            <Button type="submit" disabled={isAddingLevel || !newLevelTitle.trim()} size="sm">
+            <Button
+              type="submit"
+              disabled={isAddingLevel || !newLevelTitle.trim()}
+              size="sm"
+            >
               {isAddingLevel ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
               ) : (
