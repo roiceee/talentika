@@ -225,16 +225,6 @@ export default function OrganizationDetailPage({
               )}
             </div>
           </div>
-          <Badge
-            variant="outline"
-            className={
-              org.status === "APPROVED"
-                ? "bg-green-100 text-green-800"
-                : "bg-yellow-100 text-yellow-800"
-            }
-          >
-            {org.status}
-          </Badge>
         </div>
       </div>
 
@@ -417,12 +407,6 @@ function OverviewTab({
               </div>
             )}
             <div className="grid grid-cols-2 gap-4">
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">
-                  Status
-                </p>
-                <p>{org.status}</p>
-              </div>
               <div>
                 <p className="text-sm font-medium text-muted-foreground">
                   Members
