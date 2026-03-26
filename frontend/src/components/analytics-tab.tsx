@@ -249,31 +249,49 @@ export function AnalyticsTab({ orgId, jobProfileId }: AnalyticsTabProps) {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="flex items-end gap-3 h-40">
-              {Object.entries(CATEGORY_LABELS).map(([key, cfg]) => {
-                const count = catDist[key] ?? 0;
-                return (
+            {(() => {
+              const CHART_H = 140; // px — fixed chart area height
+              const yMax = maxCatBucket + Math.max(1, Math.ceil(maxCatBucket * 0.2));
+              return (
+                <div className="flex gap-2">
+                  {/* Y-axis */}
                   <div
-                    key={key}
-                    className="flex-1 flex flex-col items-center gap-1"
+                    className="flex flex-col justify-between text-[10px] text-muted-foreground text-right shrink-0 pb-6"
+                    style={{ height: CHART_H }}
                   >
-                    <span className="text-xs font-medium text-muted-foreground">
-                      {count}
-                    </span>
-                    <div
-                      className={`w-full rounded-t ${cfg.color} transition-all`}
-                      style={{
-                        height: `${(count / maxCatBucket) * 100}%`,
-                        minHeight: count > 0 ? "4px" : "0px",
-                      }}
-                    />
-                    <span className="text-[11px] font-medium text-muted-foreground mt-1">
-                      {cfg.label}
-                    </span>
+                    <span>{yMax}</span>
+                    <span>{Math.round(yMax / 2)}</span>
+                    <span>0</span>
                   </div>
-                );
-              })}
-            </div>
+                  {/* Bars */}
+                  <div className="flex-1 flex items-end gap-3" style={{ height: CHART_H + 24 }}>
+                    {Object.entries(CATEGORY_LABELS).map(([key, cfg]) => {
+                      const count = catDist[key] ?? 0;
+                      const barH = Math.round((count / yMax) * CHART_H);
+                      return (
+                        <div key={key} className="flex-1 flex flex-col items-center gap-1">
+                          <span className="text-xs font-medium text-muted-foreground">
+                            {count > 0 ? count : ""}
+                          </span>
+                          <div className="flex-1 flex items-end w-full">
+                            <div
+                              className={`w-full rounded-t ${cfg.color} transition-all`}
+                              style={{
+                                height: barH > 0 ? barH : 0,
+                                minHeight: count > 0 ? 4 : 0,
+                              }}
+                            />
+                          </div>
+                          <span className="text-[11px] font-medium text-muted-foreground">
+                            {cfg.label}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })()}
           </CardContent>
         </Card>
       </div>
