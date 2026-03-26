@@ -57,7 +57,8 @@ class ResumeAnalysisResult(BaseModel):
 def _build_system_prompt() -> str:
     return (
         "You are an expert talent-acquisition analyst. "
-        "Given a candidate's resume text and a job description with structured qualifications, "
+        "Given a candidate's resume text, a job description with structured qualifications, "
+        "and the candidate's answers to screening questions (if provided), "
         "produce a structured analysis of the candidate's fit for the role. "
         "Be objective, thorough, and concise.\n\n"
         "When assigning the score, use these category thresholds:\n"
@@ -66,7 +67,10 @@ def _build_system_prompt() -> str:
         "- Unsuitable (0-39): Poor fit — does not meet core requirements\n"
         "Pick a score that clearly places the candidate in the right category.\n\n"
         "Pay special attention to 'required' qualifications — failing to meet them "
-        "should weigh heavily against the score. 'Preferred' qualifications are nice-to-have."
+        "should weigh heavily against the score. 'Preferred' qualifications are nice-to-have.\n\n"
+        "If screening question answers are provided, factor them into the overall assessment: "
+        "strong answers can reinforce a higher score; weak, evasive, or disqualifying answers "
+        "should lower it."
     )
 
 
