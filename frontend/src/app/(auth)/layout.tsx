@@ -8,13 +8,18 @@ export default function AuthLayout({
   return (
     <div className="min-h-screen grid lg:grid-cols-2">
       {/* Left: Brand panel */}
-      <div className="hidden lg:flex flex-col bg-primary px-12 py-10 text-primary-foreground relative overflow-hidden">
-        {/* Background decoration */}
-        <div className="absolute inset-0 opacity-10">
-          <div className="absolute top-0 left-0 w-96 h-96 rounded-full bg-white translate-x-[-50%] translate-y-[-30%]" />
-          <div className="absolute bottom-0 right-0 w-80 h-80 rounded-full bg-white translate-x-[40%] translate-y-[30%]" />
-          <div className="absolute top-1/2 left-1/3 w-64 h-64 rounded-full bg-white opacity-50" />
-        </div>
+      <div className="hidden lg:flex flex-col px-12 py-10 text-white relative overflow-hidden">
+        {/* Background image */}
+        <Image
+          src="/auth-bg.svg"
+          alt=""
+          fill
+          className="object-cover"
+          priority
+          unoptimized
+        />
+        {/* Overlay for readability */}
+        <div className="absolute inset-0 bg-black/30" />
 
         {/* Logo */}
         <div className="relative flex items-center gap-3">
@@ -27,7 +32,7 @@ export default function AuthLayout({
           <h2 className="font-heading text-3xl text-white leading-snug mb-4">
             AI-powered talent<br />management
           </h2>
-          <p className="text-primary-foreground/75 text-base leading-relaxed max-w-sm">
+          <p className="text-white/75 text-base leading-relaxed max-w-sm">
             Screen, analyze, and shortlist candidates faster with intelligent resume parsing and scoring.
           </p>
         </div>
@@ -39,8 +44,8 @@ export default function AuthLayout({
             "AI-driven candidate scoring",
             "Smart application tracking",
           ].map((feature) => (
-            <div key={feature} className="flex items-center gap-3 text-sm text-primary-foreground/80">
-              <div className="h-1.5 w-1.5 rounded-full bg-primary-foreground/60 shrink-0" />
+            <div key={feature} className="flex items-center gap-3 text-sm text-white/80">
+              <div className="h-1.5 w-1.5 rounded-full bg-white/60 shrink-0" />
               {feature}
             </div>
           ))}
