@@ -364,6 +364,16 @@ def list_job_applications(request, org_id, job_profile_id):
     if status_filter:
         qs = qs.filter(status=status_filter)
 
+    # Skill filter (matches applications whose analysis key_skills contains the value)
+    skill_filter = request.query_params.get("skill", "").strip()
+    if skill_filter:
+        qs = qs.filter(analysis__key_skills__contains=[skill_filter])
+
+    # Trait filter (matches applications whose analysis notable_traits contains the value)
+    trait_filter = request.query_params.get("trait", "").strip()
+    if trait_filter:
+        qs = qs.filter(analysis__notable_traits__contains=[trait_filter])
+
     # Ordering
     VALID_ORDERINGS = {
         "submitted_at": "submitted_at",

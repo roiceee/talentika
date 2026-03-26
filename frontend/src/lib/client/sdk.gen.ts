@@ -84,7 +84,7 @@ export const apiApplicationsAnalysisList = <ThrowOnError extends boolean = true>
 });
 
 /**
- * Re-trigger the analysis pipeline for a FAILED application analysis.  Resets the status to UPLOADED and re-enqueues the OCR task.
+ * Re-trigger the analysis pipeline for a FAILED or UPLOADED application analysis.  UPLOADED analyses may be stuck when Redis was unavailable during submission.  Resets the status to UPLOADED and re-enqueues the OCR task.
  */
 export const apiApplicationsAnalysisRetryCreate = <ThrowOnError extends boolean = true>(options: Options<ApiApplicationsAnalysisRetryCreateData, ThrowOnError>) => (options.client ?? client).post<ApiApplicationsAnalysisRetryCreateResponses, ApiApplicationsAnalysisRetryCreateErrors, ThrowOnError>({
     responseType: 'json',
@@ -214,7 +214,7 @@ export const apiJobProfilesRead = <ThrowOnError extends boolean = true>(options:
 });
 
 /**
- * Update a job profile.
+ * Update a job profile. Any organization member can update a job profile.
  */
 export const apiJobProfilesUpdatePartialUpdate = <ThrowOnError extends boolean = true>(options: Options<ApiJobProfilesUpdatePartialUpdateData, ThrowOnError>) => (options.client ?? client).patch<ApiJobProfilesUpdatePartialUpdateResponses, ApiJobProfilesUpdatePartialUpdateErrors, ThrowOnError>({
     responseType: 'json',
@@ -460,8 +460,11 @@ export const apiOrganizationsJobProfilesApplicationsDownloadList = <ThrowOnError
  * Allowed status transitions:
  * - to_be_reviewed → reviewed, shortlisted, rejected
  * - reviewed → shortlisted, rejected
- * - shortlisted → rejected
+ * - shortlisted → reviewed, rejected
  * - rejected → reviewed, shortlisted
+ *
+ * Once an application has moved away from ``to_be_reviewed`` it cannot be
+ * reverted back to that status.
  *
  */
 export const apiOrganizationsJobProfilesApplicationsStatusPartialUpdate = <ThrowOnError extends boolean = true>(options: Options<ApiOrganizationsJobProfilesApplicationsStatusPartialUpdateData, ThrowOnError>) => (options.client ?? client).patch<ApiOrganizationsJobProfilesApplicationsStatusPartialUpdateResponses, ApiOrganizationsJobProfilesApplicationsStatusPartialUpdateErrors, ThrowOnError>({

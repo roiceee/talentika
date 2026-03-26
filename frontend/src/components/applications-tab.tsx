@@ -1,12 +1,13 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import { AxiosError } from "axios";
 import {
   listJobApplications,
   retryAnalysis,
+  getJobProfileAnalytics,
   type PaginatedApplications,
 } from "@/lib/api";
 import type { JobApplicationDetailWithAnalysis } from "@/lib/client";
@@ -55,6 +56,10 @@ import {
   ChevronRight,
   ChevronsLeft,
   ChevronsRight,
+  SlidersHorizontal,
+  Sparkles,
+  Star,
+  X,
 } from "lucide-react";
 
 // ─── Config ──────────────────────────────────────────────────────────────────
@@ -168,6 +173,27 @@ interface ApplicationsTabProps {
 
 export function ApplicationsTab({ orgId, jobProfileId }: ApplicationsTabProps) {
   const router = useRouter();
+  const searchParams = useSearchParams();
+
+  // Skill/trait filters from URL (set by Analytics tab)
+  const skillFilter = searchParams.get("skill") ?? "";
+  const traitFilter = searchParams.get("trait") ?? "";
+
+  // Available skills/traits for filter badges
+  const [availableSkills, setAvailableSkills] = useState<string[]>([]);
+  const [availableTraits, setAvailableTraits] = useState<string[]>([]);
+  const [showFilters, setShowFilters] = useState(false);
+
+  useEffect(() => {
+    getJobProfileAnalytics(orgId, jobProfileId)
+      .then((analytics) => {
+        setAvailableSkills(analytics.top_skills.map((s) => s.skill));
+        setAvailableTraits(analytics.top_traits.map((t) => t.trait));
+      })
+      .catch(() => {
+        // silently ignore — filters just won't have options
+      });
+  }, [orgId, jobProfileId]);
 
   // Server state
   const [data, setData] = useState<PaginatedApplications | null>(null);
@@ -195,10 +221,10 @@ export function ApplicationsTab({ orgId, jobProfileId }: ApplicationsTabProps) {
     return () => clearTimeout(t);
   }, [searchInput]);
 
-  // Reset page when filter/status changes
+  // Reset page when filter/status/skill/trait changes
   useEffect(() => {
     setPagination((p) => ({ ...p, pageIndex: 0 }));
-  }, [statusFilter]);
+  }, [statusFilter, skillFilter, traitFilter]);
 
   // Derived: convert TanStack sorting to API ordering string
   const ordering = useMemo(() => {
@@ -216,6 +242,8 @@ export function ApplicationsTab({ orgId, jobProfileId }: ApplicationsTabProps) {
         search: debouncedSearch || undefined,
         status: statusFilter || undefined,
         ordering,
+        skill: skillFilter || undefined,
+        trait: traitFilter || undefined,
       });
       setData(result);
     } catch (error) {
@@ -234,6 +262,8 @@ export function ApplicationsTab({ orgId, jobProfileId }: ApplicationsTabProps) {
     debouncedSearch,
     statusFilter,
     ordering,
+    skillFilter,
+    traitFilter,
   ]);
 
   useEffect(() => {
@@ -554,8 +584,60 @@ export function ApplicationsTab({ orgId, jobProfileId }: ApplicationsTabProps) {
   const startRow = (currentPage - 1) * pageSize + 1;
   const endRow = Math.min(currentPage * pageSize, totalCount);
 
+  const setSkillFilter = (val: string) => {
+    const params = new URLSearchParams(searchParams.toString());
+    if (val) params.set("skill", val);
+    else params.delete("skill");
+    router.replace(`?${params.toString()}`);
+  };
+
+  const setTraitFilter = (val: string) => {
+    const params = new URLSearchParams(searchParams.toString());
+    if (val) params.set("trait", val);
+    else params.delete("trait");
+    router.replace(`?${params.toString()}`);
+  };
+
+  const clearSkillFilter = () => setSkillFilter("");
+  const clearTraitFilter = () => setTraitFilter("");
+
   return (
     <div className="space-y-3">
+      {/* Active skill/trait filter chips */}
+      {(skillFilter || traitFilter) && (
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-xs text-muted-foreground">Filtered by:</span>
+          {skillFilter && (
+            <Badge
+              variant="secondary"
+              className="gap-1 bg-primary/10 text-primary border-primary/20 pr-1"
+            >
+              Skill: {skillFilter}
+              <button
+                onClick={clearSkillFilter}
+                className="ml-0.5 rounded-full hover:bg-primary/20 p-0.5 transition-colors"
+              >
+                <X className="h-3 w-3" />
+              </button>
+            </Badge>
+          )}
+          {traitFilter && (
+            <Badge
+              variant="secondary"
+              className="gap-1 bg-primary/10 text-primary border-primary/20 pr-1"
+            >
+              Trait: {traitFilter}
+              <button
+                onClick={clearTraitFilter}
+                className="ml-0.5 rounded-full hover:bg-primary/20 p-0.5 transition-colors"
+              >
+                <X className="h-3 w-3" />
+              </button>
+            </Badge>
+          )}
+        </div>
+      )}
+
       {/* Toolbar */}
       <div className="flex flex-wrap items-center gap-2">
         <Input
@@ -582,6 +664,27 @@ export function ApplicationsTab({ orgId, jobProfileId }: ApplicationsTabProps) {
             ))}
           </SelectContent>
         </Select>
+        {(availableSkills.length > 0 || availableTraits.length > 0) && (
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-9 gap-1.5"
+            onClick={() => setShowFilters((v) => !v)}
+          >
+            <SlidersHorizontal className="h-3.5 w-3.5" />
+            Filters
+            {(skillFilter || traitFilter) && (
+              <span className="ml-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] font-semibold text-primary-foreground">
+                {(skillFilter ? 1 : 0) + (traitFilter ? 1 : 0)}
+              </span>
+            )}
+            {showFilters ? (
+              <ChevronUp className="h-3.5 w-3.5 opacity-60" />
+            ) : (
+              <ChevronDown className="h-3.5 w-3.5 opacity-60" />
+            )}
+          </Button>
+        )}
         <div className="ml-auto flex items-center gap-2">
           <span className="text-xs text-muted-foreground">Rows per page</span>
           <Select
@@ -603,6 +706,64 @@ export function ApplicationsTab({ orgId, jobProfileId }: ApplicationsTabProps) {
           </Select>
         </div>
       </div>
+
+      {/* Collapsible skill/trait filter panel */}
+      {showFilters && (
+        <div className="rounded-lg border border-border/60 bg-muted/20 p-4 space-y-4">
+          {availableSkills.length > 0 && (
+            <div className="space-y-2">
+              <p className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                <Sparkles className="h-3.5 w-3.5" />
+                Skills
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {availableSkills.map((skill) => (
+                  <Badge
+                    key={skill}
+                    variant={skillFilter === skill ? "default" : "secondary"}
+                    className={`cursor-pointer text-xs transition-colors ${
+                      skillFilter === skill
+                        ? "bg-primary text-primary-foreground hover:bg-primary/90"
+                        : "hover:bg-primary hover:text-primary-foreground"
+                    }`}
+                    onClick={() =>
+                      setSkillFilter(skillFilter === skill ? "" : skill)
+                    }
+                  >
+                    {skill}
+                  </Badge>
+                ))}
+              </div>
+            </div>
+          )}
+          {availableTraits.length > 0 && (
+            <div className="space-y-2">
+              <p className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                <Star className="h-3.5 w-3.5" />
+                Notable Traits
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {availableTraits.map((trait) => (
+                  <Badge
+                    key={trait}
+                    variant={traitFilter === trait ? "default" : "outline"}
+                    className={`cursor-pointer text-xs transition-colors ${
+                      traitFilter === trait
+                        ? "bg-primary text-primary-foreground border-primary hover:bg-primary/90"
+                        : "hover:bg-primary hover:text-primary-foreground hover:border-primary"
+                    }`}
+                    onClick={() =>
+                      setTraitFilter(traitFilter === trait ? "" : trait)
+                    }
+                  >
+                    {trait}
+                  </Badge>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Table */}
       <div className="rounded-lg border border-border overflow-hidden shadow-sm">

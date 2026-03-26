@@ -383,6 +383,8 @@ export type ApplicationListParams = {
   search?: string;
   status?: string;
   ordering?: string;
+  skill?: string;
+  trait?: string;
 };
 
 export type PaginatedApplications = {

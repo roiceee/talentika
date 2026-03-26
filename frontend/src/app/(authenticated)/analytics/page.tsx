@@ -11,6 +11,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
+  StatusBreakdownChart,
+  CategoryDistributionChart,
+  ApplicationsOverTimeChart,
+  JobProfileBarChart,
+  DoughnutChart,
+  SCORE_CATEGORY_COLORS,
+} from "@/components/analytics-charts";
+import {
   Users,
   Briefcase,
   Brain,
@@ -20,29 +28,6 @@ import {
   BarChart3,
   Building2,
 } from "lucide-react";
-
-// ─── Config ──────────────────────────────────────────────────────────────────
-
-const STATUS_LABELS: Record<string, { label: string; color: string }> = {
-  to_be_reviewed: { label: "To Be Reviewed", color: "#9ca3af" },
-  reviewed: { label: "Hold", color: "#3b82f6" },
-  shortlisted: { label: "Shortlisted", color: "#059669" },
-  rejected: { label: "Rejected", color: "#ef4444" },
-};
-
-const CATEGORY_LABELS: Record<string, { label: string; color: string }> = {
-  excellent: { label: "Excellent", color: "bg-emerald-600" },
-  good: { label: "Good", color: "bg-blue-500" },
-  moderate: { label: "Moderate", color: "bg-amber-500" },
-  bad: { label: "Bad", color: "bg-red-500" },
-};
-
-const SCORE_CATEGORY_COLORS: Record<string, string> = {
-  excellent: "text-emerald-600",
-  good: "text-blue-600",
-  moderate: "text-amber-600",
-  bad: "text-destructive",
-};
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
@@ -101,8 +86,6 @@ export default function AnalyticsPage() {
 
   const totalApps = data.total_applications;
   const statusBreakdown = data.status_breakdown;
-  const catDist = data.category_distribution;
-  const maxCatBucket = Math.max(...Object.values(catDist), 1);
 
   return (
     <div className="mx-auto w-full max-w-300 px-6 py-8 space-y-6">
@@ -201,31 +184,7 @@ export default function AnalyticsPage() {
             {totalApps === 0 ? (
               <p className="text-sm text-muted-foreground">No data yet</p>
             ) : (
-              <div className="space-y-3">
-                {Object.entries(STATUS_LABELS).map(([key, cfg]) => {
-                  const count = statusBreakdown[key] ?? 0;
-                  const pct = totalApps > 0 ? (count / totalApps) * 100 : 0;
-                  return (
-                    <div key={key} className="space-y-1">
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="font-medium">{cfg.label}</span>
-                        <span className="text-muted-foreground">
-                          {count} ({Math.round(pct)}%)
-                        </span>
-                      </div>
-                      <div className="h-2 w-full rounded-full bg-muted overflow-hidden">
-                        <div
-                          className="h-full rounded-full transition-all"
-                          style={{
-                            width: `${pct}%`,
-                            backgroundColor: cfg.color,
-                          }}
-                        />
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
+              <StatusBreakdownChart statusBreakdown={statusBreakdown} />
             )}
           </CardContent>
         </Card>
@@ -238,31 +197,9 @@ export default function AnalyticsPage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="flex items-end gap-3 h-40">
-              {Object.entries(CATEGORY_LABELS).map(([key, cfg]) => {
-                const count = catDist[key] ?? 0;
-                return (
-                  <div
-                    key={key}
-                    className="flex-1 flex flex-col items-center gap-1"
-                  >
-                    <span className="text-xs font-medium text-muted-foreground">
-                      {count}
-                    </span>
-                    <div
-                      className={`w-full rounded-t ${cfg.color} transition-all`}
-                      style={{
-                        height: `${(count / maxCatBucket) * 100}%`,
-                        minHeight: count > 0 ? "4px" : "0px",
-                      }}
-                    />
-                    <span className="text-[11px] font-medium text-muted-foreground mt-1">
-                      {cfg.label}
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
+            <CategoryDistributionChart
+              categoryDistribution={data.category_distribution}
+            />
           </CardContent>
         </Card>
       </div>
@@ -339,57 +276,7 @@ export default function AnalyticsPage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {(() => {
-              const maxCount = Math.max(
-                ...data.applications_over_time.map((d) => d.count),
-                1,
-              );
-              return (
-                <div className="flex items-end gap-1 h-32">
-                  {data.applications_over_time.map((d, i) => (
-                    <div
-                      key={i}
-                      className="flex-1 flex flex-col items-center gap-0.5 group relative"
-                    >
-                      <div
-                        className="w-full bg-blue-500 rounded-t transition-all hover:bg-blue-600"
-                        style={{
-                          height: `${(d.count / maxCount) * 100}%`,
-                          minHeight: d.count > 0 ? "4px" : "0px",
-                        }}
-                      />
-                      <div className="absolute bottom-full mb-1 hidden group-hover:block bg-popover text-popover-foreground border rounded px-2 py-1 text-xs whitespace-nowrap shadow-sm z-10">
-                        {new Date(d.date).toLocaleDateString(undefined, {
-                          month: "short",
-                          day: "numeric",
-                        })}
-                        : {d.count} application{d.count !== 1 ? "s" : ""}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              );
-            })()}
-            <div className="flex justify-between mt-2 text-[10px] text-muted-foreground">
-              <span>
-                {new Date(
-                  data.applications_over_time[0].date,
-                ).toLocaleDateString(undefined, {
-                  month: "short",
-                  day: "numeric",
-                })}
-              </span>
-              <span>
-                {new Date(
-                  data.applications_over_time[
-                    data.applications_over_time.length - 1
-                  ].date,
-                ).toLocaleDateString(undefined, {
-                  month: "short",
-                  day: "numeric",
-                })}
-              </span>
-            </div>
+            <ApplicationsOverTimeChart data={data.applications_over_time} />
           </CardContent>
         </Card>
       )}
@@ -404,58 +291,16 @@ export default function AnalyticsPage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-3">
-              {data.applications_by_job_profile.map((profile) => {
-                const maxCount = Math.max(
-                  ...data.applications_by_job_profile.map(
-                    (p) => p.application_count,
-                  ),
-                  1,
-                );
-                const pct = (profile.application_count / maxCount) * 100;
-                return (
-                  <div key={profile.id} className="space-y-1">
-                    <div className="flex items-center justify-between text-sm gap-2">
-                      <div className="flex items-center gap-2 min-w-0">
-                        <span className="font-medium truncate">
-                          {profile.title}
-                        </span>
-                        <span className="text-xs text-muted-foreground shrink-0">
-                          {EMPLOYMENT_TYPE_LABELS[profile.employment_type] ??
-                            profile.employment_type}
-                        </span>
-                        {!profile.is_active && (
-                          <Badge
-                            variant="outline"
-                            className="text-[10px] px-1 py-0 shrink-0"
-                          >
-                            Inactive
-                          </Badge>
-                        )}
-                      </div>
-                      <div className="flex items-center gap-2 shrink-0">
-                        {profile.avg_score_category && (
-                          <span
-                            className={`text-xs font-medium ${SCORE_CATEGORY_COLORS[profile.avg_score_category.key] ?? ""}`}
-                          >
-                            {profile.avg_score_category.label}
-                          </span>
-                        )}
-                        <span className="text-muted-foreground">
-                          {profile.application_count}
-                        </span>
-                      </div>
-                    </div>
-                    <div className="h-2 w-full rounded-full bg-muted overflow-hidden">
-                      <div
-                        className="h-full rounded-full bg-blue-500 transition-all"
-                        style={{ width: `${pct}%` }}
-                      />
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
+            <JobProfileBarChart
+              labels={data.applications_by_job_profile.map((p) => p.title)}
+              data={data.applications_by_job_profile.map(
+                (p) => p.application_count,
+              )}
+              height={Math.max(
+                160,
+                data.applications_by_job_profile.length * 36,
+              )}
+            />
           </CardContent>
         </Card>
       )}
@@ -469,32 +314,13 @@ export default function AnalyticsPage() {
               Applications by Employment Type
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {Object.entries(data.employment_type_breakdown).map(
-                ([type, count]) => {
-                  const pct = totalApps > 0 ? (count / totalApps) * 100 : 0;
-                  return (
-                    <div key={type} className="space-y-1">
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="font-medium">
-                          {EMPLOYMENT_TYPE_LABELS[type] ?? type}
-                        </span>
-                        <span className="text-muted-foreground">
-                          {count} ({Math.round(pct)}%)
-                        </span>
-                      </div>
-                      <div className="h-2 w-full rounded-full bg-muted overflow-hidden">
-                        <div
-                          className="h-full rounded-full bg-violet-500 transition-all"
-                          style={{ width: `${pct}%` }}
-                        />
-                      </div>
-                    </div>
-                  );
-                },
+          <CardContent className="flex justify-center">
+            <DoughnutChart
+              labels={Object.keys(data.employment_type_breakdown).map(
+                (t) => EMPLOYMENT_TYPE_LABELS[t] ?? t,
               )}
-            </div>
+              data={Object.values(data.employment_type_breakdown)}
+            />
           </CardContent>
         </Card>
       )}

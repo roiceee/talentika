@@ -1,12 +1,18 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { AxiosError } from "axios";
 import { getJobProfileAnalytics, type JobProfileAnalytics } from "@/lib/api";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  StatusBreakdownChart,
+  CategoryDistributionChart,
+  ApplicationsOverTimeChart,
+} from "@/components/analytics-charts";
 import {
   Users,
   BarChart3,
@@ -16,38 +22,19 @@ import {
   Star,
 } from "lucide-react";
 
-// ─── Status config ───────────────────────────────────────────────────────────
-
-const STATUS_LABELS: Record<string, { label: string; color: string }> = {
-  to_be_reviewed: {
-    label: "To Be Reviewed",
-    color: "bg-primary/10 text-primary",
-  },
-  reviewed: { label: "Hold", color: "bg-amber-100 text-amber-800" },
-  shortlisted: {
-    label: "Shortlisted",
-    color: "bg-emerald-100 text-emerald-800",
-  },
-  rejected: { label: "Rejected", color: "bg-red-100 text-red-800" },
-};
-
-const CATEGORY_LABELS: Record<string, { label: string; color: string }> = {
-  excellent: { label: "Excellent", color: "bg-emerald-600" },
-  good: { label: "Good", color: "bg-blue-500" },
-  moderate: { label: "Moderate", color: "bg-amber-500" },
-  bad: { label: "Bad", color: "bg-red-500" },
-};
-
 // ─── Props ────────────────────────────────────────────────────────────────────
 
 interface AnalyticsTabProps {
   orgId: string;
   jobProfileId: string;
+  /** Base path for the job profile page (e.g. /job-profiles/[id]) */
+  basePath: string;
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
-export function AnalyticsTab({ orgId, jobProfileId }: AnalyticsTabProps) {
+export function AnalyticsTab({ orgId, jobProfileId, basePath }: AnalyticsTabProps) {
+  const router = useRouter();
   const [data, setData] = useState<JobProfileAnalytics | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -91,8 +78,6 @@ export function AnalyticsTab({ orgId, jobProfileId }: AnalyticsTabProps) {
 
   const totalApps = data.total_applications;
   const statusBreakdown = data.status_breakdown;
-  const catDist = data.category_distribution;
-  const maxCatBucket = Math.max(...Object.values(catDist), 1);
 
   return (
     <div className="space-y-6">
@@ -192,7 +177,6 @@ export function AnalyticsTab({ orgId, jobProfileId }: AnalyticsTabProps) {
 
       {/* ─── Status Breakdown + Score Distribution ─────────────────── */}
       <div className="grid gap-4 md:grid-cols-2">
-        {/* Status Breakdown */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-base">
@@ -201,46 +185,14 @@ export function AnalyticsTab({ orgId, jobProfileId }: AnalyticsTabProps) {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {Object.keys(statusBreakdown).length === 0 ? (
+            {totalApps === 0 ? (
               <p className="text-sm text-muted-foreground">No data yet</p>
             ) : (
-              <div className="space-y-3">
-                {Object.entries(STATUS_LABELS).map(([key, cfg]) => {
-                  const count = statusBreakdown[key] ?? 0;
-                  const pct = totalApps > 0 ? (count / totalApps) * 100 : 0;
-                  return (
-                    <div key={key} className="space-y-1">
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="font-medium">{cfg.label}</span>
-                        <span className="text-muted-foreground">
-                          {count} ({Math.round(pct)}%)
-                        </span>
-                      </div>
-                      <div className="h-2 w-full rounded-full bg-muted overflow-hidden">
-                        <div
-                          className={`h-full rounded-full transition-all ${cfg.color.split(" ")[0].replace("bg-", "bg-")}`}
-                          style={{
-                            width: `${pct}%`,
-                            backgroundColor:
-                              key === "to_be_reviewed"
-                                ? "#9ca3af"
-                                : key === "reviewed"
-                                  ? "#3b82f6"
-                                  : key === "shortlisted"
-                                    ? "#059669"
-                                    : "#ef4444",
-                          }}
-                        />
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
+              <StatusBreakdownChart statusBreakdown={statusBreakdown} />
             )}
           </CardContent>
         </Card>
 
-        {/* Category Distribution */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-base">
@@ -249,56 +201,15 @@ export function AnalyticsTab({ orgId, jobProfileId }: AnalyticsTabProps) {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {(() => {
-              const CHART_H = 140; // px — fixed chart area height
-              const yMax = maxCatBucket + Math.max(1, Math.ceil(maxCatBucket * 0.2));
-              return (
-                <div className="flex gap-2">
-                  {/* Y-axis */}
-                  <div
-                    className="flex flex-col justify-between text-[10px] text-muted-foreground text-right shrink-0 pb-6"
-                    style={{ height: CHART_H }}
-                  >
-                    <span>{yMax}</span>
-                    <span>{Math.round(yMax / 2)}</span>
-                    <span>0</span>
-                  </div>
-                  {/* Bars */}
-                  <div className="flex-1 flex items-end gap-3" style={{ height: CHART_H + 24 }}>
-                    {Object.entries(CATEGORY_LABELS).map(([key, cfg]) => {
-                      const count = catDist[key] ?? 0;
-                      const barH = Math.round((count / yMax) * CHART_H);
-                      return (
-                        <div key={key} className="flex-1 flex flex-col items-center gap-1">
-                          <span className="text-xs font-medium text-muted-foreground">
-                            {count > 0 ? count : ""}
-                          </span>
-                          <div className="flex-1 flex items-end w-full">
-                            <div
-                              className={`w-full rounded-t ${cfg.color} transition-all`}
-                              style={{
-                                height: barH > 0 ? barH : 0,
-                                minHeight: count > 0 ? 4 : 0,
-                              }}
-                            />
-                          </div>
-                          <span className="text-[11px] font-medium text-muted-foreground">
-                            {cfg.label}
-                          </span>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              );
-            })()}
+            <CategoryDistributionChart
+              categoryDistribution={data.category_distribution}
+            />
           </CardContent>
         </Card>
       </div>
 
       {/* ─── Top Skills + Top Traits ──────────────────────────────── */}
       <div className="grid gap-4 md:grid-cols-2">
-        {/* Top Skills */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-base">
@@ -308,6 +219,11 @@ export function AnalyticsTab({ orgId, jobProfileId }: AnalyticsTabProps) {
                 {data.top_skills.length}
               </Badge>
             </CardTitle>
+            {data.top_skills.length > 0 && (
+              <p className="text-xs text-muted-foreground">
+                Click a skill to filter applications
+              </p>
+            )}
           </CardHeader>
           <CardContent>
             {data.top_skills.length === 0 ? (
@@ -317,7 +233,16 @@ export function AnalyticsTab({ orgId, jobProfileId }: AnalyticsTabProps) {
             ) : (
               <div className="flex flex-wrap gap-2">
                 {data.top_skills.map((s, i) => (
-                  <Badge key={i} variant="secondary" className="text-xs gap-1">
+                  <Badge
+                    key={i}
+                    variant="secondary"
+                    className="text-xs gap-1 cursor-pointer hover:bg-primary hover:text-primary-foreground transition-colors"
+                    onClick={() =>
+                      router.push(
+                        `${basePath}?tab=applications&skill=${encodeURIComponent(s.skill)}`,
+                      )
+                    }
+                  >
                     {s.skill}
                     <span className="opacity-60">({s.count})</span>
                   </Badge>
@@ -327,7 +252,6 @@ export function AnalyticsTab({ orgId, jobProfileId }: AnalyticsTabProps) {
           </CardContent>
         </Card>
 
-        {/* Top Traits */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-base">
@@ -337,6 +261,11 @@ export function AnalyticsTab({ orgId, jobProfileId }: AnalyticsTabProps) {
                 {data.top_traits.length}
               </Badge>
             </CardTitle>
+            {data.top_traits.length > 0 && (
+              <p className="text-xs text-muted-foreground">
+                Click a trait to filter applications
+              </p>
+            )}
           </CardHeader>
           <CardContent>
             {data.top_traits.length === 0 ? (
@@ -346,7 +275,16 @@ export function AnalyticsTab({ orgId, jobProfileId }: AnalyticsTabProps) {
             ) : (
               <div className="flex flex-wrap gap-2">
                 {data.top_traits.map((t, i) => (
-                  <Badge key={i} variant="outline" className="text-xs gap-1">
+                  <Badge
+                    key={i}
+                    variant="outline"
+                    className="text-xs gap-1 cursor-pointer hover:bg-primary hover:text-primary-foreground hover:border-primary transition-colors"
+                    onClick={() =>
+                      router.push(
+                        `${basePath}?tab=applications&trait=${encodeURIComponent(t.trait)}`,
+                      )
+                    }
+                  >
                     {t.trait}
                     <span className="opacity-60">({t.count})</span>
                   </Badge>
@@ -370,62 +308,7 @@ export function AnalyticsTab({ orgId, jobProfileId }: AnalyticsTabProps) {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {(() => {
-              const maxCount = Math.max(
-                ...data.applications_over_time.map((d) => d.count),
-                1,
-              );
-              return (
-                <div className="flex items-end gap-1 h-32">
-                  {data.applications_over_time.map((d, i) => (
-                    <div
-                      key={i}
-                      className="flex-1 flex flex-col items-center gap-0.5 group relative"
-                    >
-                      <div
-                        className="w-full bg-blue-500 rounded-t transition-all hover:bg-blue-600"
-                        style={{
-                          height: `${(d.count / maxCount) * 100}%`,
-                          minHeight: d.count > 0 ? "4px" : "0px",
-                        }}
-                      />
-                      {/* Tooltip on hover */}
-                      <div className="absolute bottom-full mb-1 hidden group-hover:block bg-popover text-popover-foreground border rounded px-2 py-1 text-xs whitespace-nowrap shadow-sm z-10">
-                        {new Date(d.date).toLocaleDateString(undefined, {
-                          month: "short",
-                          day: "numeric",
-                        })}
-                        : {d.count} application{d.count !== 1 ? "s" : ""}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              );
-            })()}
-            <div className="flex justify-between mt-2 text-[10px] text-muted-foreground">
-              {data.applications_over_time.length > 0 && (
-                <>
-                  <span>
-                    {new Date(
-                      data.applications_over_time[0].date,
-                    ).toLocaleDateString(undefined, {
-                      month: "short",
-                      day: "numeric",
-                    })}
-                  </span>
-                  <span>
-                    {new Date(
-                      data.applications_over_time[
-                        data.applications_over_time.length - 1
-                      ].date,
-                    ).toLocaleDateString(undefined, {
-                      month: "short",
-                      day: "numeric",
-                    })}
-                  </span>
-                </>
-              )}
-            </div>
+            <ApplicationsOverTimeChart data={data.applications_over_time} />
           </CardContent>
         </Card>
       )}

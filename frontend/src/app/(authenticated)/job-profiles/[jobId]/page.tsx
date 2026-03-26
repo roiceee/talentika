@@ -535,6 +535,7 @@ export default function JobProfileDetailPage({
           <AnalyticsTab
             orgId={(profile.organization as { id?: string })?.id ?? ""}
             jobProfileId={jobId}
+            basePath={`/job-profiles/${jobId}`}
           />
         </TabsContent>
       </Tabs>
