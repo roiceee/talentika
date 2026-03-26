@@ -145,6 +145,20 @@ export function AppNavbar() {
 
         {/* Right side: org switcher + user dropdown */}
         <div className="flex items-center gap-2">
+          {/* Org settings shortcut */}
+          {currentOrg?.id && (
+            <Link href={`/organizations/${currentOrg.id}?tab=settings`}>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-9 w-9 text-muted-foreground hover:text-foreground"
+                title="Org Settings"
+              >
+                <Settings className="h-4 w-4" />
+              </Button>
+            </Link>
+          )}
+
           {/* Organization switcher */}
           <DropdownMenu
             open={orgDropdownOpen}

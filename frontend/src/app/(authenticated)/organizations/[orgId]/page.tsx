@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback, use } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import { AxiosError } from "axios";
 import { useAuth } from "@/contexts/auth-context";
@@ -109,7 +109,16 @@ export default function OrganizationDetailPage({
 }) {
   const { orgId } = use(params);
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { user } = useAuth();
+
+  const activeTab = searchParams.get("tab") ?? "overview";
+
+  function handleTabChange(tab: string) {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("tab", tab);
+    router.replace(`?${params.toString()}`, { scroll: false });
+  }
   const [org, setOrg] = useState<Organization | null>(null);
   const [members, setMembers] = useState<OrganizationMembership[]>([]);
   const [invitations, setInvitations] = useState<OrganizationInvitation[]>([]);
@@ -229,7 +238,7 @@ export default function OrganizationDetailPage({
         </div>
       </div>
 
-      <Tabs defaultValue="overview" className="space-y-6">
+      <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">
         <TabsList>
           <TabsTrigger value="overview" className="gap-2">
             <Building2 className="h-4 w-4" />
