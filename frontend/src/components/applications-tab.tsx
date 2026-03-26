@@ -73,20 +73,24 @@ const STATUS_CONFIG: Record<
 > = {
   to_be_reviewed: {
     label: "To Be Reviewed",
-    variant: "secondary",
-    className: "bg-primary/10 text-primary border-primary/20",
+    variant: "outline",
+    className: "border-primary/40 text-primary",
   },
   reviewed: {
     label: "Hold",
-    variant: "default",
-    className: "bg-amber-100 text-amber-800 border-amber-200",
+    variant: "outline",
+    className: "border-amber-400 text-amber-700",
   },
   shortlisted: {
     label: "Shortlisted",
-    variant: "default",
-    className: "bg-emerald-600 text-white hover:bg-emerald-700",
+    variant: "outline",
+    className: "border-emerald-500 text-emerald-700",
   },
-  rejected: { label: "Rejected", variant: "destructive" },
+  rejected: {
+    label: "Rejected",
+    variant: "outline",
+    className: "border-red-400 text-red-600",
+  },
 };
 
 const STATUS_OPTIONS = [
