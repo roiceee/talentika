@@ -48,7 +48,7 @@ class ResumeAnalysisResult(BaseModel):
         description=(
             "Overall candidate-job-fit score from 0 to 100. "
             "Use these ranges: "
-            "Excellent = 90-100, Good = 75-89, Moderate = 40-74, Bad = 0-39."
+            "Suitable = 70-100, Potentially Suitable = 40-69, Unsuitable = 0-39."
         ),
     )
     detailed_analysis: DetailedAnalysis = Field(description="In-depth structured analysis")
@@ -61,10 +61,9 @@ def _build_system_prompt() -> str:
         "produce a structured analysis of the candidate's fit for the role. "
         "Be objective, thorough, and concise.\n\n"
         "When assigning the score, use these category thresholds:\n"
-        "- Excellent (90-100): Outstanding fit — exceeds most requirements\n"
-        "- Good (75-89): Strong fit — meets key requirements well\n"
-        "- Moderate (40-74): Partial fit — meets some requirements but has gaps\n"
-        "- Bad (0-39): Poor fit — does not meet core requirements\n"
+        "- Suitable (70-100): Strong fit — meets key requirements well\n"
+        "- Potentially Suitable (40-69): Partial fit — meets some requirements but has notable gaps\n"
+        "- Unsuitable (0-39): Poor fit — does not meet core requirements\n"
         "Pick a score that clearly places the candidate in the right category.\n\n"
         "Pay special attention to 'required' qualifications — failing to meet them "
         "should weigh heavily against the score. 'Preferred' qualifications are nice-to-have."

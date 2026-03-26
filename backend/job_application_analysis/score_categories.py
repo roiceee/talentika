@@ -7,10 +7,9 @@ every serializer and view returns a consistent `score_category` value.
 
 Ranges
 ------
-- **Excellent** : 90 – 100
-- **Good**      : 75 – 89
-- **Moderate**  : 40 – 74
-- **Bad**       : 0 – 39
+- **Suitable**            : 70 – 100
+- **Potentially Suitable** : 40 – 69
+- **Unsuitable**          : 0 – 39
 """
 
 from __future__ import annotations
@@ -25,10 +24,9 @@ class ScoreCategory(NamedTuple):
 
 # Ordered from highest to lowest so the first match wins.
 _THRESHOLDS: list[tuple[int, ScoreCategory]] = [
-    (90, ScoreCategory("excellent", "Excellent")),
-    (75, ScoreCategory("good", "Good")),
-    (40, ScoreCategory("moderate", "Moderate")),
-    (0, ScoreCategory("bad", "Bad")),
+    (70, ScoreCategory("suitable", "Suitable")),
+    (40, ScoreCategory("potentially_suitable", "Potentially Suitable")),
+    (0, ScoreCategory("unsuitable", "Unsuitable")),
 ]
 
 
@@ -41,4 +39,4 @@ def get_score_category(score: int | float | None) -> ScoreCategory | None:
         if score >= threshold:
             return category
     # Defensive fallback (score < 0 shouldn't happen but just in case)
-    return ScoreCategory("bad", "Bad")
+    return ScoreCategory("unsuitable", "Unsuitable")

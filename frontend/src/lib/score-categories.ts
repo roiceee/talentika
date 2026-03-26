@@ -8,15 +8,14 @@
  */
 
 export type ScoreCategory = {
-  key: "excellent" | "good" | "moderate" | "bad";
+  key: "suitable" | "potentially_suitable" | "unsuitable";
   label: string;
 };
 
 const THRESHOLDS: { min: number; category: ScoreCategory }[] = [
-  { min: 90, category: { key: "excellent", label: "Excellent" } },
-  { min: 75, category: { key: "good", label: "Good" } },
-  { min: 40, category: { key: "moderate", label: "Moderate" } },
-  { min: 0, category: { key: "bad", label: "Bad" } },
+  { min: 70, category: { key: "suitable", label: "Suitable" } },
+  { min: 40, category: { key: "potentially_suitable", label: "Potentially Suitable" } },
+  { min: 0, category: { key: "unsuitable", label: "Unsuitable" } },
 ];
 
 export function getScoreCategory(
@@ -26,7 +25,7 @@ export function getScoreCategory(
   for (const t of THRESHOLDS) {
     if (score >= t.min) return t.category;
   }
-  return { key: "bad", label: "Bad" };
+  return { key: "unsuitable", label: "Unsuitable" };
 }
 
 /** Tailwind colour classes keyed by category. */
@@ -34,22 +33,17 @@ export const SCORE_CATEGORY_COLORS: Record<
   ScoreCategory["key"],
   { text: string; border: string; bg: string }
 > = {
-  excellent: {
+  suitable: {
     text: "text-emerald-600",
     border: "border-emerald-500",
     bg: "bg-emerald-100",
   },
-  good: {
-    text: "text-blue-600",
-    border: "border-blue-400",
-    bg: "bg-blue-100",
-  },
-  moderate: {
+  potentially_suitable: {
     text: "text-amber-600",
     border: "border-amber-400",
     bg: "bg-amber-100",
   },
-  bad: {
+  unsuitable: {
     text: "text-destructive",
     border: "border-red-400",
     bg: "bg-red-100",
