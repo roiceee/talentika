@@ -239,3 +239,98 @@ def update_job_profile(request, job_id):
         return Response(response_serializer.data)
 
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+# ─── Org-specific job categories ─────────────────────────────────────────────
+
+@swagger_auto_schema(method='get', tags=['Job Profile - Reference Data'], responses={200: 'list'})
+@swagger_auto_schema(method='post', tags=['Job Profile - Reference Data'], responses={201: 'created', 400: 'error', 403: 'forbidden'})
+@api_view(["GET", "POST"])
+@permission_classes([IsAuthenticated])
+def list_create_org_job_categories(request, org_id):
+    org = get_object_or_404(Organization, id=org_id)
+    if not OrganizationMembership.objects.filter(organization=org, user=request.user).exists():
+        return Response({"detail": "Not a member."}, status=status.HTTP_403_FORBIDDEN)
+
+    if request.method == "GET":
+        from django.db.models import Q as DQ
+        qs = JobCategory.objects.filter(DQ(organization=None) | DQ(organization=org)).order_by('title')
+        data = [{"id": str(c.id), "title": c.title, "is_custom": c.organization_id is not None} for c in qs]
+        return Response(data)
+
+    # POST — only admins
+    membership = OrganizationMembership.objects.filter(organization=org, user=request.user).first()
+    if not membership or membership.role != "ORG_ADMIN":
+        return Response({"detail": "Admin only."}, status=status.HTTP_403_FORBIDDEN)
+
+    title = (request.data.get("title") or "").strip()
+    if not title:
+        return Response({"title": ["This field is required."]}, status=status.HTTP_400_BAD_REQUEST)
+    if JobCategory.objects.filter(organization=org, title=title).exists():
+        return Response({"title": ["A category with this title already exists."]}, status=status.HTTP_400_BAD_REQUEST)
+
+    cat = JobCategory.objects.create(organization=org, title=title)
+    return Response({"id": str(cat.id), "title": cat.title, "is_custom": True}, status=status.HTTP_201_CREATED)
+
+
+@swagger_auto_schema(method='delete', tags=['Job Profile - Reference Data'], responses={204: 'deleted', 403: 'forbidden', 404: 'not found'})
+@api_view(["DELETE"])
+@permission_classes([IsAuthenticated])
+def delete_org_job_category(request, org_id, category_id):
+    org = get_object_or_404(Organization, id=org_id)
+    membership = OrganizationMembership.objects.filter(organization=org, user=request.user).first()
+    if not membership or membership.role != "ORG_ADMIN":
+        return Response({"detail": "Admin only."}, status=status.HTTP_403_FORBIDDEN)
+
+    cat = get_object_or_404(JobCategory, id=category_id, organization=org)
+    if cat.job_profiles.exists():
+        return Response({"detail": "Cannot delete: category is in use by job profiles."}, status=status.HTTP_400_BAD_REQUEST)
+    cat.delete()
+    return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+# ─── Org-specific experience levels ──────────────────────────────────────────
+
+@swagger_auto_schema(method='get', tags=['Job Profile - Reference Data'], responses={200: 'list'})
+@swagger_auto_schema(method='post', tags=['Job Profile - Reference Data'], responses={201: 'created', 400: 'error', 403: 'forbidden'})
+@api_view(["GET", "POST"])
+@permission_classes([IsAuthenticated])
+def list_create_org_experience_levels(request, org_id):
+    org = get_object_or_404(Organization, id=org_id)
+    if not OrganizationMembership.objects.filter(organization=org, user=request.user).exists():
+        return Response({"detail": "Not a member."}, status=status.HTTP_403_FORBIDDEN)
+
+    if request.method == "GET":
+        from django.db.models import Q as DQ
+        qs = ExperienceLevel.objects.filter(DQ(organization=None) | DQ(organization=org)).order_by('title')
+        data = [{"id": str(l.id), "title": l.title, "is_custom": l.organization_id is not None} for l in qs]
+        return Response(data)
+
+    membership = OrganizationMembership.objects.filter(organization=org, user=request.user).first()
+    if not membership or membership.role != "ORG_ADMIN":
+        return Response({"detail": "Admin only."}, status=status.HTTP_403_FORBIDDEN)
+
+    title = (request.data.get("title") or "").strip()
+    if not title:
+        return Response({"title": ["This field is required."]}, status=status.HTTP_400_BAD_REQUEST)
+    if ExperienceLevel.objects.filter(organization=org, title=title).exists():
+        return Response({"title": ["An experience level with this title already exists."]}, status=status.HTTP_400_BAD_REQUEST)
+
+    level = ExperienceLevel.objects.create(organization=org, title=title)
+    return Response({"id": str(level.id), "title": level.title, "is_custom": True}, status=status.HTTP_201_CREATED)
+
+
+@swagger_auto_schema(method='delete', tags=['Job Profile - Reference Data'], responses={204: 'deleted', 403: 'forbidden', 404: 'not found'})
+@api_view(["DELETE"])
+@permission_classes([IsAuthenticated])
+def delete_org_experience_level(request, org_id, level_id):
+    org = get_object_or_404(Organization, id=org_id)
+    membership = OrganizationMembership.objects.filter(organization=org, user=request.user).first()
+    if not membership or membership.role != "ORG_ADMIN":
+        return Response({"detail": "Admin only."}, status=status.HTTP_403_FORBIDDEN)
+
+    level = get_object_or_404(ExperienceLevel, id=level_id, organization=org)
+    if level.job_profiles.exists():
+        return Response({"detail": "Cannot delete: level is in use by job profiles."}, status=status.HTTP_400_BAD_REQUEST)
+    level.delete()
+    return Response(status=status.HTTP_204_NO_CONTENT)

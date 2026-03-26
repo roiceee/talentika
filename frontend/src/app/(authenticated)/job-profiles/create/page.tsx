@@ -7,11 +7,13 @@ import { toast } from "sonner";
 import { AxiosError } from "axios";
 import { useAuth } from "@/contexts/auth-context";
 import {
-  listJobCategories,
-  listExperienceLevels,
+  listOrgJobCategories,
+  listOrgExperienceLevels,
+  createOrgJobCategory,
+  createOrgExperienceLevel,
   createJobProfile,
+  type OrgRefItem,
 } from "@/lib/api";
-import type { JobCategory, ExperienceLevel } from "@/lib/client";
 import {
   JobProfileForm,
   type JobProfileFormValues,
@@ -24,10 +26,8 @@ export default function CreateJobProfilePage() {
   const router = useRouter();
   const orgId = user?.default_organization;
 
-  const [categories, setCategories] = useState<JobCategory[]>([]);
-  const [experienceLevels, setExperienceLevels] = useState<ExperienceLevel[]>(
-    [],
-  );
+  const [categories, setCategories] = useState<OrgRefItem[]>([]);
+  const [experienceLevels, setExperienceLevels] = useState<OrgRefItem[]>([]);
   const [isLoadingRef, setIsLoadingRef] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -36,7 +36,7 @@ export default function CreateJobProfilePage() {
       router.replace("/organizations");
       return;
     }
-    Promise.all([listJobCategories(), listExperienceLevels()])
+    Promise.all([listOrgJobCategories(orgId), listOrgExperienceLevels(orgId)])
       .then(([cats, levels]) => {
         setCategories(cats ?? []);
         setExperienceLevels(levels ?? []);
@@ -44,6 +44,46 @@ export default function CreateJobProfilePage() {
       .catch(() => toast.error("Failed to load reference data"))
       .finally(() => setIsLoadingRef(false));
   }, [orgId, router]);
+
+  async function handleCreateCategory(
+    title: string,
+  ): Promise<{ id: string; title: string } | null> {
+    if (!orgId) return null;
+    try {
+      const created = await createOrgJobCategory(orgId, title);
+      toast.success(`Category "${created.title}" created`);
+      return created;
+    } catch (error) {
+      if (error instanceof AxiosError) {
+        const msg =
+          error.response?.data?.title?.[0] || "Failed to create category";
+        toast.error(msg);
+      } else {
+        toast.error("Failed to create category");
+      }
+      return null;
+    }
+  }
+
+  async function handleCreateExperienceLevel(
+    title: string,
+  ): Promise<{ id: string; title: string } | null> {
+    if (!orgId) return null;
+    try {
+      const created = await createOrgExperienceLevel(orgId, title);
+      toast.success(`Experience level "${created.title}" created`);
+      return created;
+    } catch (error) {
+      if (error instanceof AxiosError) {
+        const msg =
+          error.response?.data?.title?.[0] || "Failed to create experience level";
+        toast.error(msg);
+      } else {
+        toast.error("Failed to create experience level");
+      }
+      return null;
+    }
+  }
 
   async function handleSubmit(values: JobProfileFormValues) {
     if (!orgId) return;
@@ -122,6 +162,8 @@ export default function CreateJobProfilePage() {
           submitLabel="Create Job Profile"
           isSubmitting={isSubmitting}
           showIsActive={false}
+          onCreateCategory={handleCreateCategory}
+          onCreateExperienceLevel={handleCreateExperienceLevel}
         />
       )}
     </div>

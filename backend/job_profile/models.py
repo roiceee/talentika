@@ -6,7 +6,14 @@ from django.contrib.postgres.fields import ArrayField
 
 class JobCategory(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    title = models.CharField(max_length=255, unique=True)
+    title = models.CharField(max_length=255)
+    organization = models.ForeignKey(
+        'organizations.Organization',
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name='custom_job_categories',
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -14,6 +21,17 @@ class JobCategory(models.Model):
         db_table = "job_categories"
         ordering = ["title"]
         verbose_name_plural = "Job Categories"
+        constraints = [
+            models.UniqueConstraint(
+                fields=['title'],
+                condition=models.Q(organization=None),
+                name='unique_global_job_category_title',
+            ),
+            models.UniqueConstraint(
+                fields=['organization', 'title'],
+                name='unique_org_job_category_title',
+            ),
+        ]
 
     def __str__(self):
         return self.title
@@ -21,13 +39,31 @@ class JobCategory(models.Model):
 
 class ExperienceLevel(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    title = models.CharField(max_length=255, unique=True)
+    title = models.CharField(max_length=255)
+    organization = models.ForeignKey(
+        'organizations.Organization',
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name='custom_experience_levels',
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         db_table = "experience_levels"
         ordering = ["title"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=['title'],
+                condition=models.Q(organization=None),
+                name='unique_global_experience_level_title',
+            ),
+            models.UniqueConstraint(
+                fields=['organization', 'title'],
+                name='unique_org_experience_level_title',
+            ),
+        ]
 
     def __str__(self):
         return self.title

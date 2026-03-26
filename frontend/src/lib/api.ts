@@ -302,6 +302,62 @@ export async function listExperienceLevels(): Promise<ExperienceLevel[]> {
 }
 
 // ---------------------------------------------------------------------------
+// Org-specific Job Categories & Experience Levels
+// ---------------------------------------------------------------------------
+
+export type OrgRefItem = { id: string; title: string; is_custom: boolean };
+
+export async function listOrgJobCategories(orgId: string): Promise<OrgRefItem[]> {
+  const res = await bffClient.get<OrgRefItem[]>(
+    `/api/organizations/${orgId}/job-categories`,
+  );
+  return res.data;
+}
+
+export async function createOrgJobCategory(
+  orgId: string,
+  title: string,
+): Promise<OrgRefItem> {
+  const res = await bffClient.post<OrgRefItem>(
+    `/api/organizations/${orgId}/job-categories`,
+    { title },
+  );
+  return res.data;
+}
+
+export async function deleteOrgJobCategory(
+  orgId: string,
+  categoryId: string,
+): Promise<void> {
+  await bffClient.delete(`/api/organizations/${orgId}/job-categories/${categoryId}`);
+}
+
+export async function listOrgExperienceLevels(orgId: string): Promise<OrgRefItem[]> {
+  const res = await bffClient.get<OrgRefItem[]>(
+    `/api/organizations/${orgId}/experience-levels`,
+  );
+  return res.data;
+}
+
+export async function createOrgExperienceLevel(
+  orgId: string,
+  title: string,
+): Promise<OrgRefItem> {
+  const res = await bffClient.post<OrgRefItem>(
+    `/api/organizations/${orgId}/experience-levels`,
+    { title },
+  );
+  return res.data;
+}
+
+export async function deleteOrgExperienceLevel(
+  orgId: string,
+  levelId: string,
+): Promise<void> {
+  await bffClient.delete(`/api/organizations/${orgId}/experience-levels/${levelId}`);
+}
+
+// ---------------------------------------------------------------------------
 // Default Organization
 // ---------------------------------------------------------------------------
 

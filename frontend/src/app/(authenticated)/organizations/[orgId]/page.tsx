@@ -23,6 +23,13 @@ import {
   resendInvitation,
   uploadOrgProfilePicture,
   deleteOrgProfilePicture,
+  listOrgJobCategories,
+  listOrgExperienceLevels,
+  createOrgJobCategory,
+  createOrgExperienceLevel,
+  deleteOrgJobCategory,
+  deleteOrgExperienceLevel,
+  type OrgRefItem,
 } from "@/lib/api";
 
 import { Button } from "@/components/ui/button";
@@ -90,6 +97,8 @@ import {
   X,
   RotateCw,
   Ban,
+  Settings,
+  Plus,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -234,6 +243,12 @@ export default function OrganizationDetailPage({
             <Mail className="h-4 w-4" />
             Invitations
           </TabsTrigger>
+          {isAdmin && (
+            <TabsTrigger value="settings" className="gap-2">
+              <Settings className="h-4 w-4" />
+              Settings
+            </TabsTrigger>
+          )}
         </TabsList>
 
         <TabsContent value="overview">
@@ -265,6 +280,12 @@ export default function OrganizationDetailPage({
             onUpdate={fetchData}
           />
         </TabsContent>
+
+        {isAdmin && (
+          <TabsContent value="settings">
+            <SettingsTab orgId={orgId} />
+          </TabsContent>
+        )}
       </Tabs>
     </div>
   );
@@ -622,6 +643,300 @@ function MembersTab({
         </Table>
       </CardContent>
     </Card>
+  );
+}
+
+// ─── Settings Tab ───────────────────────────────────────────────────
+
+function SettingsTab({ orgId }: { orgId: string }) {
+  const [orgCategories, setOrgCategories] = useState<OrgRefItem[]>([]);
+  const [orgLevels, setOrgLevels] = useState<OrgRefItem[]>([]);
+  const [newCategoryTitle, setNewCategoryTitle] = useState("");
+  const [newLevelTitle, setNewLevelTitle] = useState("");
+  const [isAddingCategory, setIsAddingCategory] = useState(false);
+  const [isAddingLevel, setIsAddingLevel] = useState(false);
+  const [deletingCategoryId, setDeletingCategoryId] = useState<string | null>(
+    null,
+  );
+  const [deletingLevelId, setDeletingLevelId] = useState<string | null>(null);
+
+  useEffect(() => {
+    listOrgJobCategories(orgId)
+      .then((data) => setOrgCategories(data ?? []))
+      .catch(() => toast.error("Failed to load job categories"));
+    listOrgExperienceLevels(orgId)
+      .then((data) => setOrgLevels(data ?? []))
+      .catch(() => toast.error("Failed to load experience levels"));
+  }, [orgId]);
+
+  async function handleAddCategory(e: React.FormEvent) {
+    e.preventDefault();
+    const title = newCategoryTitle.trim();
+    if (!title) return;
+    setIsAddingCategory(true);
+    try {
+      const created = await createOrgJobCategory(orgId, title);
+      setOrgCategories((prev) => [...prev, created].sort((a, b) => a.title.localeCompare(b.title)));
+      setNewCategoryTitle("");
+      toast.success(`Category "${created.title}" added`);
+    } catch (error) {
+      if (error instanceof AxiosError) {
+        const msg =
+          error.response?.data?.title?.[0] || "Failed to add category";
+        toast.error(msg);
+      } else {
+        toast.error("Failed to add category");
+      }
+    } finally {
+      setIsAddingCategory(false);
+    }
+  }
+
+  async function handleDeleteCategory(categoryId: string, title: string) {
+    setDeletingCategoryId(categoryId);
+    try {
+      await deleteOrgJobCategory(orgId, categoryId);
+      setOrgCategories((prev) => prev.filter((c) => c.id !== categoryId));
+      toast.success(`Category "${title}" deleted`);
+    } catch (error) {
+      if (error instanceof AxiosError) {
+        const msg =
+          error.response?.data?.detail || "Failed to delete category";
+        toast.error(msg);
+      } else {
+        toast.error("Failed to delete category");
+      }
+    } finally {
+      setDeletingCategoryId(null);
+    }
+  }
+
+  async function handleAddLevel(e: React.FormEvent) {
+    e.preventDefault();
+    const title = newLevelTitle.trim();
+    if (!title) return;
+    setIsAddingLevel(true);
+    try {
+      const created = await createOrgExperienceLevel(orgId, title);
+      setOrgLevels((prev) => [...prev, created].sort((a, b) => a.title.localeCompare(b.title)));
+      setNewLevelTitle("");
+      toast.success(`Experience level "${created.title}" added`);
+    } catch (error) {
+      if (error instanceof AxiosError) {
+        const msg =
+          error.response?.data?.title?.[0] || "Failed to add experience level";
+        toast.error(msg);
+      } else {
+        toast.error("Failed to add experience level");
+      }
+    } finally {
+      setIsAddingLevel(false);
+    }
+  }
+
+  async function handleDeleteLevel(levelId: string, title: string) {
+    setDeletingLevelId(levelId);
+    try {
+      await deleteOrgExperienceLevel(orgId, levelId);
+      setOrgLevels((prev) => prev.filter((l) => l.id !== levelId));
+      toast.success(`Experience level "${title}" deleted`);
+    } catch (error) {
+      if (error instanceof AxiosError) {
+        const msg =
+          error.response?.data?.detail || "Failed to delete experience level";
+        toast.error(msg);
+      } else {
+        toast.error("Failed to delete experience level");
+      }
+    } finally {
+      setDeletingLevelId(null);
+    }
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Custom Job Categories */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Custom Job Categories</CardTitle>
+          <CardDescription>
+            Add custom job categories specific to your organization. Global
+            categories are also available and cannot be deleted here.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <form onSubmit={handleAddCategory} className="flex gap-2">
+            <Input
+              placeholder="New category title…"
+              value={newCategoryTitle}
+              onChange={(e) => setNewCategoryTitle(e.target.value)}
+              className="flex-1"
+            />
+            <Button type="submit" disabled={isAddingCategory || !newCategoryTitle.trim()} size="sm">
+              {isAddingCategory ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Plus className="h-4 w-4" />
+              )}
+              <span className="ml-1">Add</span>
+            </Button>
+          </form>
+          <div className="divide-y rounded-md border">
+            {orgCategories.length === 0 ? (
+              <p className="py-4 text-center text-sm text-muted-foreground">
+                No categories yet.
+              </p>
+            ) : (
+              orgCategories.map((cat) => (
+                <div
+                  key={cat.id}
+                  className="flex items-center justify-between px-3 py-2"
+                >
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm">{cat.title}</span>
+                    {cat.is_custom && (
+                      <Badge variant="secondary" className="text-xs">
+                        Custom
+                      </Badge>
+                    )}
+                  </div>
+                  {cat.is_custom && (
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7 text-destructive hover:text-destructive"
+                          disabled={deletingCategoryId === cat.id}
+                        >
+                          {deletingCategoryId === cat.id ? (
+                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                          ) : (
+                            <Trash2 className="h-3.5 w-3.5" />
+                          )}
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Delete category?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Delete &quot;{cat.title}&quot;? This cannot be
+                            undone. Categories in use by job profiles cannot be
+                            deleted.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction
+                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                            onClick={() => handleDeleteCategory(cat.id, cat.title)}
+                          >
+                            Delete
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  )}
+                </div>
+              ))
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Custom Experience Levels */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Custom Experience Levels</CardTitle>
+          <CardDescription>
+            Add custom experience levels specific to your organization. Global
+            levels are also available and cannot be deleted here.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <form onSubmit={handleAddLevel} className="flex gap-2">
+            <Input
+              placeholder="New experience level title…"
+              value={newLevelTitle}
+              onChange={(e) => setNewLevelTitle(e.target.value)}
+              className="flex-1"
+            />
+            <Button type="submit" disabled={isAddingLevel || !newLevelTitle.trim()} size="sm">
+              {isAddingLevel ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Plus className="h-4 w-4" />
+              )}
+              <span className="ml-1">Add</span>
+            </Button>
+          </form>
+          <div className="divide-y rounded-md border">
+            {orgLevels.length === 0 ? (
+              <p className="py-4 text-center text-sm text-muted-foreground">
+                No experience levels yet.
+              </p>
+            ) : (
+              orgLevels.map((level) => (
+                <div
+                  key={level.id}
+                  className="flex items-center justify-between px-3 py-2"
+                >
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm">{level.title}</span>
+                    {level.is_custom && (
+                      <Badge variant="secondary" className="text-xs">
+                        Custom
+                      </Badge>
+                    )}
+                  </div>
+                  {level.is_custom && (
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7 text-destructive hover:text-destructive"
+                          disabled={deletingLevelId === level.id}
+                        >
+                          {deletingLevelId === level.id ? (
+                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                          ) : (
+                            <Trash2 className="h-3.5 w-3.5" />
+                          )}
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>
+                            Delete experience level?
+                          </AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Delete &quot;{level.title}&quot;? This cannot be
+                            undone. Levels in use by job profiles cannot be
+                            deleted.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction
+                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                            onClick={() =>
+                              handleDeleteLevel(level.id, level.title)
+                            }
+                          >
+                            Delete
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  )}
+                </div>
+              ))
+            )}
+          </div>
+        </CardContent>
+      </Card>
+    </div>
   );
 }
 

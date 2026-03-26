@@ -1,5 +1,3 @@
-import type { JobCategory, ExperienceLevel } from "@/lib/client";
-
 export interface QualificationFormData {
   id?: string;
   _key?: string;
@@ -51,11 +49,13 @@ export interface JobProfileFormValues {
 }
 
 export interface JobProfileFormProps {
-  categories: JobCategory[];
-  experienceLevels: ExperienceLevel[];
+  categories: { id: string; title: string }[];
+  experienceLevels: { id: string; title: string }[];
   initialValues?: Partial<JobProfileFormValues>;
   onSubmit: (values: JobProfileFormValues) => Promise<void>;
   submitLabel?: string;
   isSubmitting?: boolean;
   showIsActive?: boolean;
+  onCreateCategory?: (title: string) => Promise<{ id: string; title: string } | null>;
+  onCreateExperienceLevel?: (title: string) => Promise<{ id: string; title: string } | null>;
 }

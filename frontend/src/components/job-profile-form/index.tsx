@@ -45,6 +45,13 @@ import {
   CommandItem,
   CommandList,
 } from "@/components/ui/command";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { QUALIFICATION_CATEGORY_COLORS } from "@/lib/constants/job-profile";
 import { Checkbox } from "@/components/ui/checkbox";
 
@@ -82,6 +89,8 @@ export function JobProfileForm({
   submitLabel = "Save",
   isSubmitting = false,
   showIsActive = false,
+  onCreateCategory,
+  onCreateExperienceLevel,
 }: JobProfileFormProps) {
   const [values, setValues] = useState<JobProfileFormValues>(() => {
     const merged = { ...DEFAULT_VALUES, ...initialValues };
@@ -97,8 +106,24 @@ export function JobProfileForm({
       })),
     };
   });
+  const [localCategories, setLocalCategories] = useState(categories);
+  const [localLevels, setLocalLevels] = useState(experienceLevels);
   const [categoryOpen, setCategoryOpen] = useState(false);
+  const [levelOpen, setLevelOpen] = useState(false);
+  const [showCreateCategory, setShowCreateCategory] = useState(false);
+  const [showCreateLevel, setShowCreateLevel] = useState(false);
+  const [newItemTitle, setNewItemTitle] = useState("");
+  const [isCreating, setIsCreating] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  // Keep local lists in sync when the parent passes new data
+  useEffect(() => {
+    setLocalCategories(categories);
+  }, [categories]);
+
+  useEffect(() => {
+    setLocalLevels(experienceLevels);
+  }, [experienceLevels]);
 
   // Refs for qualification name inputs, keyed by _key
   const qualInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
@@ -124,6 +149,38 @@ export function JobProfileForm({
   ) {
     setValues((prev) => ({ ...prev, [key]: value }));
     setErrors((prev) => ({ ...prev, [key]: "" }));
+  }
+
+  async function handleCreateCategory() {
+    if (!onCreateCategory) return;
+    setIsCreating(true);
+    try {
+      const created = await onCreateCategory(newItemTitle.trim());
+      if (created) {
+        setLocalCategories((prev) => [...prev, created]);
+        set("category", created.id);
+      }
+      setShowCreateCategory(false);
+      setNewItemTitle("");
+    } finally {
+      setIsCreating(false);
+    }
+  }
+
+  async function handleCreateLevel() {
+    if (!onCreateExperienceLevel) return;
+    setIsCreating(true);
+    try {
+      const created = await onCreateExperienceLevel(newItemTitle.trim());
+      if (created) {
+        setLocalLevels((prev) => [...prev, created]);
+        set("experience_level", created.id);
+      }
+      setShowCreateLevel(false);
+      setNewItemTitle("");
+    } finally {
+      setIsCreating(false);
+    }
   }
 
   function validate(): boolean {
@@ -326,7 +383,7 @@ export function JobProfileForm({
                     className="w-full justify-between font-normal"
                   >
                     {values.category
-                      ? (categories.find((c) => c.id === values.category)
+                      ? (localCategories.find((c) => c.id === values.category)
                           ?.title ?? "Select category")
                       : "Select category"}
                     <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
@@ -341,7 +398,20 @@ export function JobProfileForm({
                     <CommandList>
                       <CommandEmpty>No category found.</CommandEmpty>
                       <CommandGroup>
-                        {categories.map((c) => (
+                        {onCreateCategory && (
+                          <CommandItem
+                            value="__new__"
+                            onSelect={() => {
+                              setCategoryOpen(false);
+                              setNewItemTitle("");
+                              setShowCreateCategory(true);
+                            }}
+                            className="text-primary font-medium gap-2"
+                          >
+                            <Plus className="h-4 w-4" /> New Category
+                          </CommandItem>
+                        )}
+                        {localCategories.map((c) => (
                           <CommandItem
                             key={c.id}
                             value={c.title ?? ""}
@@ -376,21 +446,68 @@ export function JobProfileForm({
               <Label>
                 Experience Level <span className="text-destructive">*</span>
               </Label>
-              <Select
-                value={values.experience_level}
-                onValueChange={(v) => set("experience_level", v)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select experience level" />
-                </SelectTrigger>
-                <SelectContent>
-                  {experienceLevels.map((l) => (
-                    <SelectItem key={l.id} value={l.id!}>
-                      {l.title}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Popover open={levelOpen} onOpenChange={setLevelOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={levelOpen}
+                    className="w-full justify-between font-normal"
+                  >
+                    {values.experience_level
+                      ? (localLevels.find((l) => l.id === values.experience_level)
+                          ?.title ?? "Select experience level")
+                      : "Select experience level"}
+                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent
+                  className="w-[--radix-popover-trigger-width] p-0"
+                  align="start"
+                >
+                  <Command>
+                    <CommandInput placeholder="Search experience level…" />
+                    <CommandList>
+                      <CommandEmpty>No experience level found.</CommandEmpty>
+                      <CommandGroup>
+                        {onCreateExperienceLevel && (
+                          <CommandItem
+                            value="__new__"
+                            onSelect={() => {
+                              setLevelOpen(false);
+                              setNewItemTitle("");
+                              setShowCreateLevel(true);
+                            }}
+                            className="text-primary font-medium gap-2"
+                          >
+                            <Plus className="h-4 w-4" /> New Experience Level
+                          </CommandItem>
+                        )}
+                        {localLevels.map((l) => (
+                          <CommandItem
+                            key={l.id}
+                            value={l.title ?? ""}
+                            onSelect={() => {
+                              set("experience_level", l.id!);
+                              setLevelOpen(false);
+                            }}
+                          >
+                            <Check
+                              className={cn(
+                                "mr-2 h-4 w-4",
+                                values.experience_level === l.id
+                                  ? "opacity-100"
+                                  : "opacity-0",
+                              )}
+                            />
+                            {l.title}
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
               {errors.experience_level && (
                 <p className="text-xs text-destructive">
                   {errors.experience_level}
@@ -714,6 +831,100 @@ export function JobProfileForm({
           {submitLabel}
         </Button>
       </div>
+
+      {/* Create Category Dialog */}
+      <Dialog
+        open={showCreateCategory}
+        onOpenChange={(open) => {
+          if (!open) setShowCreateCategory(false);
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>New Category</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-2 py-2">
+            <Label htmlFor="new-category-title">Title</Label>
+            <Input
+              id="new-category-title"
+              placeholder="e.g. Data Science"
+              value={newItemTitle}
+              onChange={(e) => setNewItemTitle(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  if (newItemTitle.trim()) handleCreateCategory();
+                }
+              }}
+              autoFocus
+            />
+          </div>
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setShowCreateCategory(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              disabled={isCreating || !newItemTitle.trim()}
+              onClick={handleCreateCategory}
+            >
+              {isCreating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Create
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Create Experience Level Dialog */}
+      <Dialog
+        open={showCreateLevel}
+        onOpenChange={(open) => {
+          if (!open) setShowCreateLevel(false);
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>New Experience Level</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-2 py-2">
+            <Label htmlFor="new-level-title">Title</Label>
+            <Input
+              id="new-level-title"
+              placeholder="e.g. Mid-Level"
+              value={newItemTitle}
+              onChange={(e) => setNewItemTitle(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  if (newItemTitle.trim()) handleCreateLevel();
+                }
+              }}
+              autoFocus
+            />
+          </div>
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setShowCreateLevel(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              disabled={isCreating || !newItemTitle.trim()}
+              onClick={handleCreateLevel}
+            >
+              {isCreating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Create
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </form>
   );
 }
