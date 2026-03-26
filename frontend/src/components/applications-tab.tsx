@@ -59,7 +59,6 @@ import {
   SlidersHorizontal,
   Sparkles,
   Star,
-  X,
 } from "lucide-react";
 
 // ─── Config ──────────────────────────────────────────────────────────────────
@@ -175,9 +174,9 @@ export function ApplicationsTab({ orgId, jobProfileId }: ApplicationsTabProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  // Skill/trait filters from URL (set by Analytics tab)
-  const skillFilter = searchParams.get("skill") ?? "";
-  const traitFilter = searchParams.get("trait") ?? "";
+  // Skill/trait filters from URL (multi-select, set by Analytics tab or filter panel)
+  const skillFilters = searchParams.getAll("skill");
+  const traitFilters = searchParams.getAll("trait");
 
   // Available skills/traits for filter badges
   const [availableSkills, setAvailableSkills] = useState<string[]>([]);
@@ -221,10 +220,13 @@ export function ApplicationsTab({ orgId, jobProfileId }: ApplicationsTabProps) {
     return () => clearTimeout(t);
   }, [searchInput]);
 
+  const skillFiltersKey = skillFilters.join(",");
+  const traitFiltersKey = traitFilters.join(",");
+
   // Reset page when filter/status/skill/trait changes
   useEffect(() => {
     setPagination((p) => ({ ...p, pageIndex: 0 }));
-  }, [statusFilter, skillFilter, traitFilter]);
+  }, [statusFilter, skillFiltersKey, traitFiltersKey]);
 
   // Derived: convert TanStack sorting to API ordering string
   const ordering = useMemo(() => {
@@ -235,6 +237,8 @@ export function ApplicationsTab({ orgId, jobProfileId }: ApplicationsTabProps) {
 
   // Fetch
   const fetchData = useCallback(async () => {
+    const skills = skillFiltersKey ? skillFiltersKey.split(",") : [];
+    const traits = traitFiltersKey ? traitFiltersKey.split(",") : [];
     try {
       const result = await listJobApplications(orgId, jobProfileId, {
         page: pagination.pageIndex + 1,
@@ -242,8 +246,8 @@ export function ApplicationsTab({ orgId, jobProfileId }: ApplicationsTabProps) {
         search: debouncedSearch || undefined,
         status: statusFilter || undefined,
         ordering,
-        skill: skillFilter || undefined,
-        trait: traitFilter || undefined,
+        skill: skills.length > 0 ? skills : undefined,
+        trait: traits.length > 0 ? traits : undefined,
       });
       setData(result);
     } catch (error) {
@@ -262,8 +266,8 @@ export function ApplicationsTab({ orgId, jobProfileId }: ApplicationsTabProps) {
     debouncedSearch,
     statusFilter,
     ordering,
-    skillFilter,
-    traitFilter,
+    skillFiltersKey,
+    traitFiltersKey,
   ]);
 
   useEffect(() => {
@@ -482,10 +486,9 @@ export function ApplicationsTab({ orgId, jobProfileId }: ApplicationsTabProps) {
             return <span className="text-xs text-muted-foreground">—</span>;
           const cat = analysis.score_category;
           const colorMap: Record<string, string> = {
-            excellent: "bg-emerald-100 text-emerald-800",
-            good: "bg-blue-100 text-blue-800",
-            moderate: "bg-amber-100 text-amber-800",
-            bad: "bg-red-100 text-red-800",
+            suitable: "bg-emerald-100 text-emerald-800",
+            potentially_suitable: "bg-amber-100 text-amber-800",
+            unsuitable: "bg-red-100 text-red-800",
           };
           return (
             <Badge
@@ -558,7 +561,12 @@ export function ApplicationsTab({ orgId, jobProfileId }: ApplicationsTabProps) {
   }
 
   const isEmpty =
-    !isLoading && (data?.count ?? 0) === 0 && !debouncedSearch && !statusFilter;
+    !isLoading &&
+    (data?.count ?? 0) === 0 &&
+    !debouncedSearch &&
+    !statusFilter &&
+    skillFilters.length === 0 &&
+    traitFilters.length === 0;
 
   if (isEmpty) {
     return (
@@ -584,60 +592,35 @@ export function ApplicationsTab({ orgId, jobProfileId }: ApplicationsTabProps) {
   const startRow = (currentPage - 1) * pageSize + 1;
   const endRow = Math.min(currentPage * pageSize, totalCount);
 
-  const setSkillFilter = (val: string) => {
+  const toggleSkill = (skill: string) => {
     const params = new URLSearchParams(searchParams.toString());
-    if (val) params.set("skill", val);
-    else params.delete("skill");
+    params.delete("skill");
+    const next = skillFilters.includes(skill)
+      ? skillFilters.filter((s) => s !== skill)
+      : [...skillFilters, skill];
+    next.forEach((s) => params.append("skill", s));
     router.replace(`?${params.toString()}`);
   };
 
-  const setTraitFilter = (val: string) => {
+  const toggleTrait = (trait: string) => {
     const params = new URLSearchParams(searchParams.toString());
-    if (val) params.set("trait", val);
-    else params.delete("trait");
+    params.delete("trait");
+    const next = traitFilters.includes(trait)
+      ? traitFilters.filter((t) => t !== trait)
+      : [...traitFilters, trait];
+    next.forEach((t) => params.append("trait", t));
     router.replace(`?${params.toString()}`);
   };
 
-  const clearSkillFilter = () => setSkillFilter("");
-  const clearTraitFilter = () => setTraitFilter("");
+  const clearAllFilters = () => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.delete("skill");
+    params.delete("trait");
+    router.replace(`?${params.toString()}`);
+  };
 
   return (
     <div className="space-y-3">
-      {/* Active skill/trait filter chips */}
-      {(skillFilter || traitFilter) && (
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="text-xs text-muted-foreground">Filtered by:</span>
-          {skillFilter && (
-            <Badge
-              variant="secondary"
-              className="gap-1 bg-primary/10 text-primary border-primary/20 pr-1"
-            >
-              Skill: {skillFilter}
-              <button
-                onClick={clearSkillFilter}
-                className="ml-0.5 rounded-full hover:bg-primary/20 p-0.5 transition-colors"
-              >
-                <X className="h-3 w-3" />
-              </button>
-            </Badge>
-          )}
-          {traitFilter && (
-            <Badge
-              variant="secondary"
-              className="gap-1 bg-primary/10 text-primary border-primary/20 pr-1"
-            >
-              Trait: {traitFilter}
-              <button
-                onClick={clearTraitFilter}
-                className="ml-0.5 rounded-full hover:bg-primary/20 p-0.5 transition-colors"
-              >
-                <X className="h-3 w-3" />
-              </button>
-            </Badge>
-          )}
-        </div>
-      )}
-
       {/* Toolbar */}
       <div className="flex flex-wrap items-center gap-2">
         <Input
@@ -673,9 +656,9 @@ export function ApplicationsTab({ orgId, jobProfileId }: ApplicationsTabProps) {
           >
             <SlidersHorizontal className="h-3.5 w-3.5" />
             Filters
-            {(skillFilter || traitFilter) && (
+            {(skillFilters.length > 0 || traitFilters.length > 0) && (
               <span className="ml-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] font-semibold text-primary-foreground">
-                {(skillFilter ? 1 : 0) + (traitFilter ? 1 : 0)}
+                {skillFilters.length + traitFilters.length}
               </span>
             )}
             {showFilters ? (
@@ -710,6 +693,13 @@ export function ApplicationsTab({ orgId, jobProfileId }: ApplicationsTabProps) {
       {/* Collapsible skill/trait filter panel */}
       {showFilters && (
         <div className="rounded-lg border border-border/60 bg-muted/20 p-4 space-y-4">
+          {(skillFilters.length > 0 || traitFilters.length > 0) && (
+            <div className="flex justify-start">
+              <Button onClick={clearAllFilters} variant={"ghost"}>
+                Clear all
+              </Button>
+            </div>
+          )}
           {availableSkills.length > 0 && (
             <div className="space-y-2">
               <p className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground uppercase tracking-wide">
@@ -720,15 +710,15 @@ export function ApplicationsTab({ orgId, jobProfileId }: ApplicationsTabProps) {
                 {availableSkills.map((skill) => (
                   <Badge
                     key={skill}
-                    variant={skillFilter === skill ? "default" : "secondary"}
+                    variant={
+                      skillFilters.includes(skill) ? "default" : "secondary"
+                    }
                     className={`cursor-pointer text-xs transition-colors ${
-                      skillFilter === skill
+                      skillFilters.includes(skill)
                         ? "bg-primary text-primary-foreground hover:bg-primary/90"
                         : "hover:bg-primary hover:text-primary-foreground"
                     }`}
-                    onClick={() =>
-                      setSkillFilter(skillFilter === skill ? "" : skill)
-                    }
+                    onClick={() => toggleSkill(skill)}
                   >
                     {skill}
                   </Badge>
@@ -746,15 +736,15 @@ export function ApplicationsTab({ orgId, jobProfileId }: ApplicationsTabProps) {
                 {availableTraits.map((trait) => (
                   <Badge
                     key={trait}
-                    variant={traitFilter === trait ? "default" : "outline"}
+                    variant={
+                      traitFilters.includes(trait) ? "default" : "outline"
+                    }
                     className={`cursor-pointer text-xs transition-colors ${
-                      traitFilter === trait
+                      traitFilters.includes(trait)
                         ? "bg-primary text-primary-foreground border-primary hover:bg-primary/90"
                         : "hover:bg-primary hover:text-primary-foreground hover:border-primary"
                     }`}
-                    onClick={() =>
-                      setTraitFilter(traitFilter === trait ? "" : trait)
-                    }
+                    onClick={() => toggleTrait(trait)}
                   >
                     {trait}
                   </Badge>
@@ -770,9 +760,15 @@ export function ApplicationsTab({ orgId, jobProfileId }: ApplicationsTabProps) {
         <Table>
           <TableHeader className="bg-muted/40">
             {table.getHeaderGroups().map((hg) => (
-              <TableRow key={hg.id} className="border-b border-border/60 hover:bg-transparent">
+              <TableRow
+                key={hg.id}
+                className="border-b border-border/60 hover:bg-transparent"
+              >
                 {hg.headers.map((header) => (
-                  <TableHead key={header.id} className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                  <TableHead
+                    key={header.id}
+                    className="text-xs font-semibold text-muted-foreground uppercase tracking-wide"
+                  >
                     {header.isPlaceholder
                       ? null
                       : flexRender(

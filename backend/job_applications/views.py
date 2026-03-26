@@ -1,6 +1,6 @@
 import os
 
-from django.db.models import F, IntegerField, OuterRef, Subquery
+from django.db.models import F, IntegerField, OuterRef, Q, Subquery
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
 from job_profile.models import JobProfile
@@ -364,15 +364,21 @@ def list_job_applications(request, org_id, job_profile_id):
     if status_filter:
         qs = qs.filter(status=status_filter)
 
-    # Skill filter (matches applications whose analysis key_skills contains the value)
-    skill_filter = request.query_params.get("skill", "").strip()
-    if skill_filter:
-        qs = qs.filter(analysis__key_skills__contains=[skill_filter])
+    # Skill filter — supports multiple values (OR logic)
+    skill_filters = [s.strip() for s in request.query_params.getlist("skill") if s.strip()]
+    if skill_filters:
+        skill_q = Q()
+        for skill in skill_filters:
+            skill_q |= Q(analysis__key_skills__contains=[skill])
+        qs = qs.filter(skill_q)
 
-    # Trait filter (matches applications whose analysis notable_traits contains the value)
-    trait_filter = request.query_params.get("trait", "").strip()
-    if trait_filter:
-        qs = qs.filter(analysis__notable_traits__contains=[trait_filter])
+    # Trait filter — supports multiple values (OR logic)
+    trait_filters = [t.strip() for t in request.query_params.getlist("trait") if t.strip()]
+    if trait_filters:
+        trait_q = Q()
+        for trait in trait_filters:
+            trait_q |= Q(analysis__notable_traits__contains=[trait])
+        qs = qs.filter(trait_q)
 
     # Ordering
     VALID_ORDERINGS = {
@@ -823,10 +829,9 @@ def job_profile_analytics(request, org_id, job_profile_id):
 
     # Category distribution (matches score_categories.py thresholds)
     category_distribution = {
-        "excellent": analyses.filter(score__gte=90).count(),
-        "good": analyses.filter(score__gte=75, score__lte=89).count(),
-        "moderate": analyses.filter(score__gte=40, score__lte=74).count(),
-        "bad": analyses.filter(score__gte=0, score__lte=39).count(),
+        "suitable": analyses.filter(score__gte=70).count(),
+        "potentially_suitable": analyses.filter(score__gte=40, score__lte=69).count(),
+        "unsuitable": analyses.filter(score__gte=0, score__lte=39).count(),
     }
 
     avg_score = analyses.aggregate(avg=Avg("score"))["avg"]
@@ -893,7 +898,7 @@ def job_profile_analytics(request, org_id, job_profile_id):
     - **total_applications**: Total across all job profiles
     - **total_job_profiles**: Dict with total, active, inactive counts
     - **status_breakdown**: Count per application status
-    - **category_distribution**: AI score category counts (excellent/good/moderate/bad)
+    - **category_distribution**: AI score category counts (suitable/potentially_suitable/unsuitable)
     - **average_category**: Org-wide average score category
     - **top_skills**: Most frequent skills across all analyses (top 15)
     - **top_traits**: Most frequent traits across all analyses (top 10)
@@ -955,10 +960,9 @@ def org_analytics(request, org_id):
     )
 
     category_distribution = {
-        "excellent": analyses.filter(score__gte=90).count(),
-        "good": analyses.filter(score__gte=75, score__lte=89).count(),
-        "moderate": analyses.filter(score__gte=40, score__lte=74).count(),
-        "bad": analyses.filter(score__gte=0, score__lte=39).count(),
+        "suitable": analyses.filter(score__gte=70).count(),
+        "potentially_suitable": analyses.filter(score__gte=40, score__lte=69).count(),
+        "unsuitable": analyses.filter(score__gte=0, score__lte=39).count(),
     }
 
     avg_score = analyses.aggregate(avg=Avg("score"))["avg"]

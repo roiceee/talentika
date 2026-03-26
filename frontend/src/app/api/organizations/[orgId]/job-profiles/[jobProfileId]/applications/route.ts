@@ -25,6 +25,12 @@ export async function GET(
       const val = incoming.get(key);
       if (val !== null && val !== "") qs.set(key, val);
     }
+    // Multi-value params
+    for (const key of ["skill", "trait"]) {
+      for (const val of incoming.getAll(key)) {
+        if (val !== "") qs.append(key, val);
+      }
+    }
     const queryString = qs.toString();
     const url = `${BACKEND_URL}/api/organizations/${orgId}/job-profiles/${jobProfileId}/applications/${queryString ? `?${queryString}` : ""}`;
 
