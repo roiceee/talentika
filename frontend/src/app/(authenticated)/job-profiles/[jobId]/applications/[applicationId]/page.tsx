@@ -600,10 +600,9 @@ export default function ApplicationDetailPage({
                     <div
                       className={`flex items-center justify-center h-14 px-4 rounded-full border-4 ${
                         {
-                          excellent: "border-emerald-500 text-emerald-600",
-                          good: "border-blue-400 text-blue-600",
-                          moderate: "border-amber-400 text-amber-600",
-                          bad: "border-red-400 text-destructive",
+                          suitable: "border-emerald-500 text-emerald-600",
+                          potentially_suitable: "border-amber-400 text-amber-600",
+                          unsuitable: "border-red-400 text-destructive",
                         }[analysis.score_category.key] ??
                         "border-muted text-muted-foreground"
                       }`}
