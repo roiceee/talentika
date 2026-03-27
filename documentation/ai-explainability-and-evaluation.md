@@ -10,11 +10,11 @@ Talentika uses a **Large Language Model (LLM)** — specifically OpenAI GPT-4o-m
 
 ### What Is a Large Language Model?
 
-LLMs are a class of artificial neural networks trained on vast corpora of human-produced text. Their architecture is based on the **Transformer** (Vaswani et al., 2017), which introduced a mechanism called **self-attention**: the ability for any part of an input text to selectively focus on and relate to any other part of the same input. This allows the model to understand language not as a sequence of isolated words, but as a web of contextual relationships.
+LLMs are a class of artificial neural networks trained on vast corpora of human-produced text. Their architecture is built on the Transformer model and a mechanism called **self-attention**: the ability for any part of an input text to selectively focus on and relate to any other part of the same input. This allows the model to understand language not as a sequence of isolated words, but as a web of contextual relationships (Brown et al., 2020).
 
-During training, these models learn to predict the next word (token) in a sequence given all preceding words. Through this process — performed billions of times across diverse text sources — the model internalises grammar, factual knowledge, reasoning patterns, and importantly for this system, the semantic relationships between professional concepts, skills, job roles, and qualifications.
+During training, these models learn to predict the next word (token) in a sequence given all preceding words. Through this process — performed billions of times across diverse text sources — the model internalises grammar, factual knowledge, reasoning patterns, and importantly for this system, the semantic relationships between professional concepts, skills, job roles, and qualifications (Zhao et al., 2023).
 
-The result is a model capable of **in-context reasoning**: when given a task description and relevant data as input, it performs the task through inference rather than through pre-programmed rules or retraining.
+The result is a model capable of **in-context reasoning**: when given a task description and relevant data as input, it performs the task through inference rather than through pre-programmed rules or retraining (Brown et al., 2020). Applied to GPT-4-class models, this reasoning capability extends to multi-step judgment tasks that require simultaneously weighing multiple sources of evidence — such as comparing a candidate's resume against a structured set of job requirements (OpenAI, 2023).
 
 ### Why an LLM Is Appropriate for Resume Screening
 
@@ -64,7 +64,7 @@ The AI is technically constrained to return a fixed set of outputs in a defined 
 
 ## 3. Why the System Is Not a Black Box
 
-A system is considered a "black box" when it produces outputs that cannot be traced back to specific, inspectable reasons. Talentika is designed to avoid this:
+A system is considered a "black box" when it produces outputs that cannot be traced back to specific, inspectable reasons. Explainable AI (XAI) research frames this transparency requirement as a fundamental condition for responsible deployment of AI in consequential decision-making contexts (Arrieta et al., 2020). Talentika is designed to satisfy this requirement:
 
 | What might seem opaque | How the system makes it transparent |
 |------------------------|-------------------------------------|
@@ -74,7 +74,7 @@ A system is considered a "black box" when it produces outputs that cannot be tra
 | What rules did the AI follow? | The classification criteria are fixed, written definitions (see Section 4) |
 | What did the AI decide? | The classification, summary, skills, and traits are all stored and displayed — nothing is hidden |
 
-Additionally, the system is positioned as a **decision-support tool**, not an autonomous decision-maker. Every classification is a recommendation. The human HR reviewer reads the AI's reasoning, examines the evidence, and independently decides whether to shortlist, hold, or reject the candidate. The AI reduces the volume of manual reading required; it does not replace human judgment.
+Additionally, the system is positioned as a **decision-support tool**, not an autonomous decision-maker. Research on AI-assisted hiring consistently emphasises that human oversight is essential when algorithmic systems inform employment decisions (Raghavan et al., 2020). Every classification is a recommendation. The human HR reviewer reads the AI's reasoning, examines the evidence, and independently decides whether to shortlist, hold, or reject the candidate. The AI reduces the volume of manual reading required; it does not replace human judgment.
 
 ---
 
@@ -142,7 +142,7 @@ Resume files submitted as PDF or DOCX must first be converted into machine-reada
 
 ### Stage 2 — Tokenisation (Language Model Side)
 
-Before the extracted text is processed by the LLM, it is **tokenised** — broken into subword units called tokens. Tokenisation for LLMs is a linguistic operation: common words become a single token, while rare or compound words may be split across multiple tokens. Each token is then converted into a high-dimensional numerical vector (an **embedding**) that encodes its semantic meaning as learned during pre-training.
+Before the extracted text is processed by the LLM, it is **tokenised** — broken into subword units called tokens. Tokenisation for LLMs is a linguistic operation: common words become a single token, while rare or compound words may be split across multiple tokens. Each token is then converted into a high-dimensional numerical vector (an **embedding**) that encodes its semantic meaning as learned during pre-training (Zhao et al., 2023).
 
 This embedding representation is what allows the model to understand that `"developer"` and `"engineer"` occupy similar positions in semantic space — they have similar embeddings — and are therefore related concepts.
 
@@ -154,7 +154,7 @@ This means the model can recognise the presence of a skill even when the exact p
 
 ### Stage 4 — Semantic Similarity Assessment
 
-Semantic similarity refers to the degree to which two pieces of text convey the same meaning, independent of the specific words used. LLMs are particularly effective at semantic similarity because their embeddings capture conceptual meaning rather than surface form.
+Semantic similarity refers to the degree to which two pieces of text convey the same meaning, independent of the specific words used. LLMs are particularly effective at semantic similarity because their embeddings capture conceptual meaning rather than surface form (Brown et al., 2020).
 
 In the context of resume screening, this manifests as:
 
@@ -166,7 +166,7 @@ This capability is what distinguishes LLM-based screening from traditional docum
 
 ### Stage 5 — Classification and Explanation Generation
 
-After processing all input tokens through its attention layers, the model generates the classification category along with the supporting narrative. The classification is produced in a single inference pass — the model considers the full context (job description, qualifications, answers, resume) simultaneously before generating any output.
+After processing all input tokens through its attention layers, the model generates the classification category along with the supporting narrative. The classification is produced in a single inference pass — the model considers the full context (job description, qualifications, answers, resume) simultaneously before generating any output (OpenAI, 2023).
 
 The narrative outputs (`ai_analysis_summary`, `strengths`, `areas_for_development`) are generated by the same model in the same pass — they are the model's articulation of its reasoning, grounded in the evidence it identified in the resume text.
 
@@ -190,4 +190,12 @@ The pipeline is fully automated — a candidate submits their resume and the sys
 
 ## References
 
-- Vaswani, A., Shazeer, N., Parmar, N., Uszkoreit, J., Jones, L., Gomez, A. N., Kaiser, Ł., & Polosukhin, I. (2017). Attention is all you need. *Advances in Neural Information Processing Systems, 30*.
+- Arrieta, A. B., Díaz-Rodríguez, N., Del Ser, J., Bennetot, A., Tabik, S., Barbado, A., García, S., Gil-López, S., Molina, D., Benjamins, R., Chatila, R., & Herrera, F. (2020). Explainable Artificial Intelligence (XAI): Concepts, taxonomies, opportunities and challenges toward responsible AI. *Information Fusion, 58*, 82–115. https://doi.org/10.1016/j.inffus.2019.12.012
+
+- Brown, T., Mann, B., Ryder, N., Subbiah, M., Kaplan, J. D., Dhariwal, P., Neelakantan, A., Shyam, P., Sastry, G., Askell, A., Agarwal, S., Herbert-Voss, A., Krueger, G., Henighan, T., Child, R., Ramesh, A., Ziegler, D., Wu, J., Winter, C., … Amodei, D. (2020). Language models are few-shot learners. *Advances in Neural Information Processing Systems, 33*, 1877–1901.
+
+- OpenAI. (2023). *GPT-4 technical report*. arXiv preprint arXiv:2303.08774.
+
+- Raghavan, M., Barocas, S., Kleinberg, J., & Levy, K. (2020). Mitigating bias in algorithmic hiring: Evaluating claims and practices. *Proceedings of the 2020 Conference on Fairness, Accountability, and Transparency*, 469–481. https://doi.org/10.1145/3351095.3372828
+
+- Zhao, W. X., Zhou, K., Li, J., Tang, T., Wang, X., Hou, Y., Min, Y., Zhang, B., Zhang, J., Dong, Z., Du, Y., Yang, C., Chen, Y., Chen, Z., Jiang, J., Ren, R., Li, Y., Tang, X., Liu, Z., … Wen, J.-R. (2023). A survey of large language models. *arXiv preprint arXiv:2303.18223*.
