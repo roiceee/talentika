@@ -15,7 +15,7 @@ frontend/  → Next.js 16 app (pnpm, TypeScript)
 - `organizations/` — org management, memberships, email invitations
 - `job_profile/` — job profiles, Q&A questions, job categories, AI screening configs
 - `job_applications/` — application submission, file uploads, status workflow
-- `job_application_analysis/` — RQ-based pipeline: OCR (doctr) → AI scoring (OpenAI/Gemini)
+- `job_application_analysis/` — RQ-based pipeline: OCR (Tesseract) → AI scoring (OpenAI)
 - `geo/` — country/state/city lookup endpoints (public, uses `countrystatecity_countries`)
 - `health/` — `/health` liveness check
 
@@ -114,7 +114,7 @@ def create_job_profile(request, org_id): ...
 `POST /api/applications/submit/upload/resume/` → `TemporaryFileUpload` (returns UUID) → pass UUID in submission payload. Dedup via SHA-256.
 
 **Analysis pipeline state machine:** `UPLOADED → OCR_PENDING → OCR_DONE → AI_PENDING → DONE / FAILED`
-OCR uses **doctr** (singleton, lazy-loaded). AI provider via `AI_PROVIDER` env (`openai` or `gemini`); models via `OPENAI_MODEL` / `GEMINI_MODEL`.
+OCR uses **Tesseract** (pytesseract + pdf2image). AI via `OPENAI_API_KEY` / `OPENAI_MODEL` settings.
 
 **Invitation flow:**
 
@@ -152,7 +152,7 @@ Header: `Authorization: Bearer <token>`. Serializer: `EmailTokenObtainPairSerial
 | [backend/app/settings.py](backend/app/settings.py)                                               | All config (JWT, email, Redis, AI provider) |
 | [backend/organizations/permissions.py](backend/organizations/permissions.py)                     | Custom DRF permissions                      |
 | [backend/job_application_analysis/workers.py](backend/job_application_analysis/workers.py)       | RQ worker pipeline                          |
-| [backend/job_application_analysis/ai_service.py](backend/job_application_analysis/ai_service.py) | OpenAI/Gemini AI backend                    |
+| [backend/job_application_analysis/ai_service.py](backend/job_application_analysis/ai_service.py) | OpenAI AI backend                           |
 | [backend/docker-compose.yml](backend/docker-compose.yml)                                         | PostgreSQL container (port 5438)            |
 | [frontend/src/proxy.ts](frontend/src/proxy.ts)                                                   | CSRF edge middleware                        |
 | [frontend/src/lib/hey-api.ts](frontend/src/lib/hey-api.ts)                                       | Axios client config                         |

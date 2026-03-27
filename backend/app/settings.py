@@ -150,17 +150,9 @@ REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379/0")
 # Set REDIS_SSL=True in production when using a TLS-enabled Redis (e.g. Upstash, ElastiCache)
 REDIS_SSL = os.getenv("REDIS_SSL", "False") == "True"
 
-# AI Provider Configuration
-# Set AI_PROVIDER to 'openai' or 'gemini' to choose the LLM backend
-AI_PROVIDER = os.getenv("AI_PROVIDER", "openai")
-
-# OpenAI Configuration (used when AI_PROVIDER=openai)
+# OpenAI Configuration
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
 OPENAI_MODEL = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
-
-# Google Gemini Configuration (used when AI_PROVIDER=gemini)
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
-GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.0-flash")
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/6.0/ref/settings/#default-auto-field

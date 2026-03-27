@@ -117,16 +117,15 @@ Failed analyses can be re-triggered manually by an admin without re-submitting t
 
 #### Stage 1 — Optical Character Recognition (OCR)
 
-The resume PDF is retrieved from storage (local disk or Amazon S3) and processed by **doctr**, a deep learning-based document understanding library.
+The resume PDF is retrieved from storage (local disk or Amazon S3) and processed by **Tesseract OCR** (via pytesseract + pdf2image).
 
-Doctr uses two neural network models in sequence:
+The pipeline works as follows:
 
-- **Text Detection**: `db_resnet50` — a ResNet-50-based differentiable binarization model that locates text regions in each page of the PDF
-- **Text Recognition**: `crnn_vgg16_bn` — a convolutional recurrent neural network (CRNN) built on VGG-16 that reads and transcribes detected text regions
+1. Each page of the PDF is rasterised to an image at 200 DPI using pdf2image.
+2. Images are downscaled to a maximum of 4 megapixels (Lanczos resampling) to prevent out-of-memory errors.
+3. Each page image is passed through **Tesseract 4+**, which uses an LSTM-based neural network to recognise text.
 
 The output is the **full plain text of the resume**, with each page separated by a marker. This extracted text becomes the input for Stage 2.
-
-The OCR model is loaded once at worker startup using thread-safe singleton initialization, avoiding repeated model loading overhead between jobs.
 
 > **Note**: This is not a simple PDF text-copy operation — the OCR approach handles scanned documents, image-based PDFs, and non-selectable text. The system processes the visual layout of the document rather than relying on embedded text metadata.
 
@@ -136,12 +135,7 @@ The OCR model is loaded once at worker startup using thread-safe singleton initi
 
 The extracted resume text is combined with the full job profile context and sent to a **Large Language Model (LLM)** for structured analysis.
 
-**Provider flexibility**: The system supports two LLM providers, switchable via configuration:
-
-- **OpenAI** (GPT models) — using the Structured Outputs API
-- **Google Gemini** — using the JSON Schema response mode
-
-Both providers are instructed to return a **Pydantic-validated structured output** rather than free-form text. This means the AI response is type-checked and guaranteed to match a strict schema before being saved to the database.
+The system uses **OpenAI** (GPT models) via the Structured Outputs API. The AI is instructed to return a **Pydantic-validated structured output** rather than free-form text. This means the AI response is type-checked and guaranteed to match a strict schema before being saved to the database.
 
 **What the AI receives as input (the prompt):**
 
@@ -205,8 +199,8 @@ Authenticated organization members can review all incoming applications and thei
 | --------------------------- | ---------------------------------------------------------------- |
 | Multi-tenancy               | Organization-scoped data with role-based permissions             |
 | Async processing            | Redis Queue (RQ) with separate OCR and AI worker queues          |
-| Deep learning OCR           | doctr with db_resnet50 (detection) + crnn_vgg16_bn (recognition) |
-| LLM Structured Outputs      | OpenAI / Google Gemini with Pydantic-enforced JSON schema        |
+| OCR                         | Tesseract 4+ (LSTM) via pytesseract + pdf2image                  |
+| LLM Structured Outputs      | OpenAI with Pydantic-enforced JSON schema                        |
 | Context injection           | Job profile + resume text + Q&A compiled into a single prompt    |
 | Fuzzy deduplication         | RapidFuzz token-sort ratio for name similarity                   |
 | Cryptographic deduplication | SHA-256 file hashing for resume identity matching                |

@@ -58,11 +58,11 @@ Browser → Next.js BFF routes (/api/*) → Django REST API (:8000) → PostgreS
 
 ### Analysis Pipeline (async, RQ-based)
 
-Application submitted → OCR job enqueued → `ocr_queue` worker extracts text via **doctr** (neural net, singleton) → `ai_queue` worker sends to LLM → structured output validated via Pydantic → saved to DB.
+Application submitted → OCR job enqueued → `ocr_queue` worker extracts text via **Tesseract OCR** (pytesseract + pdf2image) → `ai_queue` worker sends to LLM → structured output validated via Pydantic → saved to DB.
 
 Status machine: `UPLOADED → OCR_PENDING → OCR_DONE → AI_PENDING → DONE / FAILED`
 
-AI provider is switchable: `AI_PROVIDER=openai` (default `gpt-4o-mini`) or `AI_PROVIDER=gemini` (default `gemini-2.0-flash`).
+AI uses OpenAI (default model: `gpt-4o-mini`, configurable via `OPENAI_MODEL` env).
 
 ### Django Apps
 
@@ -126,7 +126,7 @@ Applications deduplicated using weighted composite score: Name 40% (RapidFuzz), 
 | `backend/app/settings.py` | All config (JWT, email, Redis, AI provider) |
 | `backend/organizations/permissions.py` | Custom DRF permissions |
 | `backend/job_application_analysis/workers.py` | RQ worker pipeline logic |
-| `backend/job_application_analysis/ai_service.py` | OpenAI/Gemini AI backend |
+| `backend/job_application_analysis/ai_service.py` | OpenAI AI backend |
 | `backend/docker-compose.yml` | PostgreSQL (port 5438) + Redis + workers |
 | `frontend/src/proxy.ts` | CSRF edge middleware |
 | `frontend/src/lib/hey-api.ts` | Axios client config |

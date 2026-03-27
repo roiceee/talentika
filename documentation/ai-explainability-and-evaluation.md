@@ -6,7 +6,7 @@ This document provides a scientifically grounded explanation of the AI-based res
 
 ## 1. Underlying Technology: Large Language Models
 
-Talentika uses a **Large Language Model (LLM)** — specifically OpenAI GPT-4o-mini or Google Gemini 2.0 Flash — as its AI reasoning engine. Understanding how an LLM works is necessary to understand how and why the system produces the outputs it does.
+Talentika uses a **Large Language Model (LLM)** — specifically OpenAI GPT-4o-mini — as its AI reasoning engine. Understanding how an LLM works is necessary to understand how and why the system produces the outputs it does.
 
 ### What Is a Large Language Model?
 
@@ -180,7 +180,7 @@ The system's scientific contribution lies not in any single component but in the
 |-----------|-----------|---------------------|
 | Document ingestion | LibreOffice, pdf2image | Normalises diverse file formats into a consistent text-extractable form |
 | Text extraction | Tesseract OCR (LSTM) | Converts visual document content into machine-readable text |
-| Semantic matching | LLM (GPT-4o-mini / Gemini 2.0 Flash) | Performs context-aware, semantically-aware candidate-job fit analysis |
+| Semantic matching | LLM (GPT-4o-mini) | Performs context-aware, semantically-aware candidate-job fit analysis |
 | Output integrity | Schema validation (Pydantic) | Ensures the AI returns a valid, predictable, machine-parseable result |
 | HR workflow | Web application, async queue | Delivers results to reviewers and supports their decision-making process |
 

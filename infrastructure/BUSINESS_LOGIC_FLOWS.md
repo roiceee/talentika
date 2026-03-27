@@ -80,7 +80,7 @@ flowchart TD
     D -->|No| F[Status: FAILED]
     E --> G[Status: AI_PENDING]
     G --> H[AI Worker: Build Prompt - Job + Requirements + Resume Text]
-    H --> I[Send to LLM - OpenAI or Gemini]
+    H --> I[Send to LLM - OpenAI]
     I --> J{AI Success?}
     J -->|Yes| K[Validate Response with Pydantic]
     J -->|No| L[Status: FAILED]

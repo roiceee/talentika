@@ -1,10 +1,6 @@
 """
-AI analysis service — sends extracted resume text + job profile data to an
-LLM (OpenAI or Google Gemini) and returns a structured analysis.
-
-Provider via settings.AI_PROVIDER (env AI_PROVIDER):
-  - "openai"  → OpenAI Structured Outputs (default)
-  - "gemini"  → Google Gemini Structured Output
+AI analysis service — sends extracted resume text + job profile data to
+OpenAI and returns a structured analysis.
 """
 
 import logging
@@ -121,9 +117,29 @@ def _build_user_prompt(
     return "".join(parts)
 
 
-def _analyse_openai(system_prompt: str, user_prompt: str) -> ResumeAnalysisResult:
+def analyse_resume(
+    resume_text: str,
+    job_title: str,
+    job_description: str,
+    qualifications: list[dict] | None = None,
+    questions_and_answers: list[dict] | None = None,
+) -> ResumeAnalysisResult:
+    if not getattr(settings, "OPENAI_API_KEY", ""):
+        raise ValueError("OPENAI_API_KEY is not set.")
+
     from openai import OpenAI
     client = OpenAI(api_key=settings.OPENAI_API_KEY)
+
+    system_prompt = _build_system_prompt()
+    user_prompt = _build_user_prompt(
+        resume_text=resume_text,
+        job_title=job_title,
+        job_description=job_description,
+        qualifications=qualifications or [],
+        questions_and_answers=questions_and_answers or [],
+    )
+
+    logger.info("Sending resume analysis request to OpenAI (model=%s)", settings.OPENAI_MODEL)
     completion = client.beta.chat.completions.parse(
         model=settings.OPENAI_MODEL,
         messages=[
@@ -136,58 +152,3 @@ def _analyse_openai(system_prompt: str, user_prompt: str) -> ResumeAnalysisResul
     if result is None:
         raise ValueError("OpenAI returned a null parsed response (possible refusal).")
     return result
-
-
-def _analyse_gemini(system_prompt: str, user_prompt: str) -> ResumeAnalysisResult:
-    from google import genai
-    client = genai.Client(api_key=settings.GEMINI_API_KEY)
-    response = client.models.generate_content(
-        model=settings.GEMINI_MODEL,
-        contents=f"{system_prompt}\n\n{user_prompt}",
-        config={
-            "response_mime_type": "application/json",
-            "response_schema": ResumeAnalysisResult,
-        },
-    )
-    parsed = response.parsed
-    if parsed is None:
-        raise ValueError("Gemini returned a null parsed response.")
-    return parsed
-
-
-_PROVIDERS = {
-    "openai": _analyse_openai,
-    "gemini": _analyse_gemini,
-}
-
-
-def _get_provider():
-    provider_name = getattr(settings, "AI_PROVIDER", "openai").lower()
-    provider_fn = _PROVIDERS.get(provider_name)
-    if provider_fn is None:
-        raise ValueError(f"Unknown AI_PROVIDER: '{provider_name}'. Choose from: {', '.join(_PROVIDERS.keys())}")
-    if provider_name == "openai" and not getattr(settings, "OPENAI_API_KEY", ""):
-        raise ValueError("AI_PROVIDER is 'openai' but OPENAI_API_KEY is not set.")
-    if provider_name == "gemini" and not getattr(settings, "GEMINI_API_KEY", ""):
-        raise ValueError("AI_PROVIDER is 'gemini' but GEMINI_API_KEY is not set.")
-    return provider_name, provider_fn
-
-
-def analyse_resume(
-    resume_text: str,
-    job_title: str,
-    job_description: str,
-    qualifications: list[dict] | None = None,
-    questions_and_answers: list[dict] | None = None,
-) -> ResumeAnalysisResult:
-    provider_name, provider_fn = _get_provider()
-    logger.info("Using AI provider: %s", provider_name)
-    system_prompt = _build_system_prompt()
-    user_prompt = _build_user_prompt(
-        resume_text=resume_text,
-        job_title=job_title,
-        job_description=job_description,
-        qualifications=qualifications or [],
-        questions_and_answers=questions_and_answers or [],
-    )
-    return provider_fn(system_prompt, user_prompt)

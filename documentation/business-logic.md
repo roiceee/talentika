@@ -106,15 +106,15 @@ flowchart TD
         EnqueueOCR --> OCRStart["OCR Worker picks up job"]
         OCRStart --> SetOCRPending["Status → OCR_PENDING"]
         SetOCRPending --> DownloadPDF["Download resume from storage<br/>(S3 or local)"]
-        DownloadPDF --> ExtractText["Extract text via doctr"]
+        DownloadPDF --> ExtractText["Extract text via Tesseract OCR"]
         ExtractText --> SaveText["Save extracted text<br/>Status → OCR_DONE"]
         SaveText --> EnqueueAI["Enqueue on ai_queue"]
 
         EnqueueAI --> AIStart["AI Worker picks up job"]
         AIStart --> SetAIPending["Status → AI_PENDING"]
         SetAIPending --> CollectContext["Collect job profile data +<br/>qualifications + Q&A pairs"]
-        CollectContext --> CallAI["Call OpenAI / Gemini API<br/>(structured output)"]
-        CallAI --> PersistResults["Save: summary, skills,<br/>traits, score (0-100),<br/>detailed analysis"]
+        CollectContext --> CallAI["Call OpenAI API<br/>(structured output)"]
+        CallAI --> PersistResults["Save: summary, skills,<br/>traits, score_category,<br/>detailed analysis"]
         PersistResults --> Done["Status → DONE"]
 
         SetOCRPending -->|Error| Failed1["Status → FAILED<br/>(retry possible)"]

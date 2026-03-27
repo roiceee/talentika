@@ -31,7 +31,7 @@ logger = logging.getLogger(__name__)
     operation_description=(
         "**Test endpoint** — upload a PDF file and get the OCR-extracted text back "
         "immediately.  Does NOT create any database records or trigger the analysis "
-        "pipeline.  Useful for verifying doctr is working."
+        "pipeline.  Useful for verifying Tesseract OCR is working."
     ),
     manual_parameters=[
         openapi.Parameter(

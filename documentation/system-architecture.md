@@ -33,7 +33,7 @@ graph TB
     end
 
     subgraph External Services
-        OpenAI["OpenAI / Gemini API"]
+        OpenAI["OpenAI API"]
         SMTP["Gmail SMTP"]
     end
 
@@ -84,7 +84,7 @@ graph TB
     end
 
     subgraph External
-        OpenAI["OpenAI / Gemini API"]
+        OpenAI["OpenAI API"]
         SMTP["Gmail SMTP"]
     end
 

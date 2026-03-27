@@ -37,7 +37,7 @@ class ApplicationAnalysis(models.Model):
     # --- OCR output ---
     extracted_resume_text = models.TextField(
         blank=True,
-        help_text="Full text extracted from the resume PDF via doctr",
+        help_text="Full text extracted from the resume PDF via Tesseract OCR",
     )
 
     # --- AI output (structured) ---
