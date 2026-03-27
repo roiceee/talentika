@@ -9,6 +9,8 @@ Provider via settings.AI_PROVIDER (env AI_PROVIDER):
 
 import logging
 
+from typing import Literal
+
 from pydantic import BaseModel, Field
 from django.conf import settings
 
@@ -43,12 +45,13 @@ class ResumeAnalysisResult(BaseModel):
     ai_analysis_summary: str = Field(description="A concise paragraph summarising the candidate's fit for the role")
     notable_traits: list[str] = Field(default_factory=list, description="Noteworthy personal / professional traits")
     key_skills: list[str] = Field(default_factory=list, description="Technical and soft skills identified")
-    score: int = Field(
-        ge=0, le=100,
+    score_category: Literal["suitable", "potentially_suitable", "unsuitable"] = Field(
         description=(
-            "Overall candidate-job-fit score from 0 to 100. "
-            "Use these ranges: "
-            "Suitable = 70-100, Potentially Suitable = 40-69, Unsuitable = 0-39."
+            "Overall candidate-job-fit classification. "
+            "Choose exactly one: "
+            "'suitable' — strong fit, meets key requirements well; "
+            "'potentially_suitable' — partial fit, meets some requirements but has notable gaps; "
+            "'unsuitable' — poor fit, does not meet core requirements."
         ),
     )
     detailed_analysis: DetailedAnalysis = Field(description="In-depth structured analysis")
@@ -61,16 +64,15 @@ def _build_system_prompt() -> str:
         "and the candidate's answers to screening questions (if provided), "
         "produce a structured analysis of the candidate's fit for the role. "
         "Be objective, thorough, and concise.\n\n"
-        "When assigning the score, use these category thresholds:\n"
-        "- Suitable (70-100): Strong fit — meets key requirements well\n"
-        "- Potentially Suitable (40-69): Partial fit — meets some requirements but has notable gaps\n"
-        "- Unsuitable (0-39): Poor fit — does not meet core requirements\n"
-        "Pick a score that clearly places the candidate in the right category.\n\n"
+        "When classifying the candidate, choose exactly one category:\n"
+        "- suitable: Strong fit — meets key requirements well\n"
+        "- potentially_suitable: Partial fit — meets some requirements but has notable gaps\n"
+        "- unsuitable: Poor fit — does not meet core requirements\n\n"
         "Pay special attention to 'required' qualifications — failing to meet them "
-        "should weigh heavily against the score. 'Preferred' qualifications are nice-to-have.\n\n"
-        "If screening question answers are provided, factor them into the overall assessment: "
-        "strong answers can reinforce a higher score; weak, evasive, or disqualifying answers "
-        "should lower it."
+        "should push the classification toward 'unsuitable'. 'Preferred' qualifications are nice-to-have.\n\n"
+        "If screening question answers are provided, factor them into the classification: "
+        "strong answers support 'suitable'; weak, evasive, or disqualifying answers "
+        "should push toward 'potentially_suitable' or 'unsuitable'."
     )
 
 

@@ -54,7 +54,6 @@ COLUMNS = [
     ),
     # Analysis
     ("Analysis Status", lambda _app, a: a.get_status_display() if a else ""),
-    ("AI Score", lambda _app, a: str(a.score) if a and a.score is not None else ""),
     ("Score Category", lambda _app, a: _score_cat_label(a)),
     ("AI Summary", lambda _app, a: a.ai_analysis_summary if a else ""),
     (
@@ -69,11 +68,11 @@ COLUMNS = [
 
 
 def _score_cat_label(analysis):
-    if not analysis or analysis.score is None:
+    if not analysis or not analysis.score_category:
         return ""
     from job_application_analysis.score_categories import get_score_category
 
-    cat = get_score_category(analysis.score)
+    cat = get_score_category(analysis.score_category)
     return cat.label if cat else ""
 
 

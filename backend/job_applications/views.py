@@ -788,7 +788,7 @@ def job_profile_analytics(request, org_id, job_profile_id):
     """Return aggregate analytics for a job profile."""
     from collections import Counter
     from datetime import timedelta
-    from django.db.models import Avg, Count, Q
+    from django.db.models import Count, Q
     from django.utils import timezone
 
     try:
@@ -827,21 +827,25 @@ def job_profile_analytics(request, org_id, job_profile_id):
         status=ApplicationAnalysis.Status.DONE,
     )
 
-    # Category distribution (matches score_categories.py thresholds)
-    category_distribution = {
-        "suitable": analyses.filter(score__gte=70).count(),
-        "potentially_suitable": analyses.filter(score__gte=40, score__lte=69).count(),
-        "unsuitable": analyses.filter(score__gte=0, score__lte=39).count(),
-    }
-
-    avg_score = analyses.aggregate(avg=Avg("score"))["avg"]
-
-    # Average score category
+    # Category distribution
     from job_application_analysis.score_categories import get_score_category
 
-    avg_score_rounded = round(avg_score, 1) if avg_score is not None else None
-    avg_cat = get_score_category(avg_score_rounded)
-    average_category = {"key": avg_cat.key, "label": avg_cat.label} if avg_cat else None
+    category_distribution = {
+        "suitable": analyses.filter(score_category="suitable").count(),
+        "potentially_suitable": analyses.filter(score_category="potentially_suitable").count(),
+        "unsuitable": analyses.filter(score_category="unsuitable").count(),
+    }
+
+    # Dominant category (most common among completed analyses)
+    dominant_row = (
+        analyses.exclude(score_category__isnull=True)
+        .values("score_category")
+        .annotate(count=Count("id"))
+        .order_by("-count")
+        .first()
+    )
+    dominant_cat = get_score_category(dominant_row["score_category"] if dominant_row else None)
+    average_category = {"key": dominant_cat.key, "label": dominant_cat.label} if dominant_cat else None
 
     # Top skills & traits
     skill_counter = Counter()
@@ -925,7 +929,7 @@ def org_analytics(request, org_id):
     """Return aggregate analytics across all job profiles in an organization."""
     from collections import Counter
     from datetime import timedelta
-    from django.db.models import Avg, Count
+    from django.db.models import Count
     from django.utils import timezone
 
     try:
@@ -960,15 +964,20 @@ def org_analytics(request, org_id):
     )
 
     category_distribution = {
-        "suitable": analyses.filter(score__gte=70).count(),
-        "potentially_suitable": analyses.filter(score__gte=40, score__lte=69).count(),
-        "unsuitable": analyses.filter(score__gte=0, score__lte=39).count(),
+        "suitable": analyses.filter(score_category="suitable").count(),
+        "potentially_suitable": analyses.filter(score_category="potentially_suitable").count(),
+        "unsuitable": analyses.filter(score_category="unsuitable").count(),
     }
 
-    avg_score = analyses.aggregate(avg=Avg("score"))["avg"]
-    avg_score_rounded = round(avg_score, 1) if avg_score is not None else None
-    avg_cat = get_score_category(avg_score_rounded)
-    average_category = {"key": avg_cat.key, "label": avg_cat.label} if avg_cat else None
+    dominant_row = (
+        analyses.exclude(score_category__isnull=True)
+        .values("score_category")
+        .annotate(count=Count("id"))
+        .order_by("-count")
+        .first()
+    )
+    dominant_cat = get_score_category(dominant_row["score_category"] if dominant_row else None)
+    average_category = {"key": dominant_cat.key, "label": dominant_cat.label} if dominant_cat else None
 
     # Top skills & traits
     skill_counter = Counter()
@@ -1010,9 +1019,16 @@ def org_analytics(request, org_id):
     applications_by_job_profile = []
     for row in profile_rows:
         profile_analyses = analyses.filter(job_application__job_profile_id=row["id"])
-        profile_avg = profile_analyses.aggregate(avg=Avg("score"))["avg"]
-        profile_avg_rounded = round(profile_avg, 1) if profile_avg is not None else None
-        profile_cat = get_score_category(profile_avg_rounded)
+        profile_dominant_row = (
+            profile_analyses.exclude(score_category__isnull=True)
+            .values("score_category")
+            .annotate(count=Count("id"))
+            .order_by("-count")
+            .first()
+        )
+        profile_cat = get_score_category(
+            profile_dominant_row["score_category"] if profile_dominant_row else None
+        )
         applications_by_job_profile.append(
             {
                 "id": str(row["id"]),

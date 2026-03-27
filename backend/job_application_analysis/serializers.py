@@ -11,12 +11,13 @@ from .score_categories import get_score_category
 
 
 class _ScoreCategoryMixin(serializers.Serializer):
-    """Adds *score_category* (e.g. "Excellent", "Bad") derived from *score*."""
+    """Expands the stored *score_category* key into a {key, label} dict."""
 
     score_category = serializers.SerializerMethodField()
 
     def get_score_category(self, obj) -> dict | None:
-        cat = get_score_category(getattr(obj, "score", None))
+        key = getattr(obj, "score_category", None)
+        cat = get_score_category(key)
         if cat is None:
             return None
         return {"key": cat.key, "label": cat.label}

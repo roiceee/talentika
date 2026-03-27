@@ -1,32 +1,16 @@
 /**
- * Score → category mapping that mirrors the backend
+ * Score category helpers that mirror the backend
  * `job_application_analysis.score_categories` module.
  *
- * Backend serializers include `score_category` on every analysis object,
- * but this client-side helper is kept for situations where only the raw
- * score is available (e.g. computing styles before the full payload).
+ * The AI returns a category key directly — there is no intermediate numeric
+ * score.  The backend serializer always includes `score_category` as a
+ * `{key, label}` object on every completed analysis.
  */
 
 export type ScoreCategory = {
   key: "suitable" | "potentially_suitable" | "unsuitable";
   label: string;
 };
-
-const THRESHOLDS: { min: number; category: ScoreCategory }[] = [
-  { min: 70, category: { key: "suitable", label: "Suitable" } },
-  { min: 40, category: { key: "potentially_suitable", label: "Potentially Suitable" } },
-  { min: 0, category: { key: "unsuitable", label: "Unsuitable" } },
-];
-
-export function getScoreCategory(
-  score: number | null | undefined,
-): ScoreCategory | null {
-  if (score == null) return null;
-  for (const t of THRESHOLDS) {
-    if (score >= t.min) return t.category;
-  }
-  return { key: "unsuitable", label: "Unsuitable" };
-}
 
 /** Tailwind colour classes keyed by category. */
 export const SCORE_CATEGORY_COLORS: Record<

@@ -267,7 +267,7 @@ def process_ai_analysis(application_analysis_id: str):
         analysis.ai_analysis_summary = result.ai_analysis_summary
         analysis.notable_traits = result.notable_traits
         analysis.key_skills = result.key_skills
-        analysis.score = result.score
+        analysis.score_category = result.score_category
         analysis.detailed_analysis = result.detailed_analysis.model_dump()
         analysis.status = ApplicationAnalysis.Status.DONE
         analysis.save(
@@ -275,14 +275,14 @@ def process_ai_analysis(application_analysis_id: str):
                 "ai_analysis_summary",
                 "notable_traits",
                 "key_skills",
-                "score",
+                "score_category",
                 "detailed_analysis",
                 "status",
                 "updated_at",
             ]
         )
         logger.info(
-            "AI analysis completed for %s (score=%s)", analysis.id, result.score
+            "AI analysis completed for %s (category=%s)", analysis.id, result.score_category
         )
 
     except Exception as exc:

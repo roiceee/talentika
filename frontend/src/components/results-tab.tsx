@@ -597,9 +597,6 @@ function ScoreBadge({ analysis }: { analysis: AnalysisData | null }) {
       className={`text-xs font-semibold ${SCORE_COLOR_MAP[cat.key] ?? ""}`}
     >
       {cat.label}
-      {analysis.score != null && (
-        <span className="ml-1 opacity-70">({analysis.score})</span>
-      )}
     </Badge>
   );
 }

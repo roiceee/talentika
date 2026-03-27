@@ -55,10 +55,17 @@ class ApplicationAnalysis(models.Model):
         blank=True,
         help_text="Array of key skill strings",
     )
-    score = models.PositiveSmallIntegerField(
+    class ScoreCategoryChoices(models.TextChoices):
+        SUITABLE = "suitable", "Suitable"
+        POTENTIALLY_SUITABLE = "potentially_suitable", "Potentially Suitable"
+        UNSUITABLE = "unsuitable", "Unsuitable"
+
+    score_category = models.CharField(
+        max_length=30,
         null=True,
         blank=True,
-        help_text="AI-assigned score 0-100",
+        choices=ScoreCategoryChoices.choices,
+        help_text="AI-assigned candidate-job-fit category",
     )
     detailed_analysis = models.JSONField(
         null=True,
