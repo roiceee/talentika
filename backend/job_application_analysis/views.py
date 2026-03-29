@@ -1,5 +1,6 @@
 import logging
 
+from django.db.models import Case, IntegerField, Value, When
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework import status
@@ -238,10 +239,8 @@ def retry_analysis(request, application_id):
 # ---------------------------------------------------------------------------
 
 _VALID_SORT_FIELDS = {
-    "score": "score",
     "created_at": "created_at",
     "updated_at": "updated_at",
-    "-score": "-score",
     "-created_at": "-created_at",
     "-updated_at": "-updated_at",
 }
@@ -253,13 +252,12 @@ _STATUS_CHOICES = [s[0] for s in ApplicationAnalysis.Status.choices]
     method="get",
     operation_description=(
         "List all application analyses for a specific job profile within an "
-        "organization, with optional filtering by pipeline status and score range, "
-        "sorting by score or timestamp, and cursor-based pagination.\n\n"
+        "organization, with optional filtering by pipeline status, "
+        "sorting by timestamp, and cursor-based pagination.\n\n"
         "**Filters** (all optional):\n"
-        "- `status` — one of: uploaded, ocr_pending, ocr_done, ai_pending, done, failed\n"
-        "- `min_score` / `max_score` — integer 0-100 (only meaningful when status=done)\n\n"
+        "- `status` — one of: uploaded, ocr_pending, ocr_done, ai_pending, done, failed\n\n"
         "**Sort** (optional):\n"
-        "- `sort_by` — field to sort on: `score`, `created_at`, `updated_at` (default: `created_at`)\n"
+        "- `sort_by` — field to sort on: `score_category`, `created_at`, `updated_at` (default: `created_at`)\n"
         "- `order` — `asc` or `desc` (default: `desc`)\n\n"
         "**Pagination**:\n"
         "- `page` — page number (default: 1)\n"
@@ -291,25 +289,11 @@ _STATUS_CHOICES = [s[0] for s in ApplicationAnalysis.Status.choices]
             required=False,
         ),
         openapi.Parameter(
-            "min_score",
-            openapi.IN_QUERY,
-            description="Minimum AI score (0-100, inclusive)",
-            type=openapi.TYPE_INTEGER,
-            required=False,
-        ),
-        openapi.Parameter(
-            "max_score",
-            openapi.IN_QUERY,
-            description="Maximum AI score (0-100, inclusive)",
-            type=openapi.TYPE_INTEGER,
-            required=False,
-        ),
-        openapi.Parameter(
             "sort_by",
             openapi.IN_QUERY,
             description="Field to sort by",
             type=openapi.TYPE_STRING,
-            enum=["score", "created_at", "updated_at"],
+            enum=["score_category", "created_at", "updated_at"],
             required=False,
         ),
         openapi.Parameter(
@@ -368,8 +352,8 @@ def list_analyses(request, org_id, job_profile_id):
     """
     List application analyses for a specific job profile within an organization.
 
-    Supports filtering by status, min_score, max_score, sorting by score /
-    created_at / updated_at, and page-based pagination.
+    Supports filtering by status, sorting by created_at / updated_at,
+    and page-based pagination.
     """
     from organizations.models import Organization
     from job_profile.models import JobProfile
@@ -423,31 +407,11 @@ def list_analyses(request, org_id, job_profile_id):
             )
         qs = qs.filter(status=status_filter)
 
-    min_score = request.query_params.get("min_score")
-    if min_score is not None:
-        try:
-            qs = qs.filter(score__gte=int(min_score))
-        except ValueError:
-            return Response(
-                {"detail": "min_score must be an integer."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-    max_score = request.query_params.get("max_score")
-    if max_score is not None:
-        try:
-            qs = qs.filter(score__lte=int(max_score))
-        except ValueError:
-            return Response(
-                {"detail": "max_score must be an integer."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
     # --- sort ---
     sort_by = request.query_params.get("sort_by", "created_at")
     order = request.query_params.get("order", "desc")
 
-    allowed_sort_fields = ("score", "created_at", "updated_at")
+    allowed_sort_fields = ("score_category", "created_at", "updated_at")
     if sort_by not in allowed_sort_fields:
         return Response(
             {
@@ -461,8 +425,22 @@ def list_analyses(request, org_id, job_profile_id):
             status=status.HTTP_400_BAD_REQUEST,
         )
 
-    order_prefix = "" if order == "asc" else "-"
-    qs = qs.order_by(f"{order_prefix}{sort_by}")
+    if sort_by == "score_category":
+        # suitable=2, potentially_suitable=1, unsuitable=0, null=-1
+        qs = qs.annotate(
+            category_priority=Case(
+                When(score_category="suitable", then=Value(2)),
+                When(score_category="potentially_suitable", then=Value(1)),
+                When(score_category="unsuitable", then=Value(0)),
+                default=Value(-1),
+                output_field=IntegerField(),
+            )
+        )
+        order_prefix = "" if order == "asc" else "-"
+        qs = qs.order_by(f"{order_prefix}category_priority")
+    else:
+        order_prefix = "" if order == "asc" else "-"
+        qs = qs.order_by(f"{order_prefix}{sort_by}")
 
     # --- pagination ---
     _DEFAULT_PAGE_SIZE = 20

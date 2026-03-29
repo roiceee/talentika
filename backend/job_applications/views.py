@@ -1,6 +1,6 @@
 import os
 
-from django.db.models import F, IntegerField, OuterRef, Q, Subquery
+from django.db.models import Case, F, IntegerField, OuterRef, Q, Subquery, Value, When
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
 from job_profile.models import JobProfile
@@ -335,11 +335,18 @@ def list_job_applications(request, org_id, job_profile_id):
             status=status.HTTP_404_NOT_FOUND,
         )
 
-    # Annotate with the related analysis score for ordering
-    score_subquery = Subquery(
-        ApplicationAnalysis.objects.filter(job_application=OuterRef("pk")).values(
-            "score"
-        )[:1],
+    # Annotate with a numeric priority derived from score_category for ordering
+    # suitable=3, potentially_suitable=2, unsuitable=1, null=0
+    category_priority_subquery = Subquery(
+        ApplicationAnalysis.objects.filter(job_application=OuterRef("pk")).annotate(
+            priority=Case(
+                When(score_category="suitable", then=Value(3)),
+                When(score_category="potentially_suitable", then=Value(2)),
+                When(score_category="unsuitable", then=Value(1)),
+                default=Value(0),
+                output_field=IntegerField(),
+            )
+        ).values("priority")[:1],
         output_field=IntegerField(),
     )
 
@@ -347,7 +354,7 @@ def list_job_applications(request, org_id, job_profile_id):
         JobApplication.objects.filter(job_profile=job_profile)
         .select_related("job_profile", "address")
         .prefetch_related("answers", "attachments", "analysis")
-        .annotate(analysis_score=score_subquery)
+        .annotate(analysis_score=category_priority_subquery)
     )
 
     # Search
