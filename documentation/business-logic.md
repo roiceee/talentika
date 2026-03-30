@@ -101,28 +101,43 @@ flowchart TD
         TriggerPipeline --> HasResume{Resume<br/>attached?}
         HasResume -->|No| SkipAnalysis["Skip analysis"]
         HasResume -->|Yes| CreateAnalysis["Create ApplicationAnalysis<br/>(status: UPLOADED)"]
-        CreateAnalysis --> EnqueueOCR["Enqueue on ocr_queue"]
+        CreateAnalysis --> EnqueueOCR["Enqueue on ocr_queue<br/>(RQ retry: max 3, 30/60/120s)"]
 
-        EnqueueOCR --> OCRStart["OCR Worker picks up job"]
-        OCRStart --> SetOCRPending["Status → OCR_PENDING"]
-        SetOCRPending --> DownloadPDF["Download resume from storage<br/>(S3 or local)"]
-        DownloadPDF --> ExtractText["Extract text via Tesseract OCR"]
-        ExtractText --> SaveText["Save extracted text<br/>Status → OCR_DONE"]
-        SaveText --> EnqueueAI["Enqueue on ai_queue"]
+        subgraph OCR Worker [ocr_queue worker]
+            EnqueueOCR --> OCRStart["OCR Worker picks up job"]
+            OCRStart --> SetOCRPending["Status → OCR_PENDING"]
+            SetOCRPending --> DownloadPDF["Download resume from storage<br/>(S3 or local)"]
+            DownloadPDF --> ConvertDocx{DOCX?}
+            ConvertDocx -->|Yes| ConvertPDF["Convert to PDF via LibreOffice"]
+            ConvertDocx -->|No| ExtractText
+            ConvertPDF --> ExtractText["Extract text via Tesseract OCR"]
+            ExtractText --> SaveText["Save extracted text<br/>Status → OCR_DONE"]
+            SaveText --> EnqueueAI["Enqueue on ai_queue<br/>(no auto-retry)"]
+        end
 
-        EnqueueAI --> AIStart["AI Worker picks up job"]
-        AIStart --> SetAIPending["Status → AI_PENDING"]
-        SetAIPending --> CollectContext["Collect job profile data +<br/>qualifications + Q&A pairs"]
-        CollectContext --> CallAI["Call OpenAI API<br/>(structured output)"]
-        CallAI --> PersistResults["Save: summary, skills,<br/>traits, score_category,<br/>detailed analysis"]
-        PersistResults --> Done["Status → DONE"]
+        subgraph AI Worker [ai_queue worker]
+            EnqueueAI --> AIStart["AI Worker picks up job"]
+            AIStart --> SetAIPending["Status → AI_PENDING"]
+            SetAIPending --> CollectContext["Collect job profile data +<br/>qualifications + Q&A pairs"]
+            CollectContext --> CallAI["Call OpenAI API<br/>(structured output)"]
+            CallAI --> PersistResults["Save: summary, skills,<br/>traits, score_category,<br/>detailed analysis"]
+            PersistResults --> Done["Status → DONE"]
+        end
 
-        SetOCRPending -->|Error| Failed1["Status → FAILED<br/>(retry possible)"]
-        SetAIPending -->|Error| Failed2["Status → FAILED<br/>(retry possible)"]
-        Failed1 --> Retry1["POST /api/applications/{id}/analysis/retry/"]
-        Failed2 --> Retry2["POST /api/applications/{id}/analysis/retry/"]
-        Retry1 --> EnqueueOCR
-        Retry2 --> EnqueueOCR
+        SetOCRPending -->|Any error| OCRAutoRetry{"RQ retries<br/>exhausted?"}
+        DownloadPDF -->|Any error| OCRAutoRetry
+        ConvertPDF -->|Any error| OCRAutoRetry
+        ExtractText -->|Any error| OCRAutoRetry
+        OCRAutoRetry -->|No — re-enqueue<br/>w/ backoff| OCRStart
+        OCRAutoRetry -->|Yes| FailedOCR["Status → FAILED<br/>error_message saved"]
+
+        SetAIPending -->|Any error| FailedAI["Status → FAILED<br/>error_message saved"]
+        CollectContext -->|Any error| FailedAI
+        CallAI -->|Any error| FailedAI
+
+        FailedOCR --> ManualRetry["POST /api/applications/{id}/analysis/retry/<br/>Reset → UPLOADED, clear error"]
+        FailedAI --> ManualRetry
+        ManualRetry --> EnqueueOCR
     end
 ```
 
