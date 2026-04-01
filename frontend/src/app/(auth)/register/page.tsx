@@ -14,6 +14,7 @@ import {
   CardFooter,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/ui/password-input";
 import { Label } from "@/components/ui/label";
 import { Loader2 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -151,9 +152,8 @@ function RegisterForm() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="password" className="text-sm font-medium">Password</Label>
-              <Input
+              <PasswordInput
                 id="password"
-                type="password"
                 placeholder="Create a password"
                 value={form.password}
                 onChange={(e) => updateField("password", e.target.value)}
@@ -164,9 +164,8 @@ function RegisterForm() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="password_confirm" className="text-sm font-medium">Confirm password</Label>
-              <Input
+              <PasswordInput
                 id="password_confirm"
-                type="password"
                 placeholder="Confirm your password"
                 value={form.password_confirm}
                 onChange={(e) => updateField("password_confirm", e.target.value)}

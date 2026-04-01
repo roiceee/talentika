@@ -15,7 +15,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/ui/password-input";
 import { Label } from "@/components/ui/label";
 import { Loader2, CheckCircle } from "lucide-react";
 
@@ -97,9 +97,8 @@ export default function PasswordResetConfirmPage({
         <CardContent className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="new_password">New password</Label>
-            <Input
+            <PasswordInput
               id="new_password"
-              type="password"
               placeholder="Enter new password"
               value={newPassword}
               onChange={(e) => setNewPassword(e.target.value)}
@@ -110,9 +109,8 @@ export default function PasswordResetConfirmPage({
           </div>
           <div className="space-y-2">
             <Label htmlFor="confirm_password">Confirm password</Label>
-            <Input
+            <PasswordInput
               id="confirm_password"
-              type="password"
               placeholder="Confirm new password"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
