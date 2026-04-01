@@ -41,7 +41,7 @@ A new Django app `users` that handles:
 ✅ Token expires in 24 hours  
 ✅ Single-use tokens  
 ✅ Secure - doesn't reveal if email exists  
-📧 Email link format: `{FRONTEND_URL}/password-reset/{uid}/{token}/`
+📧 Email link format: `{FRONTEND_WEB_URL}/password-reset/{uid}/{token}/`
 
 ## Quick Start
 
@@ -87,7 +87,7 @@ users/
 
 ```bash
 # Password reset email configuration
-FRONTEND_URL=http://localhost:3000
+FRONTEND_WEB_URL=http://localhost:3000
 EMAIL_HOST=smtp.gmail.com
 EMAIL_PORT=587
 EMAIL_USE_TLS=True

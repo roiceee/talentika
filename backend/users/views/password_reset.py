@@ -72,7 +72,7 @@ def password_reset_request(request):
             reset_token = PasswordResetToken.objects.create(user=user)
 
             # Construct reset URL (frontend will handle this)
-            reset_url = f"{settings.FRONTEND_URL}/password-reset/{reset_token.token}/"
+            reset_url = f"{settings.FRONTEND_WEB_URL}/password-reset/{reset_token.token}/"
 
             # Send email
             subject = "Password Reset Request - Talentika"

@@ -76,7 +76,7 @@ Talentika sends invitation emails when users are added to organizations. To enab
 EMAIL_HOST_USER=your-email@gmail.com
 EMAIL_HOST_PASSWORD=your-app-password
 DEFAULT_FROM_EMAIL=your-email@gmail.com
-FRONTEND_URL=http://localhost:3000
+FRONTEND_WEB_URL=http://localhost:3000
 ```
 
 For complete email setup instructions, including how to generate Gmail app passwords, see [EMAIL_SETUP.md](EMAIL_SETUP.md).
