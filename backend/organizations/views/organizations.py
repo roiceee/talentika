@@ -32,7 +32,8 @@ def list_user_organizations(request):
     Users can belong to multiple organizations.
     """
     memberships = OrganizationMembership.objects.filter(
-        user=request.user
+        user=request.user,
+        organization__deleted_at__isnull=True,
     ).select_related("organization")
 
     if not memberships.exists():

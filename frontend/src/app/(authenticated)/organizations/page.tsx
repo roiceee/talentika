@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import Link from "next/link";
 import { toast } from "sonner";
 import type { OrganizationListItem, OrganizationCreateData } from "@/types";
@@ -14,6 +14,7 @@ import {
   Card,
   CardContent,
   CardDescription,
+  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
@@ -30,8 +31,42 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Building2, Plus, Users, Loader2, Star } from "lucide-react";
+import {
+  Building2,
+  Plus,
+  Users,
+  Loader2,
+  Star,
+  Search,
+  ArrowUpDown,
+  X,
+  Calendar,
+} from "lucide-react";
+
+const STATUS_LABELS: Record<string, string> = {
+  PENDING: "Pending",
+  APPROVED: "Approved",
+  REJECTED: "Rejected",
+  SUSPENDED: "Suspended",
+};
+
+const STATUS_VARIANTS: Record<
+  string,
+  "default" | "secondary" | "destructive" | "outline"
+> = {
+  APPROVED: "default",
+  PENDING: "secondary",
+  REJECTED: "destructive",
+  SUSPENDED: "outline",
+};
 
 export default function OrganizationsPage() {
   const { user, refreshUser } = useAuth();
@@ -45,12 +80,15 @@ export default function OrganizationsPage() {
     description: "",
   });
 
+  const [search, setSearch] = useState("");
+  const [filterStatus, setFilterStatus] = useState("all");
+  const [sort, setSort] = useState("newest");
+
   async function fetchOrgs() {
     try {
       const data = await listOrganizations();
       setOrgs(data ?? []);
     } catch (error) {
-      // 404 means no organizations — that's OK
       if (error instanceof AxiosError && error.response?.status === 404) {
         setOrgs([]);
       } else {
@@ -109,12 +147,56 @@ export default function OrganizationsPage() {
     }
   }
 
+  const filtered = useMemo(() => {
+    let result = [...orgs];
+
+    if (search.trim()) {
+      const q = search.toLowerCase();
+      result = result.filter(
+        (o) =>
+          o.name.toLowerCase().includes(q) ||
+          o.description?.toLowerCase().includes(q),
+      );
+    }
+
+    if (filterStatus !== "all") {
+      result = result.filter((o) => o.status === filterStatus);
+    }
+
+    result.sort((a, b) => {
+      if (sort === "newest")
+        return (
+          new Date(b.created_at ?? 0).getTime() -
+          new Date(a.created_at ?? 0).getTime()
+        );
+      if (sort === "oldest")
+        return (
+          new Date(a.created_at ?? 0).getTime() -
+          new Date(b.created_at ?? 0).getTime()
+        );
+      if (sort === "az") return a.name.localeCompare(b.name);
+      if (sort === "za") return b.name.localeCompare(a.name);
+      if (sort === "members")
+        return (b.member_count ?? 0) - (a.member_count ?? 0);
+      return 0;
+    });
+
+    return result;
+  }, [orgs, search, filterStatus, sort]);
+
+  const hasFilters = search.trim() || filterStatus !== "all";
+
+  function clearFilters() {
+    setSearch("");
+    setFilterStatus("all");
+  }
+
   return (
-    <div className="w-full py-8">
-      <div className="mb-8 flex items-center justify-between">
+    <div className="w-full py-8 space-y-6">
+      <div className="flex items-center justify-between">
         <div>
           <h1 className="font-heading text-2xl font-semibold">Organizations</h1>
-          <p className="text-muted-foreground">
+          <p className="text-muted-foreground text-sm mt-0.5">
             Manage your organizations and teams
           </p>
         </div>
@@ -183,15 +265,24 @@ export default function OrganizationsPage() {
       </div>
 
       {isLoading ? (
-        <div className="space-y-4">
-          {[...Array(3)].map((_, i) => (
-            <Skeleton key={i} className="h-28 w-full" />
-          ))}
-        </div>
+        <>
+          <div className="flex gap-3">
+            <Skeleton className="h-9 flex-1" />
+            <Skeleton className="h-9 w-36" />
+            <Skeleton className="h-9 w-36" />
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {[...Array(3)].map((_, i) => (
+              <Skeleton key={i} className="h-44 w-full" />
+            ))}
+          </div>
+        </>
       ) : orgs.length === 0 ? (
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12">
-            <Building2 className="mb-4 h-12 w-12 text-muted-foreground" />
+            <div className="h-14 w-14 rounded-full bg-primary/10 flex items-center justify-center mb-4">
+              <Building2 className="h-7 w-7 text-primary" />
+            </div>
             <h3 className="mb-2 font-heading text-lg font-semibold">
               No organizations yet
             </h3>
@@ -207,78 +298,176 @@ export default function OrganizationsPage() {
           </CardContent>
         </Card>
       ) : (
-        <div className="space-y-4">
-          {orgs.map((org) => (
-            <Link
-              key={org.id}
-              href={`/organizations/${org.id}`}
-              className="block"
-            >
-              <Card className="transition-colors hover:bg-muted/50">
-                <CardHeader className="pb-2">
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="text-lg">{org.name}</CardTitle>
-                    <div className="flex items-center gap-2">
-                      {user?.default_organization === org.id && (
-                        <Badge
-                          variant="outline"
-                          className="bg-yellow-50 text-yellow-700 border-yellow-300"
-                        >
-                          <Star className="mr-1 h-3 w-3 fill-yellow-400" />
-                          Default
-                        </Badge>
-                      )}
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-7 px-2"
-                        onClick={(e) => handleSetDefault(e, org.id!)}
-                        disabled={settingDefaultId === org.id}
-                        title={
-                          user?.default_organization === org.id
-                            ? "Clear default"
-                            : "Set as default"
-                        }
-                      >
-                        {settingDefaultId === org.id ? (
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                        ) : (
-                          <Star
-                            className={`h-4 w-4 ${
-                              user?.default_organization === org.id
-                                ? "fill-yellow-400 text-yellow-400"
-                                : "text-muted-foreground"
-                            }`}
-                          />
+        <>
+          <div className="flex flex-wrap gap-3">
+            <div className="relative flex-1 min-w-48">
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+              <Input
+                placeholder="Search by name or description…"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="pl-8"
+              />
+            </div>
+
+            <Select value={filterStatus} onValueChange={setFilterStatus}>
+              <SelectTrigger className="w-36">
+                <SelectValue placeholder="Status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All statuses</SelectItem>
+                {Object.entries(STATUS_LABELS).map(([value, label]) => (
+                  <SelectItem key={value} value={value}>
+                    {label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            <Select value={sort} onValueChange={setSort}>
+              <SelectTrigger className="w-40">
+                <ArrowUpDown className="h-3.5 w-3.5 mr-1.5 text-muted-foreground" />
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="newest">Newest first</SelectItem>
+                <SelectItem value="oldest">Oldest first</SelectItem>
+                <SelectItem value="az">Name A–Z</SelectItem>
+                <SelectItem value="za">Name Z–A</SelectItem>
+                <SelectItem value="members">Most members</SelectItem>
+              </SelectContent>
+            </Select>
+
+            {hasFilters && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={clearFilters}
+                className="gap-1.5 text-muted-foreground"
+              >
+                <X className="h-3.5 w-3.5" />
+                Clear
+              </Button>
+            )}
+          </div>
+
+          {filtered.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-16 text-center">
+              <Search className="h-10 w-10 text-muted-foreground/40 mb-3" />
+              <p className="font-medium">No organizations match your filters</p>
+              <p className="text-sm text-muted-foreground mt-1">
+                Try adjusting your search or filters.
+              </p>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={clearFilters}
+                className="mt-4"
+              >
+                Clear filters
+              </Button>
+            </div>
+          ) : (
+            <>
+              <p className="text-sm text-muted-foreground">
+                {filtered.length} of {orgs.length} organization
+                {orgs.length !== 1 ? "s" : ""}
+              </p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {filtered.map((org) => (
+                  <Link
+                    key={org.id}
+                    href={`/organizations/${org.id}`}
+                    className="block group"
+                  >
+                    <Card className="h-full flex flex-col transition-all duration-150 hover:shadow-md hover:border-primary/30">
+                      <CardHeader className="pb-3">
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="min-w-0 flex-1">
+                            <CardTitle className="text-base leading-snug group-hover:text-primary transition-colors truncate">
+                              {org.name}
+                            </CardTitle>
+                          </div>
+                          <div className="flex items-center gap-1.5 shrink-0">
+                            {org.status && (
+                              <Badge
+                                variant={
+                                  STATUS_VARIANTS[org.status] ?? "secondary"
+                                }
+                                className="text-xs font-normal"
+                              >
+                                {STATUS_LABELS[org.status] ?? org.status}
+                              </Badge>
+                            )}
+                            {user?.default_organization === org.id && (
+                              <Badge
+                                variant="outline"
+                                className="bg-yellow-50 text-yellow-700 border-yellow-300 text-xs font-normal"
+                              >
+                                <Star className="mr-1 h-3 w-3 fill-yellow-400" />
+                                Default
+                              </Badge>
+                            )}
+                          </div>
+                        </div>
+                        {org.description && (
+                          <CardDescription className="line-clamp-2 mt-1">
+                            {org.description}
+                          </CardDescription>
                         )}
-                      </Button>
-                    </div>
-                  </div>
-                  {org.description && (
-                    <CardDescription className="line-clamp-2">
-                      {org.description}
-                    </CardDescription>
-                  )}
-                </CardHeader>
-                <CardContent>
-                  <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                    <span className="flex items-center gap-1">
-                      <Users className="h-4 w-4" />
-                      {org.member_count} member
-                      {org.member_count !== 1 ? "s" : ""}
-                    </span>
-                    <span>
-                      Created{" "}
-                      {org.created_at
-                        ? new Date(org.created_at).toLocaleDateString()
-                        : "—"}
-                    </span>
-                  </div>
-                </CardContent>
-              </Card>
-            </Link>
-          ))}
-        </div>
+                      </CardHeader>
+
+                      <CardContent className="flex-1 pb-3">
+                        <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                          <span className="flex items-center gap-1.5">
+                            <Users className="h-3.5 w-3.5" />
+                            {org.member_count ?? 0} member
+                            {(org.member_count ?? 0) !== 1 ? "s" : ""}
+                          </span>
+                        </div>
+                      </CardContent>
+
+                      <CardFooter className="pt-0 pb-4 flex items-center justify-between">
+                        {org.created_at && (
+                          <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                            <Calendar className="h-3 w-3" />
+                            <span>
+                              {new Date(org.created_at).toLocaleDateString()}
+                            </span>
+                          </div>
+                        )}
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-7 px-2 ml-auto"
+                          onClick={(e) => handleSetDefault(e, org.id!)}
+                          disabled={settingDefaultId === org.id}
+                          title={
+                            user?.default_organization === org.id
+                              ? "Clear default"
+                              : "Set as default"
+                          }
+                        >
+                          {settingDefaultId === org.id ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <Star
+                              className={`h-4 w-4 ${
+                                user?.default_organization === org.id
+                                  ? "fill-yellow-400 text-yellow-400"
+                                  : "text-muted-foreground"
+                              }`}
+                            />
+                          )}
+                        </Button>
+                      </CardFooter>
+                    </Card>
+                  </Link>
+                ))}
+              </div>
+            </>
+          )}
+        </>
       )}
     </div>
   );
