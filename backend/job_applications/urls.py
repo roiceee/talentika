@@ -4,6 +4,7 @@ from .views import (
     upload_resume,
     list_job_applications,
     get_job_application,
+    delete_job_application,
     download_resume,
     update_application_status,
     job_profile_analytics,
@@ -26,6 +27,11 @@ urlpatterns = [
         "organizations/<uuid:org_id>/job-profiles/<uuid:job_profile_id>/applications/<uuid:job_application_id>/",
         get_job_application,
         name="get_job_application",
+    ),
+    path(
+        "organizations/<uuid:org_id>/job-profiles/<uuid:job_profile_id>/applications/<uuid:job_application_id>/delete/",
+        delete_job_application,
+        name="delete_job_application",
     ),
     path(
         "organizations/<uuid:org_id>/job-profiles/<uuid:job_profile_id>/applications/<uuid:job_application_id>/download/",

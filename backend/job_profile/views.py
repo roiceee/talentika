@@ -1,4 +1,5 @@
 from django.shortcuts import get_object_or_404
+from django.utils import timezone
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
@@ -239,6 +240,45 @@ def update_job_profile(request, job_id):
         return Response(response_serializer.data)
 
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+@swagger_auto_schema(
+    method="delete",
+    operation_description="Soft-delete a job profile. Only organization admins or the creator can delete.",
+    responses={
+        204: "Job profile deleted successfully",
+        403: "Forbidden",
+        404: "Job profile not found",
+    },
+    tags=["Job Profiles"],
+)
+@api_view(["DELETE"])
+@permission_classes([IsAuthenticated])
+def delete_job_profile(request, job_id):
+    """
+    Soft-delete a job profile.
+
+    Sets deleted_at so the job profile is hidden from all queries.
+    Only organization admins can perform this action.
+    """
+    job_profile = get_object_or_404(
+        JobProfile.objects.select_related("organization"), id=job_id
+    )
+
+    is_admin = request.user.is_superuser or OrganizationMembership.objects.filter(
+        user=request.user,
+        organization=job_profile.organization,
+        role="ORG_ADMIN",
+    ).exists()
+    if not is_admin:
+        return Response(
+            {"error": "Only organization admins can delete job profiles."},
+            status=status.HTTP_403_FORBIDDEN,
+        )
+
+    job_profile.deleted_at = timezone.now()
+    job_profile.save(update_fields=["deleted_at"])
+    return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 # ─── Org-specific job categories ─────────────────────────────────────────────

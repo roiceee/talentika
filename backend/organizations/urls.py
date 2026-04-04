@@ -4,6 +4,7 @@ from .views import (
     create_organization,
     get_organization,
     update_organization,
+    delete_organization,
     list_organization_members,
     remove_member,
     leave_organization,
@@ -27,6 +28,11 @@ urlpatterns = [
         "organizations/<uuid:org_id>/update/",
         update_organization,
         name="update-organization",
+    ),
+    path(
+        "organizations/<uuid:org_id>/delete/",
+        delete_organization,
+        name="delete-organization",
     ),
     # Organization members
     path(

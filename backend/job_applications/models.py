@@ -3,6 +3,11 @@ from django.db import models
 from django.core.validators import EmailValidator
 
 
+class ActiveJobApplicationManager(models.Manager):
+    def get_queryset(self):
+        return super().get_queryset().filter(deleted_at__isnull=True)
+
+
 class JobApplication(models.Model):
     """
     Job application submitted by anonymous applicants.
@@ -30,9 +35,17 @@ class JobApplication(models.Model):
         choices=Status.choices,
         default=Status.TO_BE_REVIEWED,
     )
+    deleted_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text="Soft-delete timestamp; non-null means the application has been deleted",
+    )
     submitted_at = models.DateTimeField(auto_now_add=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+    objects = ActiveJobApplicationManager()
+    all_objects = models.Manager()
 
     class Meta:
         db_table = "job_applications"

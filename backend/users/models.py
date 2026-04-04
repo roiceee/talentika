@@ -2,9 +2,14 @@ import uuid
 import secrets
 from datetime import timedelta
 from django.db import models
-from django.contrib.auth.models import AbstractUser
+from django.contrib.auth.models import AbstractUser, UserManager
 from django.utils import timezone
 from django.conf import settings
+
+
+class ActiveUserManager(UserManager):
+    def get_queryset(self):
+        return super().get_queryset().filter(deleted_at__isnull=True)
 
 
 class User(AbstractUser):
@@ -29,11 +34,19 @@ class User(AbstractUser):
         null=True,
         help_text="Storage path for the user's profile picture",
     )
+    deleted_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text="Soft-delete timestamp; non-null means the account has been deleted",
+    )
     # first_name, last_name, password are inherited from AbstractUser
     # is_superuser is also inherited for app owner/super admin access
 
     USERNAME_FIELD = "email"
     REQUIRED_FIELDS = ["username", "first_name", "last_name"]
+
+    objects = ActiveUserManager()
+    all_objects = UserManager()
 
     class Meta:
         db_table = "users"
@@ -42,6 +55,11 @@ class User(AbstractUser):
 
     def __str__(self):
         return f"{self.email} ({self.get_full_name()})"
+
+    def soft_delete(self):
+        self.deleted_at = timezone.now()
+        self.is_active = False
+        self.save(update_fields=["deleted_at", "is_active"])
 
 
 class PasswordResetToken(models.Model):

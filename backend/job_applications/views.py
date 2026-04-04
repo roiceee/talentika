@@ -1378,3 +1378,59 @@ def download_export(request, org_id, job_profile_id, export_id):
         as_attachment=True,
         filename=file_path.name,
     )
+
+
+# ---------------------------------------------------------------------------
+# Delete job application (soft delete)
+# ---------------------------------------------------------------------------
+
+
+@swagger_auto_schema(
+    method="delete",
+    operation_description="Soft-delete a job application. Only organization admins can perform this action.",
+    responses={
+        204: "Application deleted successfully",
+        403: "Forbidden",
+        404: "Organization, job profile, or application not found",
+    },
+    tags=["Job Applications"],
+)
+@api_view(["DELETE"])
+@permission_classes([IsAuthenticated, IsOrganizationMember])
+def delete_job_application(request, org_id, job_profile_id, job_application_id):
+    """
+    Soft-delete a job application.
+
+    Sets deleted_at so the application is hidden from all queries.
+    Only organization admins can perform this action.
+    """
+    from django.utils import timezone
+
+    try:
+        organization = Organization.objects.get(id=org_id)
+    except Organization.DoesNotExist:
+        return Response({"detail": "Organization not found."}, status=status.HTTP_404_NOT_FOUND)
+
+    from organizations.models.organization_membership import OrganizationMembership as OrgMembership
+    is_admin = request.user.is_superuser or OrgMembership.objects.filter(
+        user=request.user, organization=organization, role="ORG_ADMIN"
+    ).exists()
+    if not is_admin:
+        return Response(
+            {"error": "Only organization admins can delete applications."},
+            status=status.HTTP_403_FORBIDDEN,
+        )
+
+    try:
+        job_profile = JobProfile.objects.get(id=job_profile_id, organization=organization)
+    except JobProfile.DoesNotExist:
+        return Response({"detail": "Job profile not found."}, status=status.HTTP_404_NOT_FOUND)
+
+    try:
+        job_application = JobApplication.objects.get(id=job_application_id, job_profile=job_profile)
+    except JobApplication.DoesNotExist:
+        return Response({"detail": "Job application not found."}, status=status.HTTP_404_NOT_FOUND)
+
+    job_application.deleted_at = timezone.now()
+    job_application.save(update_fields=["deleted_at"])
+    return Response(status=status.HTTP_204_NO_CONTENT)

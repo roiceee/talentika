@@ -4,6 +4,11 @@ from django.utils import timezone
 from django.conf import settings
 
 
+class ActiveOrganizationManager(models.Manager):
+    def get_queryset(self):
+        return super().get_queryset().filter(deleted_at__isnull=True)
+
+
 class Organization(models.Model):
     """
     Organization model representing companies/teams that users belong to.
@@ -51,6 +56,14 @@ class Organization(models.Model):
         null=True,
         help_text="Storage path for the organization's profile picture",
     )
+    deleted_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text="Soft-delete timestamp; non-null means the organization has been deleted",
+    )
+
+    objects = ActiveOrganizationManager()
+    all_objects = models.Manager()
 
     class Meta:
         db_table = "organizations"

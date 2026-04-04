@@ -69,6 +69,11 @@ class ExperienceLevel(models.Model):
         return self.title
 
 
+class ActiveJobProfileManager(models.Manager):
+    def get_queryset(self):
+        return super().get_queryset().filter(deleted_at__isnull=True)
+
+
 class JobProfile(models.Model):
     class EmploymentType(models.TextChoices):
         FULL_TIME = "full_time", "Full Time"
@@ -113,8 +118,16 @@ class JobProfile(models.Model):
     is_active = models.BooleanField(
         default=True, help_text="Whether the job profile is active"
     )
+    deleted_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text="Soft-delete timestamp; non-null means the job profile has been deleted",
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+    objects = ActiveJobProfileManager()
+    all_objects = models.Manager()
 
     class Meta:
         db_table = "job_profiles"

@@ -1,3 +1,4 @@
+from django.utils import timezone
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -117,3 +118,25 @@ def set_default_organization(request):
         return Response(response_serializer.data, status=status.HTTP_200_OK)
 
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+@swagger_auto_schema(
+    method="delete",
+    operation_description="Permanently delete the authenticated user's account (soft delete). This action is irreversible.",
+    responses={
+        204: "Account deleted successfully",
+        401: "Not authenticated",
+    },
+    tags=["Users"],
+)
+@api_view(["DELETE"])
+@permission_classes([IsAuthenticated])
+def delete_account(request):
+    """
+    Soft-delete the current user's account.
+
+    Sets deleted_at and deactivates is_active so the user can no longer log in.
+    """
+    user = request.user
+    user.soft_delete()
+    return Response(status=status.HTTP_204_NO_CONTENT)

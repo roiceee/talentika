@@ -1,4 +1,5 @@
 from django.shortcuts import get_object_or_404
+from django.utils import timezone
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -160,3 +161,35 @@ def update_organization(request, org_id):
         response_serializer = OrganizationSerializer(organization)
         return Response(response_serializer.data)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+@swagger_auto_schema(
+    method="delete",
+    operation_description="Soft-delete an organization. Only organization admins can perform this action. This action is irreversible.",
+    responses={
+        204: "Organization deleted successfully",
+        403: "Only organization admins can delete the organization",
+        404: "Organization not found",
+    },
+    tags=["Organizations"],
+)
+@api_view(["DELETE"])
+@permission_classes([IsAuthenticated])
+def delete_organization(request, org_id):
+    """
+    Soft-delete an organization.
+
+    Sets deleted_at so the organization is hidden from all queries.
+    Only organization admins can perform this action.
+    """
+    organization = get_object_or_404(Organization, id=org_id)
+
+    if not is_org_admin(request.user, organization):
+        return Response(
+            {"error": "Only organization admins can delete the organization."},
+            status=status.HTTP_403_FORBIDDEN,
+        )
+
+    organization.deleted_at = timezone.now()
+    organization.save(update_fields=["deleted_at"])
+    return Response(status=status.HTTP_204_NO_CONTENT)

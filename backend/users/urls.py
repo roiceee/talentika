@@ -12,6 +12,7 @@ from .views import (
     password_reset_confirm,
     upload_profile_picture,
     delete_profile_picture,
+    delete_account,
 )
 
 # Decorate TokenRefreshView with Swagger documentation
@@ -78,6 +79,7 @@ urlpatterns = [
         delete_profile_picture,
         name="delete_profile_picture",
     ),
+    path("profile/delete/", delete_account, name="delete_account"),
     # Password reset endpoints
     path("password-reset/", password_reset_request, name="password_reset_request"),
     path(

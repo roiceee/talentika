@@ -3,6 +3,7 @@ from .organizations import (
     create_organization,
     get_organization,
     update_organization,
+    delete_organization,
 )
 from .memberships import (
     list_organization_members,
@@ -28,6 +29,7 @@ __all__ = [
     "create_organization",
     "get_organization",
     "update_organization",
+    "delete_organization",
     # Memberships
     "list_organization_members",
     "remove_member",
