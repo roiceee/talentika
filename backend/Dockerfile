@@ -18,7 +18,7 @@ WORKDIR /app
 
 # Install Python deps (cached layer — only re-runs when lock/toml change)
 COPY pyproject.toml uv.lock ./
-RUN uv sync --frozen --no-dev
+RUN uv sync --frozen
 
 # Copy application code
 COPY . .
