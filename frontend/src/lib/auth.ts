@@ -42,6 +42,7 @@ const bffClient = axios.create({
   headers: {
     "Content-Type": "application/json",
   },
+  paramsSerializer: { indexes: null },
 });
 
 // Add CSRF token to all state-changing requests
