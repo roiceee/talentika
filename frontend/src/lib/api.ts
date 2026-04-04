@@ -307,7 +307,9 @@ export async function listExperienceLevels(): Promise<ExperienceLevel[]> {
 
 export type OrgRefItem = { id: string; title: string; is_custom: boolean };
 
-export async function listOrgJobCategories(orgId: string): Promise<OrgRefItem[]> {
+export async function listOrgJobCategories(
+  orgId: string,
+): Promise<OrgRefItem[]> {
   const res = await bffClient.get<OrgRefItem[]>(
     `/api/organizations/${orgId}/job-categories`,
   );
@@ -329,10 +331,14 @@ export async function deleteOrgJobCategory(
   orgId: string,
   categoryId: string,
 ): Promise<void> {
-  await bffClient.delete(`/api/organizations/${orgId}/job-categories/${categoryId}`);
+  await bffClient.delete(
+    `/api/organizations/${orgId}/job-categories/${categoryId}`,
+  );
 }
 
-export async function listOrgExperienceLevels(orgId: string): Promise<OrgRefItem[]> {
+export async function listOrgExperienceLevels(
+  orgId: string,
+): Promise<OrgRefItem[]> {
   const res = await bffClient.get<OrgRefItem[]>(
     `/api/organizations/${orgId}/experience-levels`,
   );
@@ -354,7 +360,9 @@ export async function deleteOrgExperienceLevel(
   orgId: string,
   levelId: string,
 ): Promise<void> {
-  await bffClient.delete(`/api/organizations/${orgId}/experience-levels/${levelId}`);
+  await bffClient.delete(
+    `/api/organizations/${orgId}/experience-levels/${levelId}`,
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -680,4 +688,34 @@ export async function deleteJobApplication(
   await bffClient.delete(
     `/api/organizations/${orgId}/job-profiles/${jobProfileId}/applications/${applicationId}`,
   );
+}
+
+export type BulkUploadResult = {
+  file_name: string;
+  status: "created" | "error";
+  application_id?: string;
+  error?: string;
+};
+
+export type BulkUploadResponse = {
+  results: BulkUploadResult[];
+  created: number;
+  failed: number;
+};
+
+export async function bulkUploadApplications(
+  orgId: string,
+  jobProfileId: string,
+  files: File[],
+): Promise<BulkUploadResponse> {
+  const formData = new FormData();
+  for (const file of files) {
+    formData.append("files", file);
+  }
+  const response = await bffClient.post<BulkUploadResponse>(
+    `/api/organizations/${orgId}/job-profiles/${jobProfileId}/applications/bulk`,
+    formData,
+    { headers: { "Content-Type": "multipart/form-data" } },
+  );
+  return response.data;
 }

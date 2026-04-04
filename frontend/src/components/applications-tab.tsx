@@ -8,8 +8,10 @@ import {
   listJobApplications,
   retryAnalysis,
   deleteJobApplication,
+  bulkUploadApplications,
   getJobProfileAnalytics,
   type PaginatedApplications,
+  type BulkUploadResult,
 } from "@/lib/api";
 import type { JobApplicationDetailWithAnalysis } from "@/lib/client";
 import {
@@ -62,7 +64,23 @@ import {
   Star,
   Trash2,
   MoreHorizontal,
+  Upload,
+  CheckCircle2,
+  XCircle,
 } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -190,11 +208,16 @@ function SortableHeader({
 interface ApplicationsTabProps {
   orgId: string;
   jobProfileId: string;
+  hasRequiredQuestions?: boolean;
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
-export function ApplicationsTab({ orgId, jobProfileId }: ApplicationsTabProps) {
+export function ApplicationsTab({
+  orgId,
+  jobProfileId,
+  hasRequiredQuestions = false,
+}: ApplicationsTabProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -217,6 +240,14 @@ export function ApplicationsTab({ orgId, jobProfileId }: ApplicationsTabProps) {
         // silently ignore — filters just won't have options
       });
   }, [orgId, jobProfileId]);
+
+  // Bulk upload state
+  const [bulkDialogOpen, setBulkDialogOpen] = useState(false);
+  const [bulkFiles, setBulkFiles] = useState<File[]>([]);
+  const [isBulkUploading, setIsBulkUploading] = useState(false);
+  const [bulkResults, setBulkResults] = useState<BulkUploadResult[] | null>(
+    null,
+  );
 
   // Server state
   const [data, setData] = useState<PaginatedApplications | null>(null);
@@ -396,6 +427,41 @@ export function ApplicationsTab({ orgId, jobProfileId }: ApplicationsTabProps) {
     },
     [orgId, jobProfileId],
   );
+
+  // Bulk upload handler
+  const handleBulkUpload = useCallback(async () => {
+    if (bulkFiles.length === 0) return;
+    setIsBulkUploading(true);
+    setBulkResults(null);
+    try {
+      const response = await bulkUploadApplications(
+        orgId,
+        jobProfileId,
+        bulkFiles,
+      );
+      setBulkResults(response.results);
+      if (response.created > 0) {
+        toast.success(
+          `${response.created} resume${response.created !== 1 ? "s" : ""} uploaded successfully.`,
+        );
+        fetchData();
+      }
+      if (response.failed > 0) {
+        toast.error(
+          `${response.failed} file${response.failed !== 1 ? "s" : ""} failed to upload.`,
+        );
+      }
+    } catch (error) {
+      if (error instanceof AxiosError) {
+        const msg = error.response?.data?.error ?? "Bulk upload failed.";
+        toast.error(msg);
+      } else {
+        toast.error("Bulk upload failed.");
+      }
+    } finally {
+      setIsBulkUploading(false);
+    }
+  }, [orgId, jobProfileId, bulkFiles, fetchData]);
 
   // Toggle sort for a column
   const handleSort = useCallback((id: string) => {
@@ -588,7 +654,10 @@ export function ApplicationsTab({ orgId, jobProfileId }: ApplicationsTabProps) {
           const appId = row.original.id ?? "";
           const isDeleting = deletingAppIds.has(appId);
           return (
-            <div className="flex justify-end" onClick={(e) => e.stopPropagation()}>
+            <div
+              className="flex justify-end"
+              onClick={(e) => e.stopPropagation()}
+            >
               <AlertDialog>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
@@ -607,9 +676,7 @@ export function ApplicationsTab({ orgId, jobProfileId }: ApplicationsTabProps) {
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
                     <AlertDialogTrigger asChild>
-                      <DropdownMenuItem
-                        className="text-destructive focus:text-destructive focus:bg-destructive/10"
-                      >
+                      <DropdownMenuItem className="text-destructive focus:text-destructive focus:bg-destructive/10">
                         <Trash2 className="mr-2 h-4 w-4" />
                         Delete application
                       </DropdownMenuItem>
@@ -643,7 +710,14 @@ export function ApplicationsTab({ orgId, jobProfileId }: ApplicationsTabProps) {
         },
       },
     ],
-    [sorting, retryingIds, deletingAppIds, handleSort, handleRetry, handleDelete],
+    [
+      sorting,
+      retryingIds,
+      deletingAppIds,
+      handleSort,
+      handleRetry,
+      handleDelete,
+    ],
   );
 
   // ─── Table instance ─────────────────────────────────────────────────────
@@ -785,24 +859,41 @@ export function ApplicationsTab({ orgId, jobProfileId }: ApplicationsTabProps) {
           </Button>
         )}
         <div className="ml-auto flex items-center gap-2">
-          <span className="text-xs text-muted-foreground">Rows per page</span>
-          <Select
-            value={String(pagination.pageSize)}
-            onValueChange={(val) =>
-              setPagination({ pageIndex: 0, pageSize: Number(val) })
-            }
-          >
-            <SelectTrigger className="h-9 w-24">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {[10, 20, 50].map((n) => (
-                <SelectItem key={n} value={String(n)}>
-                  {n}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          {hasRequiredQuestions ? (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-9 gap-1.5 cursor-not-allowed text-muted-foreground"
+                  disabled
+                >
+                  <Upload className="h-3.5 w-3.5" />
+                  Bulk upload
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>
+                  Bulk upload is unavailable because this job profile has
+                  required questions. Applicants must submit directly.
+                </p>
+              </TooltipContent>
+            </Tooltip>
+          ) : (
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-9 gap-1.5"
+              onClick={() => {
+                setBulkFiles([]);
+                setBulkResults(null);
+                setBulkDialogOpen(true);
+              }}
+            >
+              <Upload className="h-3.5 w-3.5" />
+              Bulk upload
+            </Button>
+          )}
         </div>
       </div>
 
@@ -951,11 +1042,32 @@ export function ApplicationsTab({ orgId, jobProfileId }: ApplicationsTabProps) {
 
       {/* Pagination controls */}
       <div className="flex items-center justify-between text-sm">
-        <p className="text-muted-foreground">
-          {totalCount > 0
-            ? `Showing ${startRow}–${endRow} of ${totalCount} result${totalCount !== 1 ? "s" : ""}`
-            : "No results"}
-        </p>
+        <div className="flex items-center gap-2 text-muted-foreground">
+          <p>
+            {totalCount > 0
+              ? `Showing ${startRow}–${endRow} of ${totalCount} result${totalCount !== 1 ? "s" : ""}`
+              : "No results"}
+          </p>
+          <span>·</span>
+          <span>Rows per page</span>
+          <Select
+            value={String(pagination.pageSize)}
+            onValueChange={(val) =>
+              setPagination({ pageIndex: 0, pageSize: Number(val) })
+            }
+          >
+            <SelectTrigger className="h-7 w-16 text-xs">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {[10, 20, 50].map((n) => (
+                <SelectItem key={n} value={String(n)}>
+                  {n}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
         <div className="flex items-center gap-1">
           <Button
             variant="outline"
@@ -1004,6 +1116,161 @@ export function ApplicationsTab({ orgId, jobProfileId }: ApplicationsTabProps) {
           </Button>
         </div>
       </div>
+
+      {/* Bulk Upload Dialog */}
+      <Dialog
+        open={bulkDialogOpen}
+        onOpenChange={(open) => {
+          if (!isBulkUploading) {
+            setBulkDialogOpen(open);
+            if (!open) {
+              setBulkFiles([]);
+              setBulkResults(null);
+            }
+          }
+        }}
+      >
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Bulk upload resumes</DialogTitle>
+            <DialogDescription>
+              Upload multiple resumes at once. Applicant details will be
+              extracted automatically via OCR. PDF, DOC, and DOCX only, max 10
+              MB each.
+            </DialogDescription>
+          </DialogHeader>
+
+          {bulkResults ? (
+            <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
+              {bulkResults.map((r, i) => (
+                <div
+                  key={i}
+                  className="flex items-start gap-2 rounded-md border px-3 py-2 text-sm"
+                >
+                  {r.status === "created" ? (
+                    <CheckCircle2 className="h-4 w-4 shrink-0 mt-0.5 text-emerald-500" />
+                  ) : (
+                    <XCircle className="h-4 w-4 shrink-0 mt-0.5 text-destructive" />
+                  )}
+                  <div className="min-w-0">
+                    <p className="truncate font-medium">{r.file_name}</p>
+                    {r.error && (
+                      <p className="text-xs text-destructive">{r.error}</p>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <label
+                htmlFor="bulk-file-input"
+                className="flex flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-border/60 p-8 text-center cursor-pointer hover:border-primary/40 hover:bg-muted/20 transition-colors"
+              >
+                <Upload className="h-8 w-8 text-muted-foreground" />
+                <span className="text-sm font-medium">
+                  Click to select files
+                </span>
+                <span className="text-xs text-muted-foreground">
+                  PDF, DOC, DOCX — up to 50 files
+                </span>
+                <input
+                  id="bulk-file-input"
+                  type="file"
+                  multiple
+                  accept=".pdf,.doc,.docx"
+                  className="sr-only"
+                  onChange={(e) => {
+                    const incoming = Array.from(e.target.files ?? []);
+                    setBulkFiles((prev) => {
+                      const existing = new Set(
+                        prev.map((f) => `${f.name}:${f.size}`),
+                      );
+                      const merged = [
+                        ...prev,
+                        ...incoming.filter(
+                          (f) => !existing.has(`${f.name}:${f.size}`),
+                        ),
+                      ];
+                      return merged.slice(0, 50);
+                    });
+                    e.target.value = "";
+                  }}
+                />
+              </label>
+
+              {bulkFiles.length > 0 && (
+                <div className="space-y-1 max-h-48 overflow-y-auto pr-1">
+                  {bulkFiles.map((f, i) => (
+                    <div
+                      key={i}
+                      className="flex items-center gap-2 rounded-md border px-3 py-1.5 text-sm"
+                    >
+                      <span className="flex-1 truncate">{f.name}</span>
+                      <span className="shrink-0 text-xs text-muted-foreground">
+                        {(f.size / (1024 * 1024)).toFixed(1)} MB
+                      </span>
+                      <button
+                        type="button"
+                        className="shrink-0 text-muted-foreground hover:text-destructive transition-colors"
+                        onClick={() =>
+                          setBulkFiles((prev) => prev.filter((_, j) => j !== i))
+                        }
+                        aria-label="Remove"
+                      >
+                        <XCircle className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          <DialogFooter>
+            {bulkResults ? (
+              <Button
+                onClick={() => {
+                  setBulkDialogOpen(false);
+                  setBulkFiles([]);
+                  setBulkResults(null);
+                }}
+              >
+                Done
+              </Button>
+            ) : (
+              <>
+                <Button
+                  variant="outline"
+                  onClick={() => setBulkDialogOpen(false)}
+                  disabled={isBulkUploading}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={handleBulkUpload}
+                  disabled={bulkFiles.length === 0 || isBulkUploading}
+                >
+                  {isBulkUploading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Uploading…
+                    </>
+                  ) : (
+                    <>
+                      <Upload className="mr-2 h-4 w-4" />
+                      Upload{" "}
+                      {bulkFiles.length > 0
+                        ? `${bulkFiles.length} file${bulkFiles.length !== 1 ? "s" : ""}`
+                        : ""}
+                    </>
+                  )}
+                </Button>
+              </>
+            )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

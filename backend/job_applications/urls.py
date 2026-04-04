@@ -2,6 +2,7 @@ from django.urls import path
 from .views import (
     submit_job_application,
     upload_resume,
+    bulk_upload_applications,
     list_job_applications,
     get_job_application,
     delete_job_application,
@@ -22,6 +23,11 @@ urlpatterns = [
         "organizations/<uuid:org_id>/job-profiles/<uuid:job_profile_id>/applications/",
         list_job_applications,
         name="list_job_applications",
+    ),
+    path(
+        "organizations/<uuid:org_id>/job-profiles/<uuid:job_profile_id>/applications/bulk/",
+        bulk_upload_applications,
+        name="bulk_upload_applications",
     ),
     path(
         "organizations/<uuid:org_id>/job-profiles/<uuid:job_profile_id>/applications/<uuid:job_application_id>/",

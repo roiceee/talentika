@@ -669,6 +669,7 @@ export default function JobProfileDetailPage({
           <ApplicationsTab
             orgId={(profile.organization as { id?: string })?.id ?? ""}
             jobProfileId={jobId}
+            hasRequiredQuestions={profile.questions?.some((q) => q.is_required) ?? false}
           />
         </TabsContent>
 

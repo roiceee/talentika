@@ -136,9 +136,7 @@ def _replace_resume_with_pdf(
         attachment.file_size = len(pdf_bytes)
         attachment.save(update_fields=["file", "file_name", "file_size"])
 
-    logger.info(
-        "Replaced DOCX with PDF: %s → %s", docx_storage_path, pdf_storage_path
-    )
+    logger.info("Replaced DOCX with PDF: %s → %s", docx_storage_path, pdf_storage_path)
     return pdf_storage_path
 
 
@@ -225,7 +223,10 @@ def process_ai_analysis(application_analysis_id: str):
     4. Persist result fields, set status → DONE
     """
     from job_application_analysis.models import ApplicationAnalysis
-    from job_application_analysis.ai_service import analyse_resume
+    from job_application_analysis.ai_service import (
+        analyse_resume,
+        BulkResumeAnalysisResult,
+    )
 
     analysis = ApplicationAnalysis.objects.select_related(
         "job_application__job_profile"
@@ -240,10 +241,12 @@ def process_ai_analysis(application_analysis_id: str):
         job_app = analysis.job_application
         job_profile = job_app.job_profile
 
+        # Bulk uploads are identified by the placeholder email set at upload time
+        is_bulk_upload = job_app.email.endswith("@bulk.internal")
+
         # 2. Collect context
         qa_pairs = _collect_qa_pairs(job_app)
 
-        # Build qualifications list from the new Qualification model
         qualifications_list = list(
             job_profile.qualifications.values(
                 "category",
@@ -254,16 +257,57 @@ def process_ai_analysis(application_analysis_id: str):
             )
         )
 
-        # 3. Call AI
+        # 3. Call AI — bulk uploads use BulkResumeAnalysisResult which instructs
+        #    the model to also extract applicant name / email / phone.
         result = analyse_resume(
             resume_text=analysis.extracted_resume_text,
             job_title=job_profile.title,
             job_description=job_profile.description,
             qualifications=qualifications_list,
             questions_and_answers=qa_pairs,
+            is_bulk_upload=is_bulk_upload,
         )
 
-        # 4. Persist
+        # 4. Back-fill contact info — only for bulk uploads.
+        # Done BEFORE saving DONE status so the frontend never sees "done"
+        # with stale placeholder data (avoids the polling race condition).
+        if is_bulk_upload and isinstance(result, BulkResumeAnalysisResult):
+            from job_applications.models import JobApplication as _JobApp
+
+            info = result.applicant_info
+            logger.info(
+                "Bulk contact extraction for application %s: "
+                "first_name=%r last_name=%r email=%r phone=%r",
+                job_app.id,
+                info.first_name,
+                info.last_name,
+                info.email,
+                info.phone,
+            )
+            update_kwargs = {}
+            if info.first_name:
+                update_kwargs["first_name"] = info.first_name
+            if info.last_name:
+                update_kwargs["last_name"] = info.last_name
+            if info.phone:
+                update_kwargs["phone"] = info.phone
+            if info.email:
+                update_kwargs["email"] = info.email
+            if update_kwargs:
+                _JobApp.objects.filter(pk=job_app.pk).update(**update_kwargs)
+                logger.info(
+                    "Back-filled contact info for application %s: %s",
+                    job_app.id,
+                    list(update_kwargs.keys()),
+                )
+            else:
+                logger.warning(
+                    "Bulk upload application %s: AI could not extract any contact info.",
+                    job_app.id,
+                )
+
+        # 5. Persist analysis and mark DONE — after back-fill so the frontend
+        # always sees consistent data when it polls the "done" status.
         analysis.ai_analysis_summary = result.ai_analysis_summary
         analysis.notable_traits = result.notable_traits
         analysis.key_skills = result.key_skills
@@ -282,7 +326,9 @@ def process_ai_analysis(application_analysis_id: str):
             ]
         )
         logger.info(
-            "AI analysis completed for %s (category=%s)", analysis.id, result.score_category
+            "AI analysis completed for %s (category=%s)",
+            analysis.id,
+            result.score_category,
         )
 
     except Exception as exc:
@@ -312,6 +358,7 @@ def _get_redis_connection():
     ssl_enabled = getattr(settings, "REDIS_SSL", False)
     if ssl_enabled:
         import ssl as ssl_module
+
         kwargs["ssl_cert_reqs"] = ssl_module.CERT_NONE
     return redis.Redis.from_url(settings.REDIS_URL, **kwargs)
 

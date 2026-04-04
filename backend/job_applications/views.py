@@ -233,6 +233,228 @@ def upload_resume(request):
 
 
 @swagger_auto_schema(
+    method="post",
+    operation_description="""
+    Bulk upload resumes for a job profile (HR only).
+
+    Accepts up to 50 resume files (PDF, DOC, DOCX, max 10 MB each) and creates
+    one JobApplication per file. Applicant metadata is left blank to be populated
+    by the OCR pipeline.
+
+    Blocked when the job profile has any required questions — those must be
+    answered by the candidate directly.
+
+    Returns a per-file result list with status "created" or "error".
+    """,
+    manual_parameters=[
+        openapi.Parameter(
+            "org_id",
+            openapi.IN_PATH,
+            description="Organization UUID",
+            type=openapi.TYPE_STRING,
+            format="uuid",
+            required=True,
+        ),
+        openapi.Parameter(
+            "job_profile_id",
+            openapi.IN_PATH,
+            description="Job Profile UUID",
+            type=openapi.TYPE_STRING,
+            format="uuid",
+            required=True,
+        ),
+        openapi.Parameter(
+            "files",
+            openapi.IN_FORM,
+            description="Resume files (repeat for each file)",
+            type=openapi.TYPE_FILE,
+            required=True,
+        ),
+    ],
+    responses={
+        201: openapi.Response(
+            "Bulk upload results",
+            schema=openapi.Schema(
+                type=openapi.TYPE_OBJECT,
+                properties={
+                    "results": openapi.Schema(
+                        type=openapi.TYPE_ARRAY,
+                        items=openapi.Schema(
+                            type=openapi.TYPE_OBJECT,
+                            properties={
+                                "file_name": openapi.Schema(type=openapi.TYPE_STRING),
+                                "status": openapi.Schema(type=openapi.TYPE_STRING),
+                                "application_id": openapi.Schema(
+                                    type=openapi.TYPE_STRING
+                                ),
+                                "error": openapi.Schema(type=openapi.TYPE_STRING),
+                            },
+                        ),
+                    ),
+                    "created": openapi.Schema(type=openapi.TYPE_INTEGER),
+                    "failed": openapi.Schema(type=openapi.TYPE_INTEGER),
+                },
+            ),
+        ),
+        409: "Job profile has required questions — bulk upload is not allowed",
+    },
+    tags=["Job Applications"],
+)
+@api_view(["POST"])
+@permission_classes([IsAuthenticated, IsOrganizationMember])
+@parser_classes([MultiPartParser, FormParser])
+def bulk_upload_applications(request, org_id, job_profile_id):
+    """
+    Bulk upload resumes for a job profile.
+
+    Blocked when the job profile has required questions.
+    """
+    import uuid as _uuid
+
+    organization = Organization.objects.filter(id=org_id).first()
+    if not organization:
+        return Response(
+            {"error": "Organization not found."}, status=status.HTTP_404_NOT_FOUND
+        )
+
+    job_profile = JobProfile.objects.filter(
+        id=job_profile_id, organization=organization
+    ).first()
+    if not job_profile:
+        return Response(
+            {"error": "Job profile not found."}, status=status.HTTP_404_NOT_FOUND
+        )
+
+    if not job_profile.is_active:
+        return Response(
+            {"error": "This job profile is not accepting applications."},
+            status=status.HTTP_409_CONFLICT,
+        )
+
+    # Block if any required questions exist
+    if job_profile.questions.filter(is_required=True).exists():
+        return Response(
+            {
+                "error": (
+                    "Bulk upload is unavailable because this job profile has required questions. "
+                    "Applicants must answer these questions by submitting directly."
+                )
+            },
+            status=status.HTTP_409_CONFLICT,
+        )
+
+    files = request.FILES.getlist("files")
+    if not files:
+        return Response(
+            {"error": "No files provided."}, status=status.HTTP_400_BAD_REQUEST
+        )
+
+    MAX_FILES = 50
+    if len(files) > MAX_FILES:
+        return Response(
+            {"error": f"Cannot upload more than {MAX_FILES} files at once."},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    MAX_SIZE = 10 * 1024 * 1024  # 10 MB
+    allowed_extensions = {".pdf", ".doc", ".docx"}
+    allowed_content_types = {
+        "application/pdf",
+        "application/msword",
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    }
+
+    storage = get_storage()
+    results = []
+
+    for uploaded_file in files:
+        file_name = uploaded_file.name
+
+        # Validate size
+        if uploaded_file.size > MAX_SIZE:
+            results.append(
+                {
+                    "file_name": file_name,
+                    "status": "error",
+                    "error": f"File exceeds 10 MB limit ({uploaded_file.size / (1024*1024):.1f} MB).",
+                }
+            )
+            continue
+
+        # Validate type
+        file_ext = os.path.splitext(file_name)[1].lower()
+        if (
+            file_ext not in allowed_extensions
+            and uploaded_file.content_type not in allowed_content_types
+        ):
+            results.append(
+                {
+                    "file_name": file_name,
+                    "status": "error",
+                    "error": "Only PDF, DOC, and DOCX files are allowed.",
+                }
+            )
+            continue
+
+        try:
+            sha256_hash = compute_sha256(uploaded_file)
+
+            storage_path, _ = storage.save(
+                file=uploaded_file,
+                filename=file_name,
+                content_type=uploaded_file.content_type or "application/octet-stream",
+                metadata={"purpose": "bulk_resume"},
+            )
+
+            # Create application with placeholder metadata (OCR fills it in later)
+            placeholder_email = f"bulk-{_uuid.uuid4().hex[:12]}@bulk.internal"
+            job_application = JobApplication.objects.create(
+                job_profile=job_profile,
+                first_name="",
+                last_name="",
+                email=placeholder_email,
+                phone="",
+            )
+
+            ApplicationAttachment.objects.create(
+                job_application=job_application,
+                file=storage_path,
+                file_name=file_name,
+                file_type=ApplicationAttachment.FileType.RESUME,
+                file_size=uploaded_file.size,
+                sha256_hash=sha256_hash,
+            )
+
+            _trigger_analysis_pipeline(job_application)
+
+            results.append(
+                {
+                    "file_name": file_name,
+                    "status": "created",
+                    "application_id": str(job_application.id),
+                }
+            )
+
+        except Exception as exc:
+            logger.exception("Bulk upload failed for file %s", file_name)
+            results.append(
+                {
+                    "file_name": file_name,
+                    "status": "error",
+                    "error": "An unexpected error occurred while processing this file.",
+                }
+            )
+
+    created = sum(1 for r in results if r["status"] == "created")
+    failed = len(results) - created
+
+    return Response(
+        {"results": results, "created": created, "failed": failed},
+        status=status.HTTP_201_CREATED,
+    )
+
+
+@swagger_auto_schema(
     method="get",
     operation_description="""
     List job applications for a specific job profile (paginated, filterable, sortable).
@@ -338,7 +560,8 @@ def list_job_applications(request, org_id, job_profile_id):
     # Annotate with a numeric priority derived from score_category for ordering
     # suitable=3, potentially_suitable=2, unsuitable=1, null=0
     category_priority_subquery = Subquery(
-        ApplicationAnalysis.objects.filter(job_application=OuterRef("pk")).annotate(
+        ApplicationAnalysis.objects.filter(job_application=OuterRef("pk"))
+        .annotate(
             priority=Case(
                 When(score_category="suitable", then=Value(3)),
                 When(score_category="potentially_suitable", then=Value(2)),
@@ -346,7 +569,8 @@ def list_job_applications(request, org_id, job_profile_id):
                 default=Value(0),
                 output_field=IntegerField(),
             )
-        ).values("priority")[:1],
+        )
+        .values("priority")[:1],
         output_field=IntegerField(),
     )
 
@@ -372,7 +596,9 @@ def list_job_applications(request, org_id, job_profile_id):
         qs = qs.filter(status=status_filter)
 
     # Skill filter — supports multiple values (OR logic)
-    skill_filters = [s.strip() for s in request.query_params.getlist("skill") if s.strip()]
+    skill_filters = [
+        s.strip() for s in request.query_params.getlist("skill") if s.strip()
+    ]
     if skill_filters:
         skill_q = Q()
         for skill in skill_filters:
@@ -380,7 +606,9 @@ def list_job_applications(request, org_id, job_profile_id):
         qs = qs.filter(skill_q)
 
     # Trait filter — supports multiple values (OR logic)
-    trait_filters = [t.strip() for t in request.query_params.getlist("trait") if t.strip()]
+    trait_filters = [
+        t.strip() for t in request.query_params.getlist("trait") if t.strip()
+    ]
     if trait_filters:
         trait_q = Q()
         for trait in trait_filters:
@@ -637,10 +865,10 @@ def download_resume(request, org_id, job_profile_id, job_application_id):
     Update the status of a job application.
 
     Allowed status transitions:
-    - to_be_reviewed → reviewed, shortlisted, rejected
-    - reviewed → shortlisted, rejected
-    - shortlisted → reviewed, rejected
-    - rejected → reviewed, shortlisted
+    - to_be_reviewed -> reviewed, shortlisted, rejected
+    - reviewed -> shortlisted, rejected
+    - shortlisted -> reviewed, rejected
+    - rejected -> reviewed, shortlisted
 
     Once an application has moved away from ``to_be_reviewed`` it cannot be
     reverted back to that status.
@@ -737,7 +965,9 @@ def update_application_status(request, org_id, job_profile_id, job_application_i
         and job_application.status != JobApplication.Status.TO_BE_REVIEWED
     ):
         return Response(
-            {"detail": "Cannot revert status back to 'to_be_reviewed' once it has been reviewed."},
+            {
+                "detail": "Cannot revert status back to 'to_be_reviewed' once it has been reviewed."
+            },
             status=status.HTTP_400_BAD_REQUEST,
         )
 
@@ -839,7 +1069,9 @@ def job_profile_analytics(request, org_id, job_profile_id):
 
     category_distribution = {
         "suitable": analyses.filter(score_category="suitable").count(),
-        "potentially_suitable": analyses.filter(score_category="potentially_suitable").count(),
+        "potentially_suitable": analyses.filter(
+            score_category="potentially_suitable"
+        ).count(),
         "unsuitable": analyses.filter(score_category="unsuitable").count(),
     }
 
@@ -851,8 +1083,12 @@ def job_profile_analytics(request, org_id, job_profile_id):
         .order_by("-count")
         .first()
     )
-    dominant_cat = get_score_category(dominant_row["score_category"] if dominant_row else None)
-    average_category = {"key": dominant_cat.key, "label": dominant_cat.label} if dominant_cat else None
+    dominant_cat = get_score_category(
+        dominant_row["score_category"] if dominant_row else None
+    )
+    average_category = (
+        {"key": dominant_cat.key, "label": dominant_cat.label} if dominant_cat else None
+    )
 
     # Top skills & traits
     skill_counter = Counter()
@@ -972,7 +1208,9 @@ def org_analytics(request, org_id):
 
     category_distribution = {
         "suitable": analyses.filter(score_category="suitable").count(),
-        "potentially_suitable": analyses.filter(score_category="potentially_suitable").count(),
+        "potentially_suitable": analyses.filter(
+            score_category="potentially_suitable"
+        ).count(),
         "unsuitable": analyses.filter(score_category="unsuitable").count(),
     }
 
@@ -983,8 +1221,12 @@ def org_analytics(request, org_id):
         .order_by("-count")
         .first()
     )
-    dominant_cat = get_score_category(dominant_row["score_category"] if dominant_row else None)
-    average_category = {"key": dominant_cat.key, "label": dominant_cat.label} if dominant_cat else None
+    dominant_cat = get_score_category(
+        dominant_row["score_category"] if dominant_row else None
+    )
+    average_category = (
+        {"key": dominant_cat.key, "label": dominant_cat.label} if dominant_cat else None
+    )
 
     # Top skills & traits
     skill_counter = Counter()
@@ -1409,12 +1651,20 @@ def delete_job_application(request, org_id, job_profile_id, job_application_id):
     try:
         organization = Organization.objects.get(id=org_id)
     except Organization.DoesNotExist:
-        return Response({"detail": "Organization not found."}, status=status.HTTP_404_NOT_FOUND)
+        return Response(
+            {"detail": "Organization not found."}, status=status.HTTP_404_NOT_FOUND
+        )
 
-    from organizations.models.organization_membership import OrganizationMembership as OrgMembership
-    is_admin = request.user.is_superuser or OrgMembership.objects.filter(
-        user=request.user, organization=organization, role="ORG_ADMIN"
-    ).exists()
+    from organizations.models.organization_membership import (
+        OrganizationMembership as OrgMembership,
+    )
+
+    is_admin = (
+        request.user.is_superuser
+        or OrgMembership.objects.filter(
+            user=request.user, organization=organization, role="ORG_ADMIN"
+        ).exists()
+    )
     if not is_admin:
         return Response(
             {"error": "Only organization admins can delete applications."},
@@ -1422,14 +1672,22 @@ def delete_job_application(request, org_id, job_profile_id, job_application_id):
         )
 
     try:
-        job_profile = JobProfile.objects.get(id=job_profile_id, organization=organization)
+        job_profile = JobProfile.objects.get(
+            id=job_profile_id, organization=organization
+        )
     except JobProfile.DoesNotExist:
-        return Response({"detail": "Job profile not found."}, status=status.HTTP_404_NOT_FOUND)
+        return Response(
+            {"detail": "Job profile not found."}, status=status.HTTP_404_NOT_FOUND
+        )
 
     try:
-        job_application = JobApplication.objects.get(id=job_application_id, job_profile=job_profile)
+        job_application = JobApplication.objects.get(
+            id=job_application_id, job_profile=job_profile
+        )
     except JobApplication.DoesNotExist:
-        return Response({"detail": "Job application not found."}, status=status.HTTP_404_NOT_FOUND)
+        return Response(
+            {"detail": "Job application not found."}, status=status.HTTP_404_NOT_FOUND
+        )
 
     job_application.deleted_at = timezone.now()
     job_application.save(update_fields=["deleted_at"])
