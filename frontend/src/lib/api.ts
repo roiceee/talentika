@@ -650,3 +650,34 @@ export function getExportDownloadUrl(
 ): string {
   return `/api/organizations/${orgId}/job-profiles/${jobProfileId}/export/${exportId}/download`;
 }
+
+// ---------------------------------------------------------------------------
+// Soft Delete
+// ---------------------------------------------------------------------------
+
+export async function deleteAccount(): Promise<void> {
+  await bffClient.delete("/api/users/profile");
+}
+
+export async function deleteOrganization(orgId: string): Promise<void> {
+  await bffClient.delete(`/api/organizations/${orgId}`);
+}
+
+export async function deleteJobProfile(
+  orgId: string,
+  jobProfileId: string,
+): Promise<void> {
+  await bffClient.delete(
+    `/api/organizations/${orgId}/job-profiles/${jobProfileId}`,
+  );
+}
+
+export async function deleteJobApplication(
+  orgId: string,
+  jobProfileId: string,
+  applicationId: string,
+): Promise<void> {
+  await bffClient.delete(
+    `/api/organizations/${orgId}/job-profiles/${jobProfileId}/applications/${applicationId}`,
+  );
+}

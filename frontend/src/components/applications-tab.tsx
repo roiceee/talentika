@@ -7,6 +7,7 @@ import { AxiosError } from "axios";
 import {
   listJobApplications,
   retryAnalysis,
+  deleteJobApplication,
   getJobProfileAnalytics,
   type PaginatedApplications,
 } from "@/lib/api";
@@ -59,7 +60,26 @@ import {
   SlidersHorizontal,
   Sparkles,
   Star,
+  Trash2,
+  MoreHorizontal,
 } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 // ─── Config ──────────────────────────────────────────────────────────────────
 
@@ -202,6 +222,7 @@ export function ApplicationsTab({ orgId, jobProfileId }: ApplicationsTabProps) {
   const [data, setData] = useState<PaginatedApplications | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [retryingIds, setRetryingIds] = useState<Set<string>>(new Set());
+  const [deletingAppIds, setDeletingAppIds] = useState<Set<string>>(new Set());
 
   // Table state (all server-side)
   const [pagination, setPagination] = useState<PaginationState>({
@@ -344,6 +365,36 @@ export function ApplicationsTab({ orgId, jobProfileId }: ApplicationsTabProps) {
       }
     },
     [],
+  );
+
+  // Delete application
+  const handleDelete = useCallback(
+    async (e: React.MouseEvent, applicationId: string) => {
+      e.stopPropagation();
+      setDeletingAppIds((prev) => new Set(prev).add(applicationId));
+      try {
+        await deleteJobApplication(orgId, jobProfileId, applicationId);
+        toast.success("Application deleted");
+        setData((prev) =>
+          prev
+            ? {
+                ...prev,
+                count: prev.count - 1,
+                results: prev.results.filter((app) => app.id !== applicationId),
+              }
+            : prev,
+        );
+      } catch {
+        toast.error("Failed to delete application");
+      } finally {
+        setDeletingAppIds((prev) => {
+          const next = new Set(prev);
+          next.delete(applicationId);
+          return next;
+        });
+      }
+    },
+    [orgId, jobProfileId],
   );
 
   // Toggle sort for a column
@@ -530,8 +581,69 @@ export function ApplicationsTab({ orgId, jobProfileId }: ApplicationsTabProps) {
             <span className="text-xs text-muted-foreground">—</span>
           ),
       },
+      {
+        id: "actions",
+        header: () => null,
+        cell: ({ row }) => {
+          const appId = row.original.id ?? "";
+          const isDeleting = deletingAppIds.has(appId);
+          return (
+            <div className="flex justify-end" onClick={(e) => e.stopPropagation()}>
+              <AlertDialog>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-7 w-7 text-muted-foreground"
+                      disabled={isDeleting}
+                    >
+                      {isDeleting ? (
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      ) : (
+                        <MoreHorizontal className="h-3.5 w-3.5" />
+                      )}
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <AlertDialogTrigger asChild>
+                      <DropdownMenuItem
+                        className="text-destructive focus:text-destructive focus:bg-destructive/10"
+                      >
+                        <Trash2 className="mr-2 h-4 w-4" />
+                        Delete application
+                      </DropdownMenuItem>
+                    </AlertDialogTrigger>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Delete application?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Delete the application from{" "}
+                      <strong>
+                        {row.original.first_name} {row.original.last_name}
+                      </strong>
+                      ? This action cannot be undone.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction
+                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                      onClick={(e) => handleDelete(e, appId)}
+                    >
+                      Delete
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </div>
+          );
+        },
+      },
     ],
-    [sorting, retryingIds, handleSort, handleRetry],
+    [sorting, retryingIds, deletingAppIds, handleSort, handleRetry, handleDelete],
   );
 
   // ─── Table instance ─────────────────────────────────────────────────────

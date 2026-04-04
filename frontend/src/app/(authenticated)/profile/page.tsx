@@ -1,11 +1,13 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/auth-context";
 import {
   updateUserProfile,
   uploadUserProfilePicture,
   deleteUserProfilePicture,
+  deleteAccount,
 } from "@/lib/api";
 import { toast } from "sonner";
 import { AxiosError } from "axios";
@@ -22,12 +24,25 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { AvatarUpload } from "@/components/avatar-upload";
-import { Loader2, Pencil } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { Loader2, Pencil, Trash2 } from "lucide-react";
 
 export default function ProfilePage() {
-  const { user, refreshUser } = useAuth();
+  const { user, refreshUser, logout } = useAuth();
+  const router = useRouter();
   const [editing, setEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [isDeletingAccount, setIsDeletingAccount] = useState(false);
   const [form, setForm] = useState({
     username: user?.username || "",
     first_name: user?.first_name || "",
@@ -221,6 +236,58 @@ export default function ProfilePage() {
               </Button>
             </div>
           )}
+        </CardContent>
+      </Card>
+      {/* Danger Zone */}
+      <Card className="border-destructive/40 mt-2">
+        <CardHeader>
+          <CardTitle className="text-destructive">Danger Zone</CardTitle>
+          <CardDescription>
+            Permanently delete your account. This action cannot be undone.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button variant="destructive" disabled={isDeletingAccount}>
+                {isDeletingAccount ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <Trash2 className="mr-2 h-4 w-4" />
+                )}
+                Delete account
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Delete your account?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  This will permanently delete your account and all associated
+                  data. You will be logged out immediately. This action cannot
+                  be undone.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction
+                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  onClick={async () => {
+                    setIsDeletingAccount(true);
+                    try {
+                      await deleteAccount();
+                      await logout();
+                      router.push("/auth/login");
+                    } catch {
+                      toast.error("Failed to delete account");
+                      setIsDeletingAccount(false);
+                    }
+                  }}
+                >
+                  Delete account
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </CardContent>
       </Card>
     </div>

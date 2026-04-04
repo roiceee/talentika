@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import {
   apiOrganizationsRead,
   apiOrganizationsUpdatePartialUpdate,
+  apiOrganizationsDeleteDelete,
 } from "@/lib/client";
 import { authenticatedSdkCall } from "@/lib/server/api-client";
 import { errorResponse } from "@/lib/server/errors";
@@ -48,6 +49,26 @@ export async function PATCH(
       }),
     );
     return NextResponse.json(response.data);
+  } catch (error: unknown) {
+    return errorResponse(error);
+  }
+}
+
+/**
+ * DELETE /api/organizations/:orgId
+ *
+ * Soft-delete an organization. Only admins can do this.
+ */
+export async function DELETE(
+  _request: NextRequest,
+  { params }: { params: Promise<{ orgId: string }> },
+) {
+  try {
+    const { orgId } = await params;
+    await authenticatedSdkCall((opts) =>
+      apiOrganizationsDeleteDelete({ ...opts, path: { org_id: orgId } }),
+    );
+    return new NextResponse(null, { status: 204 });
   } catch (error: unknown) {
     return errorResponse(error);
   }

@@ -14,6 +14,7 @@ import type {
 import {
   getOrganization,
   updateOrganization,
+  deleteOrganization,
   listMembers,
   removeMember,
   leaveOrganization,
@@ -100,7 +101,14 @@ import {
   Plus,
   Calendar,
   Building,
+  MoreHorizontal,
 } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import Link from "next/link";
 
 export default function OrganizationDetailPage({
@@ -627,6 +635,7 @@ function OverviewTab({
 // ─── Settings Tab ───────────────────────────────────────────────────
 
 function SettingsTab({ orgId }: { orgId: string }) {
+  const router = useRouter();
   const [orgCategories, setOrgCategories] = useState<OrgRefItem[]>([]);
   const [orgLevels, setOrgLevels] = useState<OrgRefItem[]>([]);
   const [newCategoryTitle, setNewCategoryTitle] = useState("");
@@ -637,6 +646,9 @@ function SettingsTab({ orgId }: { orgId: string }) {
     null,
   );
   const [deletingLevelId, setDeletingLevelId] = useState<string | null>(null);
+  const [isDeletingOrg, setIsDeletingOrg] = useState(false);
+  const [deleteOrgDialogOpen, setDeleteOrgDialogOpen] = useState(false);
+  const [deleteOrgConfirm, setDeleteOrgConfirm] = useState("");
 
   useEffect(() => {
     listOrgJobCategories(orgId)
@@ -925,6 +937,111 @@ function SettingsTab({ orgId }: { orgId: string }) {
               ))
             )}
           </div>
+        </CardContent>
+      </Card>
+
+      {/* Danger Zone */}
+      <Card className="border-destructive/40 mt-2">
+        <CardHeader className="flex flex-row items-start justify-between">
+          <div>
+            <CardTitle className="text-destructive">Danger Zone</CardTitle>
+            <CardDescription>
+              Permanently delete this organization and all its data. This action
+              cannot be undone.
+            </CardDescription>
+          </div>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 shrink-0"
+                disabled={isDeletingOrg}
+              >
+                {isDeletingOrg ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <MoreHorizontal className="h-4 w-4" />
+                )}
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem
+                className="text-destructive focus:text-destructive focus:bg-destructive/10"
+                onSelect={() => {
+                  setDeleteOrgConfirm("");
+                  setDeleteOrgDialogOpen(true);
+                }}
+              >
+                <Trash2 className="mr-2 h-4 w-4" />
+                Delete organization
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </CardHeader>
+        <CardContent>
+          <Dialog
+            open={deleteOrgDialogOpen}
+            onOpenChange={(open) => {
+              if (!isDeletingOrg) setDeleteOrgDialogOpen(open);
+            }}
+          >
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Delete organization?</DialogTitle>
+                <DialogDescription>
+                  This will permanently delete the organization and all
+                  associated job profiles, applications, and data. This action
+                  cannot be undone.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-2">
+                <Label htmlFor="confirm-delete-org" className="text-sm">
+                  Type <span className="font-semibold">confirm deletion</span>{" "}
+                  to proceed
+                </Label>
+                <Input
+                  id="confirm-delete-org"
+                  value={deleteOrgConfirm}
+                  onChange={(e) => setDeleteOrgConfirm(e.target.value)}
+                  placeholder="confirm deletion"
+                  autoComplete="off"
+                />
+              </div>
+              <DialogFooter>
+                <Button
+                  variant="outline"
+                  onClick={() => setDeleteOrgDialogOpen(false)}
+                  disabled={isDeletingOrg}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  variant="destructive"
+                  disabled={
+                    deleteOrgConfirm !== "confirm deletion" || isDeletingOrg
+                  }
+                  onClick={async () => {
+                    setIsDeletingOrg(true);
+                    try {
+                      await deleteOrganization(orgId);
+                      toast.success("Organization deleted");
+                      router.push("/organizations");
+                    } catch {
+                      toast.error("Failed to delete organization");
+                      setIsDeletingOrg(false);
+                      setDeleteOrgDialogOpen(false);
+                    }
+                  }}
+                >
+                  {isDeletingOrg && (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  )}
+                  Delete organization
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
         </CardContent>
       </Card>
     </div>

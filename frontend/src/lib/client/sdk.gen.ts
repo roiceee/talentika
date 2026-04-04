@@ -2,7 +2,7 @@
 
 import { type Client, formDataBodySerializer, type Options as Options2, type TDataShape } from './client';
 import { client } from './client.gen';
-import type { ApiApplicationsAnalysisListData, ApiApplicationsAnalysisListErrors, ApiApplicationsAnalysisListResponses, ApiApplicationsAnalysisRetryCreateData, ApiApplicationsAnalysisRetryCreateErrors, ApiApplicationsAnalysisRetryCreateResponses, ApiApplicationsSubmitCreateData, ApiApplicationsSubmitCreateErrors, ApiApplicationsSubmitCreateResponses, ApiApplicationsSubmitUploadResumeCreateData, ApiApplicationsSubmitUploadResumeCreateErrors, ApiApplicationsSubmitUploadResumeCreateResponses, ApiGeoCountriesListData, ApiGeoCountriesListResponses, ApiGeoCountriesStatesCitiesListData, ApiGeoCountriesStatesCitiesListResponses, ApiGeoCountriesStatesListData, ApiGeoCountriesStatesListResponses, ApiInvitationsAcceptCreateData, ApiInvitationsAcceptCreateErrors, ApiInvitationsAcceptCreateResponses, ApiInvitationsValidateCreateData, ApiInvitationsValidateCreateErrors, ApiInvitationsValidateCreateResponses, ApiJobProfilesCreateCreateData, ApiJobProfilesCreateCreateErrors, ApiJobProfilesCreateCreateResponses, ApiJobProfilesExperienceLevelsListData, ApiJobProfilesExperienceLevelsListResponses, ApiJobProfilesJobCategoriesListData, ApiJobProfilesJobCategoriesListResponses, ApiJobProfilesReadData, ApiJobProfilesReadResponses, ApiJobProfilesUpdatePartialUpdateData, ApiJobProfilesUpdatePartialUpdateErrors, ApiJobProfilesUpdatePartialUpdateResponses, ApiOrganizationsAnalyticsListData, ApiOrganizationsAnalyticsListResponses, ApiOrganizationsCreateCreateData, ApiOrganizationsCreateCreateErrors, ApiOrganizationsCreateCreateResponses, ApiOrganizationsInvitationsCancelDeleteData, ApiOrganizationsInvitationsCancelDeleteErrors, ApiOrganizationsInvitationsCancelDeleteResponses, ApiOrganizationsInvitationsCreateData, ApiOrganizationsInvitationsCreateErrors, ApiOrganizationsInvitationsCreateResponses, ApiOrganizationsInvitationsListListData, ApiOrganizationsInvitationsListListErrors, ApiOrganizationsInvitationsListListResponses, ApiOrganizationsInvitationsResendCreateData, ApiOrganizationsInvitationsResendCreateErrors, ApiOrganizationsInvitationsResendCreateResponses, ApiOrganizationsJobProfilesAnalysesListData, ApiOrganizationsJobProfilesAnalysesListErrors, ApiOrganizationsJobProfilesAnalysesListResponses, ApiOrganizationsJobProfilesAnalyticsListData, ApiOrganizationsJobProfilesAnalyticsListResponses, ApiOrganizationsJobProfilesApplicationsDownloadListData, ApiOrganizationsJobProfilesApplicationsDownloadListErrors, ApiOrganizationsJobProfilesApplicationsDownloadListResponses, ApiOrganizationsJobProfilesApplicationsListData, ApiOrganizationsJobProfilesApplicationsListErrors, ApiOrganizationsJobProfilesApplicationsListResponses, ApiOrganizationsJobProfilesApplicationsReadData, ApiOrganizationsJobProfilesApplicationsReadErrors, ApiOrganizationsJobProfilesApplicationsReadResponses, ApiOrganizationsJobProfilesApplicationsStatusPartialUpdateData, ApiOrganizationsJobProfilesApplicationsStatusPartialUpdateErrors, ApiOrganizationsJobProfilesApplicationsStatusPartialUpdateResponses, ApiOrganizationsJobProfilesExportCreateData, ApiOrganizationsJobProfilesExportCreateErrors, ApiOrganizationsJobProfilesExportCreateResponses, ApiOrganizationsJobProfilesExportDownloadListData, ApiOrganizationsJobProfilesExportDownloadListErrors, ApiOrganizationsJobProfilesExportDownloadListResponses, ApiOrganizationsJobProfilesExportReadData, ApiOrganizationsJobProfilesExportReadResponses, ApiOrganizationsJobProfilesListData, ApiOrganizationsJobProfilesListResponses, ApiOrganizationsJobProfilesResultsListData, ApiOrganizationsJobProfilesResultsListErrors, ApiOrganizationsJobProfilesResultsListResponses, ApiOrganizationsLeaveDeleteData, ApiOrganizationsLeaveDeleteErrors, ApiOrganizationsLeaveDeleteResponses, ApiOrganizationsListData, ApiOrganizationsListErrors, ApiOrganizationsListResponses, ApiOrganizationsMembersDeleteData, ApiOrganizationsMembersDeleteErrors, ApiOrganizationsMembersDeleteResponses, ApiOrganizationsMembersListData, ApiOrganizationsMembersListErrors, ApiOrganizationsMembersListResponses, ApiOrganizationsProfilePictureCreateData, ApiOrganizationsProfilePictureCreateErrors, ApiOrganizationsProfilePictureCreateResponses, ApiOrganizationsProfilePictureDeleteDeleteData, ApiOrganizationsProfilePictureDeleteDeleteErrors, ApiOrganizationsProfilePictureDeleteDeleteResponses, ApiOrganizationsReadData, ApiOrganizationsReadErrors, ApiOrganizationsReadResponses, ApiOrganizationsUpdatePartialUpdateData, ApiOrganizationsUpdatePartialUpdateErrors, ApiOrganizationsUpdatePartialUpdateResponses, ApiTestResumeExtractionCreateData, ApiTestResumeExtractionCreateErrors, ApiTestResumeExtractionCreateResponses, ApiUsersAuthLoginCreateData, ApiUsersAuthLoginCreateErrors, ApiUsersAuthLoginCreateResponses, ApiUsersAuthRegisterCreateData, ApiUsersAuthRegisterCreateErrors, ApiUsersAuthRegisterCreateResponses, ApiUsersAuthTokenRefreshCreateData, ApiUsersAuthTokenRefreshCreateErrors, ApiUsersAuthTokenRefreshCreateResponses, ApiUsersPasswordResetConfirmCreateData, ApiUsersPasswordResetConfirmCreateErrors, ApiUsersPasswordResetConfirmCreateResponses, ApiUsersPasswordResetCreateData, ApiUsersPasswordResetCreateErrors, ApiUsersPasswordResetCreateResponses, ApiUsersProfileDefaultOrganizationPartialUpdateData, ApiUsersProfileDefaultOrganizationPartialUpdateErrors, ApiUsersProfileDefaultOrganizationPartialUpdateResponses, ApiUsersProfileListData, ApiUsersProfileListErrors, ApiUsersProfileListResponses, ApiUsersProfilePictureCreateData, ApiUsersProfilePictureCreateErrors, ApiUsersProfilePictureCreateResponses, ApiUsersProfilePictureDeleteDeleteData, ApiUsersProfilePictureDeleteDeleteResponses, ApiUsersProfileUpdatePartialUpdateData, ApiUsersProfileUpdatePartialUpdateErrors, ApiUsersProfileUpdatePartialUpdateResponses, HealthListData, HealthListResponses } from './types.gen';
+import type { ApiApplicationsAnalysisListData, ApiApplicationsAnalysisListErrors, ApiApplicationsAnalysisListResponses, ApiApplicationsAnalysisRetryCreateData, ApiApplicationsAnalysisRetryCreateErrors, ApiApplicationsAnalysisRetryCreateResponses, ApiApplicationsSubmitCreateData, ApiApplicationsSubmitCreateErrors, ApiApplicationsSubmitCreateResponses, ApiApplicationsSubmitUploadResumeCreateData, ApiApplicationsSubmitUploadResumeCreateErrors, ApiApplicationsSubmitUploadResumeCreateResponses, ApiGeoCountriesListData, ApiGeoCountriesListResponses, ApiGeoCountriesStatesCitiesListData, ApiGeoCountriesStatesCitiesListResponses, ApiGeoCountriesStatesListData, ApiGeoCountriesStatesListResponses, ApiInvitationsAcceptCreateData, ApiInvitationsAcceptCreateErrors, ApiInvitationsAcceptCreateResponses, ApiInvitationsValidateCreateData, ApiInvitationsValidateCreateErrors, ApiInvitationsValidateCreateResponses, ApiJobProfilesCreateCreateData, ApiJobProfilesCreateCreateErrors, ApiJobProfilesCreateCreateResponses, ApiJobProfilesDeleteDeleteData, ApiJobProfilesDeleteDeleteErrors, ApiJobProfilesDeleteDeleteResponses, ApiJobProfilesExperienceLevelsListData, ApiJobProfilesExperienceLevelsListResponses, ApiJobProfilesJobCategoriesListData, ApiJobProfilesJobCategoriesListResponses, ApiJobProfilesReadData, ApiJobProfilesReadResponses, ApiJobProfilesUpdatePartialUpdateData, ApiJobProfilesUpdatePartialUpdateErrors, ApiJobProfilesUpdatePartialUpdateResponses, ApiOrganizationsAnalyticsListData, ApiOrganizationsAnalyticsListResponses, ApiOrganizationsCreateCreateData, ApiOrganizationsCreateCreateErrors, ApiOrganizationsCreateCreateResponses, ApiOrganizationsDeleteDeleteData, ApiOrganizationsDeleteDeleteErrors, ApiOrganizationsDeleteDeleteResponses, ApiOrganizationsExperienceLevelsCreateData, ApiOrganizationsExperienceLevelsCreateErrors, ApiOrganizationsExperienceLevelsCreateResponses, ApiOrganizationsExperienceLevelsDeleteData, ApiOrganizationsExperienceLevelsDeleteErrors, ApiOrganizationsExperienceLevelsDeleteResponses, ApiOrganizationsExperienceLevelsListData, ApiOrganizationsExperienceLevelsListResponses, ApiOrganizationsInvitationsCancelDeleteData, ApiOrganizationsInvitationsCancelDeleteErrors, ApiOrganizationsInvitationsCancelDeleteResponses, ApiOrganizationsInvitationsCreateData, ApiOrganizationsInvitationsCreateErrors, ApiOrganizationsInvitationsCreateResponses, ApiOrganizationsInvitationsListListData, ApiOrganizationsInvitationsListListErrors, ApiOrganizationsInvitationsListListResponses, ApiOrganizationsInvitationsResendCreateData, ApiOrganizationsInvitationsResendCreateErrors, ApiOrganizationsInvitationsResendCreateResponses, ApiOrganizationsJobCategoriesCreateData, ApiOrganizationsJobCategoriesCreateErrors, ApiOrganizationsJobCategoriesCreateResponses, ApiOrganizationsJobCategoriesDeleteData, ApiOrganizationsJobCategoriesDeleteErrors, ApiOrganizationsJobCategoriesDeleteResponses, ApiOrganizationsJobCategoriesListData, ApiOrganizationsJobCategoriesListResponses, ApiOrganizationsJobProfilesAnalysesListData, ApiOrganizationsJobProfilesAnalysesListErrors, ApiOrganizationsJobProfilesAnalysesListResponses, ApiOrganizationsJobProfilesAnalyticsListData, ApiOrganizationsJobProfilesAnalyticsListResponses, ApiOrganizationsJobProfilesApplicationsDeleteDeleteData, ApiOrganizationsJobProfilesApplicationsDeleteDeleteErrors, ApiOrganizationsJobProfilesApplicationsDeleteDeleteResponses, ApiOrganizationsJobProfilesApplicationsDownloadListData, ApiOrganizationsJobProfilesApplicationsDownloadListErrors, ApiOrganizationsJobProfilesApplicationsDownloadListResponses, ApiOrganizationsJobProfilesApplicationsListData, ApiOrganizationsJobProfilesApplicationsListErrors, ApiOrganizationsJobProfilesApplicationsListResponses, ApiOrganizationsJobProfilesApplicationsReadData, ApiOrganizationsJobProfilesApplicationsReadErrors, ApiOrganizationsJobProfilesApplicationsReadResponses, ApiOrganizationsJobProfilesApplicationsStatusPartialUpdateData, ApiOrganizationsJobProfilesApplicationsStatusPartialUpdateErrors, ApiOrganizationsJobProfilesApplicationsStatusPartialUpdateResponses, ApiOrganizationsJobProfilesExportCreateData, ApiOrganizationsJobProfilesExportCreateErrors, ApiOrganizationsJobProfilesExportCreateResponses, ApiOrganizationsJobProfilesExportDownloadListData, ApiOrganizationsJobProfilesExportDownloadListErrors, ApiOrganizationsJobProfilesExportDownloadListResponses, ApiOrganizationsJobProfilesExportReadData, ApiOrganizationsJobProfilesExportReadResponses, ApiOrganizationsJobProfilesListData, ApiOrganizationsJobProfilesListResponses, ApiOrganizationsJobProfilesResultsListData, ApiOrganizationsJobProfilesResultsListErrors, ApiOrganizationsJobProfilesResultsListResponses, ApiOrganizationsLeaveDeleteData, ApiOrganizationsLeaveDeleteErrors, ApiOrganizationsLeaveDeleteResponses, ApiOrganizationsListData, ApiOrganizationsListErrors, ApiOrganizationsListResponses, ApiOrganizationsMembersDeleteData, ApiOrganizationsMembersDeleteErrors, ApiOrganizationsMembersDeleteResponses, ApiOrganizationsMembersListData, ApiOrganizationsMembersListErrors, ApiOrganizationsMembersListResponses, ApiOrganizationsProfilePictureCreateData, ApiOrganizationsProfilePictureCreateErrors, ApiOrganizationsProfilePictureCreateResponses, ApiOrganizationsProfilePictureDeleteDeleteData, ApiOrganizationsProfilePictureDeleteDeleteErrors, ApiOrganizationsProfilePictureDeleteDeleteResponses, ApiOrganizationsReadData, ApiOrganizationsReadErrors, ApiOrganizationsReadResponses, ApiOrganizationsUpdatePartialUpdateData, ApiOrganizationsUpdatePartialUpdateErrors, ApiOrganizationsUpdatePartialUpdateResponses, ApiTestResumeExtractionCreateData, ApiTestResumeExtractionCreateErrors, ApiTestResumeExtractionCreateResponses, ApiUsersAuthLoginCreateData, ApiUsersAuthLoginCreateErrors, ApiUsersAuthLoginCreateResponses, ApiUsersAuthRegisterCreateData, ApiUsersAuthRegisterCreateErrors, ApiUsersAuthRegisterCreateResponses, ApiUsersAuthTokenRefreshCreateData, ApiUsersAuthTokenRefreshCreateErrors, ApiUsersAuthTokenRefreshCreateResponses, ApiUsersPasswordResetConfirmCreateData, ApiUsersPasswordResetConfirmCreateErrors, ApiUsersPasswordResetConfirmCreateResponses, ApiUsersPasswordResetCreateData, ApiUsersPasswordResetCreateErrors, ApiUsersPasswordResetCreateResponses, ApiUsersProfileDefaultOrganizationPartialUpdateData, ApiUsersProfileDefaultOrganizationPartialUpdateErrors, ApiUsersProfileDefaultOrganizationPartialUpdateResponses, ApiUsersProfileDeleteDeleteData, ApiUsersProfileDeleteDeleteErrors, ApiUsersProfileDeleteDeleteResponses, ApiUsersProfileListData, ApiUsersProfileListErrors, ApiUsersProfileListResponses, ApiUsersProfilePictureCreateData, ApiUsersProfilePictureCreateErrors, ApiUsersProfilePictureCreateResponses, ApiUsersProfilePictureDeleteDeleteData, ApiUsersProfilePictureDeleteDeleteResponses, ApiUsersProfileUpdatePartialUpdateData, ApiUsersProfileUpdatePartialUpdateErrors, ApiUsersProfileUpdatePartialUpdateResponses, HealthListData, HealthListResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean> = Options2<TData, ThrowOnError> & {
     /**
@@ -214,6 +214,16 @@ export const apiJobProfilesRead = <ThrowOnError extends boolean = true>(options:
 });
 
 /**
+ * Soft-delete a job profile. Only organization admins or the creator can delete.
+ */
+export const apiJobProfilesDeleteDelete = <ThrowOnError extends boolean = true>(options: Options<ApiJobProfilesDeleteDeleteData, ThrowOnError>) => (options.client ?? client).delete<ApiJobProfilesDeleteDeleteResponses, ApiJobProfilesDeleteDeleteErrors, ThrowOnError>({
+    responseType: 'json',
+    security: [{ name: 'Authorization', type: 'apiKey' }],
+    url: '/api/job-profiles/{job_id}/delete/',
+    ...options
+});
+
+/**
  * Update a job profile. Any organization member can update a job profile.
  */
 export const apiJobProfilesUpdatePartialUpdate = <ThrowOnError extends boolean = true>(options: Options<ApiJobProfilesUpdatePartialUpdateData, ThrowOnError>) => (options.client ?? client).patch<ApiJobProfilesUpdatePartialUpdateResponses, ApiJobProfilesUpdatePartialUpdateErrors, ThrowOnError>({
@@ -272,7 +282,7 @@ export const apiOrganizationsRead = <ThrowOnError extends boolean = true>(option
  * - **total_applications**: Total across all job profiles
  * - **total_job_profiles**: Dict with total, active, inactive counts
  * - **status_breakdown**: Count per application status
- * - **category_distribution**: AI score category counts (excellent/good/moderate/bad)
+ * - **category_distribution**: AI score category counts (suitable/potentially_suitable/unsuitable)
  * - **average_category**: Org-wide average score category
  * - **top_skills**: Most frequent skills across all analyses (top 15)
  * - **top_traits**: Most frequent traits across all analyses (top 10)
@@ -285,6 +295,37 @@ export const apiOrganizationsAnalyticsList = <ThrowOnError extends boolean = tru
     responseType: 'json',
     security: [{ name: 'Authorization', type: 'apiKey' }],
     url: '/api/organizations/{org_id}/analytics/',
+    ...options
+});
+
+/**
+ * Soft-delete an organization. Only organization admins can perform this action. This action is irreversible.
+ */
+export const apiOrganizationsDeleteDelete = <ThrowOnError extends boolean = true>(options: Options<ApiOrganizationsDeleteDeleteData, ThrowOnError>) => (options.client ?? client).delete<ApiOrganizationsDeleteDeleteResponses, ApiOrganizationsDeleteDeleteErrors, ThrowOnError>({
+    responseType: 'json',
+    security: [{ name: 'Authorization', type: 'apiKey' }],
+    url: '/api/organizations/{org_id}/delete/',
+    ...options
+});
+
+export const apiOrganizationsExperienceLevelsList = <ThrowOnError extends boolean = true>(options: Options<ApiOrganizationsExperienceLevelsListData, ThrowOnError>) => (options.client ?? client).get<ApiOrganizationsExperienceLevelsListResponses, unknown, ThrowOnError>({
+    responseType: 'json',
+    security: [{ name: 'Authorization', type: 'apiKey' }],
+    url: '/api/organizations/{org_id}/experience-levels/',
+    ...options
+});
+
+export const apiOrganizationsExperienceLevelsCreate = <ThrowOnError extends boolean = true>(options: Options<ApiOrganizationsExperienceLevelsCreateData, ThrowOnError>) => (options.client ?? client).post<ApiOrganizationsExperienceLevelsCreateResponses, ApiOrganizationsExperienceLevelsCreateErrors, ThrowOnError>({
+    responseType: 'json',
+    security: [{ name: 'Authorization', type: 'apiKey' }],
+    url: '/api/organizations/{org_id}/experience-levels/',
+    ...options
+});
+
+export const apiOrganizationsExperienceLevelsDelete = <ThrowOnError extends boolean = true>(options: Options<ApiOrganizationsExperienceLevelsDeleteData, ThrowOnError>) => (options.client ?? client).delete<ApiOrganizationsExperienceLevelsDeleteResponses, ApiOrganizationsExperienceLevelsDeleteErrors, ThrowOnError>({
+    responseType: 'json',
+    security: [{ name: 'Authorization', type: 'apiKey' }],
+    url: '/api/organizations/{org_id}/experience-levels/{level_id}/',
     ...options
 });
 
@@ -352,6 +393,27 @@ export const apiOrganizationsInvitationsResendCreate = <ThrowOnError extends boo
     ...options
 });
 
+export const apiOrganizationsJobCategoriesList = <ThrowOnError extends boolean = true>(options: Options<ApiOrganizationsJobCategoriesListData, ThrowOnError>) => (options.client ?? client).get<ApiOrganizationsJobCategoriesListResponses, unknown, ThrowOnError>({
+    responseType: 'json',
+    security: [{ name: 'Authorization', type: 'apiKey' }],
+    url: '/api/organizations/{org_id}/job-categories/',
+    ...options
+});
+
+export const apiOrganizationsJobCategoriesCreate = <ThrowOnError extends boolean = true>(options: Options<ApiOrganizationsJobCategoriesCreateData, ThrowOnError>) => (options.client ?? client).post<ApiOrganizationsJobCategoriesCreateResponses, ApiOrganizationsJobCategoriesCreateErrors, ThrowOnError>({
+    responseType: 'json',
+    security: [{ name: 'Authorization', type: 'apiKey' }],
+    url: '/api/organizations/{org_id}/job-categories/',
+    ...options
+});
+
+export const apiOrganizationsJobCategoriesDelete = <ThrowOnError extends boolean = true>(options: Options<ApiOrganizationsJobCategoriesDeleteData, ThrowOnError>) => (options.client ?? client).delete<ApiOrganizationsJobCategoriesDeleteResponses, ApiOrganizationsJobCategoriesDeleteErrors, ThrowOnError>({
+    responseType: 'json',
+    security: [{ name: 'Authorization', type: 'apiKey' }],
+    url: '/api/organizations/{org_id}/job-categories/{category_id}/',
+    ...options
+});
+
 /**
  * List job profiles for an organization.
  */
@@ -363,14 +425,13 @@ export const apiOrganizationsJobProfilesList = <ThrowOnError extends boolean = t
 });
 
 /**
- * List all application analyses for a specific job profile within an organization, with optional filtering by pipeline status and score range, sorting by score or timestamp, and cursor-based pagination.
+ * List all application analyses for a specific job profile within an organization, with optional filtering by pipeline status, sorting by timestamp, and cursor-based pagination.
  *
  * **Filters** (all optional):
  * - `status` — one of: uploaded, ocr_pending, ocr_done, ai_pending, done, failed
- * - `min_score` / `max_score` — integer 0-100 (only meaningful when status=done)
  *
  * **Sort** (optional):
- * - `sort_by` — field to sort on: `score`, `created_at`, `updated_at` (default: `created_at`)
+ * - `sort_by` — field to sort on: `score_category`, `created_at`, `updated_at` (default: `created_at`)
  * - `order` — `asc` or `desc` (default: `desc`)
  *
  * **Pagination**:
@@ -435,6 +496,16 @@ export const apiOrganizationsJobProfilesApplicationsRead = <ThrowOnError extends
     responseType: 'json',
     security: [{ name: 'Authorization', type: 'apiKey' }],
     url: '/api/organizations/{org_id}/job-profiles/{job_profile_id}/applications/{job_application_id}/',
+    ...options
+});
+
+/**
+ * Soft-delete a job application. Only organization admins can perform this action.
+ */
+export const apiOrganizationsJobProfilesApplicationsDeleteDelete = <ThrowOnError extends boolean = true>(options: Options<ApiOrganizationsJobProfilesApplicationsDeleteDeleteData, ThrowOnError>) => (options.client ?? client).delete<ApiOrganizationsJobProfilesApplicationsDeleteDeleteResponses, ApiOrganizationsJobProfilesApplicationsDeleteDeleteErrors, ThrowOnError>({
+    responseType: 'json',
+    security: [{ name: 'Authorization', type: 'apiKey' }],
+    url: '/api/organizations/{org_id}/job-profiles/{job_profile_id}/applications/{job_application_id}/delete/',
     ...options
 });
 
@@ -606,7 +677,7 @@ export const apiOrganizationsUpdatePartialUpdate = <ThrowOnError extends boolean
 });
 
 /**
- * **Test endpoint** — upload a PDF file and get the OCR-extracted text back immediately.  Does NOT create any database records or trigger the analysis pipeline.  Useful for verifying doctr is working.
+ * **Test endpoint** — upload a PDF file and get the OCR-extracted text back immediately.  Does NOT create any database records or trigger the analysis pipeline.  Useful for verifying Tesseract OCR is working.
  */
 export const apiTestResumeExtractionCreate = <ThrowOnError extends boolean = true>(options: Options<ApiTestResumeExtractionCreateData, ThrowOnError>) => (options.client ?? client).post<ApiTestResumeExtractionCreateResponses, ApiTestResumeExtractionCreateErrors, ThrowOnError>({
     ...formDataBodySerializer,
@@ -752,6 +823,16 @@ export const apiUsersProfileDefaultOrganizationPartialUpdate = <ThrowOnError ext
         'Content-Type': 'application/json',
         ...options.headers
     }
+});
+
+/**
+ * Permanently delete the authenticated user's account (soft delete). This action is irreversible.
+ */
+export const apiUsersProfileDeleteDelete = <ThrowOnError extends boolean = true>(options?: Options<ApiUsersProfileDeleteDeleteData, ThrowOnError>) => (options?.client ?? client).delete<ApiUsersProfileDeleteDeleteResponses, ApiUsersProfileDeleteDeleteErrors, ThrowOnError>({
+    responseType: 'json',
+    security: [{ name: 'Authorization', type: 'apiKey' }],
+    url: '/api/users/profile/delete/',
+    ...options
 });
 
 /**

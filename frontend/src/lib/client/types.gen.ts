@@ -191,7 +191,7 @@ export type ApplicationAnalysis = {
     /**
      * Extracted resume text
      *
-     * Full text extracted from the resume PDF via doctr
+     * Full text extracted from the resume PDF via Tesseract OCR
      */
     readonly extracted_resume_text?: string;
     /**
@@ -1689,6 +1689,33 @@ export type ApiJobProfilesReadResponses = {
 
 export type ApiJobProfilesReadResponse = ApiJobProfilesReadResponses[keyof ApiJobProfilesReadResponses];
 
+export type ApiJobProfilesDeleteDeleteData = {
+    body?: never;
+    path: {
+        job_id: string;
+    };
+    query?: never;
+    url: '/api/job-profiles/{job_id}/delete/';
+};
+
+export type ApiJobProfilesDeleteDeleteErrors = {
+    /**
+     * Forbidden
+     */
+    403: unknown;
+    /**
+     * Job profile not found
+     */
+    404: unknown;
+};
+
+export type ApiJobProfilesDeleteDeleteResponses = {
+    /**
+     * Job profile deleted successfully
+     */
+    204: unknown;
+};
+
 export type ApiJobProfilesUpdatePartialUpdateData = {
     body: JobProfileCreateWritable;
     path: {
@@ -1804,6 +1831,104 @@ export type ApiOrganizationsAnalyticsListResponses = {
      * Org analytics object
      */
     200: unknown;
+};
+
+export type ApiOrganizationsDeleteDeleteData = {
+    body?: never;
+    path: {
+        org_id: string;
+    };
+    query?: never;
+    url: '/api/organizations/{org_id}/delete/';
+};
+
+export type ApiOrganizationsDeleteDeleteErrors = {
+    /**
+     * Only organization admins can delete the organization
+     */
+    403: unknown;
+    /**
+     * Organization not found
+     */
+    404: unknown;
+};
+
+export type ApiOrganizationsDeleteDeleteResponses = {
+    /**
+     * Organization deleted successfully
+     */
+    204: unknown;
+};
+
+export type ApiOrganizationsExperienceLevelsListData = {
+    body?: never;
+    path: {
+        org_id: string;
+    };
+    query?: never;
+    url: '/api/organizations/{org_id}/experience-levels/';
+};
+
+export type ApiOrganizationsExperienceLevelsListResponses = {
+    /**
+     * list
+     */
+    200: unknown;
+};
+
+export type ApiOrganizationsExperienceLevelsCreateData = {
+    body?: never;
+    path: {
+        org_id: string;
+    };
+    query?: never;
+    url: '/api/organizations/{org_id}/experience-levels/';
+};
+
+export type ApiOrganizationsExperienceLevelsCreateErrors = {
+    /**
+     * error
+     */
+    400: unknown;
+    /**
+     * forbidden
+     */
+    403: unknown;
+};
+
+export type ApiOrganizationsExperienceLevelsCreateResponses = {
+    /**
+     * created
+     */
+    201: unknown;
+};
+
+export type ApiOrganizationsExperienceLevelsDeleteData = {
+    body?: never;
+    path: {
+        org_id: string;
+        level_id: string;
+    };
+    query?: never;
+    url: '/api/organizations/{org_id}/experience-levels/{level_id}/';
+};
+
+export type ApiOrganizationsExperienceLevelsDeleteErrors = {
+    /**
+     * forbidden
+     */
+    403: unknown;
+    /**
+     * not found
+     */
+    404: unknown;
+};
+
+export type ApiOrganizationsExperienceLevelsDeleteResponses = {
+    /**
+     * deleted
+     */
+    204: unknown;
 };
 
 export type ApiOrganizationsInvitationsCreateData = {
@@ -1952,6 +2077,77 @@ export type ApiOrganizationsInvitationsResendCreateResponses = {
 
 export type ApiOrganizationsInvitationsResendCreateResponse = ApiOrganizationsInvitationsResendCreateResponses[keyof ApiOrganizationsInvitationsResendCreateResponses];
 
+export type ApiOrganizationsJobCategoriesListData = {
+    body?: never;
+    path: {
+        org_id: string;
+    };
+    query?: never;
+    url: '/api/organizations/{org_id}/job-categories/';
+};
+
+export type ApiOrganizationsJobCategoriesListResponses = {
+    /**
+     * list
+     */
+    200: unknown;
+};
+
+export type ApiOrganizationsJobCategoriesCreateData = {
+    body?: never;
+    path: {
+        org_id: string;
+    };
+    query?: never;
+    url: '/api/organizations/{org_id}/job-categories/';
+};
+
+export type ApiOrganizationsJobCategoriesCreateErrors = {
+    /**
+     * error
+     */
+    400: unknown;
+    /**
+     * forbidden
+     */
+    403: unknown;
+};
+
+export type ApiOrganizationsJobCategoriesCreateResponses = {
+    /**
+     * created
+     */
+    201: unknown;
+};
+
+export type ApiOrganizationsJobCategoriesDeleteData = {
+    body?: never;
+    path: {
+        org_id: string;
+        category_id: string;
+    };
+    query?: never;
+    url: '/api/organizations/{org_id}/job-categories/{category_id}/';
+};
+
+export type ApiOrganizationsJobCategoriesDeleteErrors = {
+    /**
+     * forbidden
+     */
+    403: unknown;
+    /**
+     * not found
+     */
+    404: unknown;
+};
+
+export type ApiOrganizationsJobCategoriesDeleteResponses = {
+    /**
+     * deleted
+     */
+    204: unknown;
+};
+
 export type ApiOrganizationsJobProfilesListData = {
     body?: never;
     path: {
@@ -1988,17 +2184,9 @@ export type ApiOrganizationsJobProfilesAnalysesListData = {
          */
         status?: 'uploaded' | 'ocr_pending' | 'ocr_done' | 'ai_pending' | 'done' | 'failed';
         /**
-         * Minimum AI score (0-100, inclusive)
-         */
-        min_score?: number;
-        /**
-         * Maximum AI score (0-100, inclusive)
-         */
-        max_score?: number;
-        /**
          * Field to sort by
          */
-        sort_by?: 'score' | 'created_at' | 'updated_at';
+        sort_by?: 'score_category' | 'created_at' | 'updated_at';
         /**
          * Sort direction
          */
@@ -2174,6 +2362,35 @@ export type ApiOrganizationsJobProfilesApplicationsReadResponses = {
 };
 
 export type ApiOrganizationsJobProfilesApplicationsReadResponse = ApiOrganizationsJobProfilesApplicationsReadResponses[keyof ApiOrganizationsJobProfilesApplicationsReadResponses];
+
+export type ApiOrganizationsJobProfilesApplicationsDeleteDeleteData = {
+    body?: never;
+    path: {
+        org_id: string;
+        job_profile_id: string;
+        job_application_id: string;
+    };
+    query?: never;
+    url: '/api/organizations/{org_id}/job-profiles/{job_profile_id}/applications/{job_application_id}/delete/';
+};
+
+export type ApiOrganizationsJobProfilesApplicationsDeleteDeleteErrors = {
+    /**
+     * Forbidden
+     */
+    403: unknown;
+    /**
+     * Organization, job profile, or application not found
+     */
+    404: unknown;
+};
+
+export type ApiOrganizationsJobProfilesApplicationsDeleteDeleteResponses = {
+    /**
+     * Application deleted successfully
+     */
+    204: unknown;
+};
 
 export type ApiOrganizationsJobProfilesApplicationsDownloadListData = {
     body?: never;
@@ -2820,6 +3037,27 @@ export type ApiUsersProfileDefaultOrganizationPartialUpdateResponses = {
 };
 
 export type ApiUsersProfileDefaultOrganizationPartialUpdateResponse = ApiUsersProfileDefaultOrganizationPartialUpdateResponses[keyof ApiUsersProfileDefaultOrganizationPartialUpdateResponses];
+
+export type ApiUsersProfileDeleteDeleteData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/users/profile/delete/';
+};
+
+export type ApiUsersProfileDeleteDeleteErrors = {
+    /**
+     * Not authenticated
+     */
+    401: unknown;
+};
+
+export type ApiUsersProfileDeleteDeleteResponses = {
+    /**
+     * Account deleted successfully
+     */
+    204: unknown;
+};
 
 export type ApiUsersProfilePictureCreateData = {
     body: {

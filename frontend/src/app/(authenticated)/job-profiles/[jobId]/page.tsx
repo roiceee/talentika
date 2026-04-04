@@ -8,6 +8,7 @@ import { AxiosError } from "axios";
 import {
   getJobProfile,
   updateJobProfile,
+  deleteJobProfile,
   listOrgJobCategories,
   listOrgExperienceLevels,
   createOrgJobCategory,
@@ -30,6 +31,15 @@ import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { ApplicationsTab } from "@/components/applications-tab";
 import { ResultsTab } from "@/components/results-tab";
 import { AnalyticsTab } from "@/components/analytics-tab";
@@ -50,7 +60,15 @@ import {
   BarChart3,
   Loader2,
   Lock,
+  Trash2,
+  MoreHorizontal,
 } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
   Tooltip,
   TooltipContent,
@@ -74,6 +92,9 @@ export default function JobProfileDetailPage({
   const [isEditMode, setIsEditMode] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isTogglingActive, setIsTogglingActive] = useState(false);
+  const [isDeletingProfile, setIsDeletingProfile] = useState(false);
+  const [deleteProfileDialogOpen, setDeleteProfileDialogOpen] = useState(false);
+  const [deleteProfileConfirm, setDeleteProfileConfirm] = useState("");
 
   const fetchAll = useCallback(async () => {
     try {
@@ -399,6 +420,87 @@ export default function JobProfileDetailPage({
                 {isActive ? "Accepting" : "Closed"}
               </Label>
             </div>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="h-9 w-9">
+                  {isDeletingProfile ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <MoreHorizontal className="h-4 w-4" />
+                  )}
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem
+                  className="text-destructive focus:text-destructive focus:bg-destructive/10"
+                  onSelect={() => {
+                    setDeleteProfileConfirm("");
+                    setDeleteProfileDialogOpen(true);
+                  }}
+                >
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  Delete job profile
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+            <Dialog
+              open={deleteProfileDialogOpen}
+              onOpenChange={(open) => {
+                if (!isDeletingProfile) setDeleteProfileDialogOpen(open);
+              }}
+            >
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Delete job profile?</DialogTitle>
+                  <DialogDescription>
+                    This will permanently delete &quot;{profile.title}&quot; and
+                    all associated applications. This action cannot be undone.
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-2">
+                  <Label htmlFor="confirm-delete-profile" className="text-sm">
+                    Type <span className="font-semibold">confirm deletion</span> to proceed
+                  </Label>
+                  <Input
+                    id="confirm-delete-profile"
+                    value={deleteProfileConfirm}
+                    onChange={(e) => setDeleteProfileConfirm(e.target.value)}
+                    placeholder="confirm deletion"
+                    autoComplete="off"
+                  />
+                </div>
+                <DialogFooter>
+                  <Button
+                    variant="outline"
+                    onClick={() => setDeleteProfileDialogOpen(false)}
+                    disabled={isDeletingProfile}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    variant="destructive"
+                    disabled={deleteProfileConfirm !== "confirm deletion" || isDeletingProfile}
+                    onClick={async () => {
+                      const orgId = (profile.organization as { id?: string })?.id;
+                      if (!orgId) return;
+                      setIsDeletingProfile(true);
+                      try {
+                        await deleteJobProfile(orgId, jobId);
+                        toast.success("Job profile deleted");
+                        router.push("/job-profiles");
+                      } catch {
+                        toast.error("Failed to delete job profile");
+                        setIsDeletingProfile(false);
+                        setDeleteProfileDialogOpen(false);
+                      }
+                    }}
+                  >
+                    {isDeletingProfile && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    Delete
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
           </div>
         </div>
       </div>
