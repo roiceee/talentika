@@ -49,6 +49,7 @@ import {
   ArrowUpDown,
   X,
   Calendar,
+  Check,
 } from "lucide-react";
 
 const STATUS_LABELS: Record<string, string> = {
@@ -437,28 +438,26 @@ export default function OrganizationsPage() {
                           </div>
                         )}
                         <Button
-                          variant="ghost"
+                          variant={
+                            user?.default_organization === org.id
+                              ? "secondary"
+                              : "outline"
+                          }
                           size="sm"
-                          className="h-7 px-2 ml-auto"
+                          className="h-7 text-xs ml-auto"
                           onClick={(e) => handleSetDefault(e, org.id!)}
                           disabled={settingDefaultId === org.id}
-                          title={
-                            user?.default_organization === org.id
-                              ? "Clear default"
-                              : "Set as default"
-                          }
                         >
                           {settingDefaultId === org.id ? (
-                            <Loader2 className="h-4 w-4 animate-spin" />
+                            <Loader2 className="h-3 w-3 animate-spin" />
+                          ) : user?.default_organization === org.id ? (
+                            <Check className="h-3 w-3" />
                           ) : (
-                            <Star
-                              className={`h-4 w-4 ${
-                                user?.default_organization === org.id
-                                  ? "fill-yellow-400 text-yellow-400"
-                                  : "text-muted-foreground"
-                              }`}
-                            />
+                            <Star className="h-3 w-3" />
                           )}
+                          {user?.default_organization === org.id
+                            ? "Selected"
+                            : "Select org"}
                         </Button>
                       </CardFooter>
                     </Card>

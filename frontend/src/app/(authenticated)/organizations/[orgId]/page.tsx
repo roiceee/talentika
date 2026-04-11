@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback, use } from "react";
+import { Star } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import { AxiosError } from "axios";
@@ -30,6 +31,7 @@ import {
   createOrgExperienceLevel,
   deleteOrgJobCategory,
   deleteOrgExperienceLevel,
+  setDefaultOrganization,
   type OrgRefItem,
 } from "@/lib/api";
 
@@ -119,7 +121,7 @@ export default function OrganizationDetailPage({
   const { orgId } = use(params);
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { user } = useAuth();
+  const { user, refreshUser } = useAuth();
 
   const activeTab = searchParams.get("tab") ?? "overview";
 
@@ -132,6 +134,7 @@ export default function OrganizationDetailPage({
   const [members, setMembers] = useState<OrganizationMembership[]>([]);
   const [invitations, setInvitations] = useState<OrganizationInvitation[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isSelectingOrg, setIsSelectingOrg] = useState(false);
 
   // Current user's role in this org
   const currentMembership = members.find((m) => m.user?.id === user?.id);
@@ -175,6 +178,24 @@ export default function OrganizationDetailPage({
   useEffect(() => {
     fetchData();
   }, [fetchData]);
+
+  async function handleSelectOrg() {
+    setIsSelectingOrg(true);
+    try {
+      const isAlreadySelected = user?.default_organization === orgId;
+      await setDefaultOrganization(isAlreadySelected ? null : orgId);
+      await refreshUser();
+      toast.success(
+        isAlreadySelected
+          ? "Default organization cleared"
+          : "Default organization updated",
+      );
+    } catch {
+      toast.error("Failed to update default organization");
+    } finally {
+      setIsSelectingOrg(false);
+    }
+  }
 
   if (isLoading) {
     return (
@@ -234,6 +255,22 @@ export default function OrganizationDetailPage({
               )}
             </div>
           </div>
+          <Button
+            variant={
+              user?.default_organization === orgId ? "secondary" : "outline"
+            }
+            onClick={handleSelectOrg}
+            disabled={isSelectingOrg}
+          >
+            {isSelectingOrg ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : user?.default_organization === orgId ? (
+              <Check className="h-4 w-4" />
+            ) : (
+              <Star className="h-4 w-4" />
+            )}
+            {user?.default_organization === orgId ? "Selected" : "Select org"}
+          </Button>
         </div>
       </div>
 
