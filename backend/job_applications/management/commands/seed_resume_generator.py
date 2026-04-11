@@ -856,7 +856,7 @@ def _build_style_3_minimal(first_name, last_name, email, phone, template) -> byt
     base = getSampleStyleSheet()
 
     name_s = ParagraphStyle("s3_name", parent=base["Normal"],
-                            fontName="Helvetica-Light" if "Helvetica-Light" in ("Helvetica-Light",) else "Helvetica",
+                            fontName="Helvetica",
                             fontSize=24, spaceAfter=2, textColor=_DKGREY)
     contact_s = ParagraphStyle("s3_contact", parent=base["Normal"],
                                fontName="Helvetica", fontSize=8,
