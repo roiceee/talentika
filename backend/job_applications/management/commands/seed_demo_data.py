@@ -1,3 +1,4 @@
+import os
 import random
 from io import BytesIO
 
@@ -11,7 +12,7 @@ from users.models import User
 
 from .seed_resume_generator import generate_resume
 
-DEFAULT_BASE_URL = "http://localhost:8000"
+DEFAULT_BASE_URL = os.environ.get("SEED_BASE_URL", "http://localhost:8000")
 
 FIRST_NAMES = [
     "Juan", "Jose", "Miguel", "Carlos", "Antonio",
