@@ -356,6 +356,10 @@ export default function ApplicationDetailPage({
         </div>
       </div>
 
+      {/* Two-column layout on xl: left = info/answers/analysis, right = resume */}
+      <div className="flex flex-col gap-4 xl:grid xl:grid-cols-2 xl:items-start xl:gap-6">
+        <div className="space-y-4">
+
       {/* Applicant Info */}
       <Card>
         <CardHeader>
@@ -883,6 +887,9 @@ export default function ApplicationDetailPage({
         </Card>
       )}
 
+        </div>{/* end left column */}
+
+        <div className="xl:sticky xl:top-4">
       {/* Resume */}
       {resumeAttachment && (
         <Card>
@@ -959,6 +966,9 @@ export default function ApplicationDetailPage({
           </CardContent>
         </Card>
       )}
+
+        </div>{/* end right column */}
+      </div>{/* end two-column grid */}
 
       {/* Floating action panel */}
       <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end gap-2 group/fab">
