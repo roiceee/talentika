@@ -8,6 +8,7 @@ import os
 import subprocess
 import tempfile
 import time
+import uuid
 
 import pytesseract
 from pdf2image import convert_from_bytes
@@ -99,9 +100,13 @@ def convert_docx_to_pdf_bytes(docx_bytes: bytes) -> bytes:
         with open(docx_path, "wb") as f:
             f.write(docx_bytes)
 
+        # Each invocation gets its own LibreOffice user profile so concurrent
+        # calls don't share (and corrupt) the default ~/.config/libreoffice dir.
+        user_install = f"file:///tmp/lo-profile-{uuid.uuid4().hex}"
         result = subprocess.run(
             [
                 "soffice",
+                f"-env:UserInstallation={user_install}",
                 "--headless",
                 "--convert-to",
                 "pdf",

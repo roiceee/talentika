@@ -146,16 +146,13 @@ def _replace_resume_with_pdf(
 # ---------------------------------------------------------------------------
 
 
-def process_ocr(application_analysis_id: str):
+async def _process_ocr_async(application_analysis_id: str):
     """
-    OCR worker task — runs on the ``ocr_queue``.
+    Core async OCR worker logic.
 
-    1. Set status → OCR_PENDING
-    2. Download the resume from storage
-    3. If DOCX, convert to PDF via LibreOffice first
-    4. Extract text via pytesseract
-    5. Save extracted text, set status → OCR_DONE
-    6. Enqueue the AI analysis task on ``ai_queue``
+    All blocking operations (file I/O, LibreOffice, pytesseract, DB) run in
+    threads via ``asyncio.to_thread`` so the event loop stays free to start
+    other OCR jobs concurrently.
     """
     from job_application_analysis.models import ApplicationAnalysis
     from job_application_analysis.ocr_service import (
@@ -163,55 +160,87 @@ def process_ocr(application_analysis_id: str):
         extract_text_from_pdf_bytes,
     )
 
-    analysis = ApplicationAnalysis.objects.select_related("job_application").get(
-        id=application_analysis_id
+    analysis = await asyncio.to_thread(
+        lambda: ApplicationAnalysis.objects.select_related("job_application").get(
+            id=application_analysis_id
+        )
     )
 
     try:
         # 1. Mark OCR_PENDING
         analysis.status = ApplicationAnalysis.Status.OCR_PENDING
-        analysis.save(update_fields=["status", "updated_at"])
+        await asyncio.to_thread(
+            lambda: analysis.save(update_fields=["status", "updated_at"])
+        )
         logger.info("OCR started for analysis %s", analysis.id)
 
         # 2. Download resume
-        storage_path = _get_resume_storage_path(analysis.job_application)
+        storage_path = await asyncio.to_thread(
+            lambda: _get_resume_storage_path(analysis.job_application)
+        )
         logger.info("OCR worker: downloading resume from %s", storage_path)
-        file_bytes = _download_resume_bytes(storage_path)
+        file_bytes = await asyncio.to_thread(
+            lambda: _download_resume_bytes(storage_path)
+        )
         logger.info(
             "OCR worker: downloaded %d bytes from %s", len(file_bytes), storage_path
         )
 
-        # 2a. Convert DOCX → PDF if necessary
+        # 3. Convert DOCX → PDF if necessary (LibreOffice subprocess)
         storage_path_lower = str(storage_path).lower()
         if storage_path_lower.endswith(".docx"):
             logger.info(
                 "DOCX detected for analysis %s — converting to PDF via LibreOffice",
                 analysis.id,
             )
-            file_bytes = convert_docx_to_pdf_bytes(file_bytes)
-            storage_path = _replace_resume_with_pdf(
-                analysis.job_application, str(storage_path), file_bytes
+            file_bytes = await asyncio.to_thread(
+                lambda: convert_docx_to_pdf_bytes(file_bytes)
+            )
+            storage_path = await asyncio.to_thread(
+                lambda: _replace_resume_with_pdf(
+                    analysis.job_application, str(storage_path), file_bytes
+                )
             )
 
-        pdf_bytes = file_bytes
+        # 4. Extract text (pytesseract subprocess — CPU/I/O heavy)
+        extracted = await asyncio.to_thread(
+            lambda: extract_text_from_pdf_bytes(file_bytes)
+        )
 
-        # 3. Extract text
-        extracted = extract_text_from_pdf_bytes(pdf_bytes)
-
-        # 4. Save
+        # 5. Save
         analysis.extracted_resume_text = extracted
         analysis.status = ApplicationAnalysis.Status.OCR_DONE
-        analysis.save(update_fields=["extracted_resume_text", "status", "updated_at"])
+        await asyncio.to_thread(
+            lambda: analysis.save(
+                update_fields=["extracted_resume_text", "status", "updated_at"]
+            )
+        )
         logger.info("OCR completed for analysis %s", analysis.id)
 
-        # 5. Enqueue AI task
-        _enqueue_ai(str(analysis.id))
+        # 6. Enqueue AI task
+        await asyncio.to_thread(lambda: _enqueue_ai(str(analysis.id)))
 
     except Exception as exc:
         logger.exception("OCR failed for analysis %s", analysis.id)
         analysis.status = ApplicationAnalysis.Status.FAILED
         analysis.error_message = f"OCR error: {exc}\n{traceback.format_exc()}"
-        analysis.save(update_fields=["status", "error_message", "updated_at"])
+        await asyncio.to_thread(
+            lambda: analysis.save(
+                update_fields=["status", "error_message", "updated_at"]
+            )
+        )
+
+
+def process_ocr(application_analysis_id: str):
+    """
+    OCR worker task — runs on the ``ocr_queue``.
+
+    Sync wrapper around ``_process_ocr_async`` for compatibility with the
+    standard RQ worker (used locally / in dev).
+    In production the async worker loop in ``run_analysis_workers`` calls
+    ``_process_ocr_async`` directly.
+    """
+    asyncio.run(_process_ocr_async(application_analysis_id))
 
 
 async def _process_ai_analysis_async(application_analysis_id: str):
