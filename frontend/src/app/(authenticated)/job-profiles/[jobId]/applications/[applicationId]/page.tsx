@@ -356,10 +356,6 @@ export default function ApplicationDetailPage({
         </div>
       </div>
 
-      {/* Two-column layout on xl: left = info/answers/analysis, right = resume */}
-      <div className="flex flex-col gap-4 xl:grid xl:grid-cols-2 xl:items-start xl:gap-6">
-        <div className="space-y-4">
-
       {/* Applicant Info */}
       <Card>
         <CardHeader>
@@ -508,6 +504,9 @@ export default function ApplicationDetailPage({
         </Card>
       )}
 
+      {/* Two-column layout on xl: AI analysis left, resume right */}
+      <div className="flex flex-col gap-4 xl:grid xl:grid-cols-2 xl:items-start xl:gap-6">
+        <div>
       {/* AI Analysis */}
       {analysis && (
         <Card>
@@ -887,8 +886,7 @@ export default function ApplicationDetailPage({
         </Card>
       )}
 
-        </div>{/* end left column */}
-
+        </div>
         <div className="xl:sticky xl:top-4">
       {/* Resume */}
       {resumeAttachment && (
