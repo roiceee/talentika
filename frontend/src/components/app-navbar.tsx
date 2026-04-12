@@ -87,7 +87,7 @@ export function AppNavbar() {
 
   return (
     <header className="sticky top-0 z-50 bg-white border-b border-border shadow-sm">
-      <div className="mx-auto w-full max-w-300 flex h-14 items-center justify-between px-6">
+      <div className="mx-auto w-full max-w-[1600px] flex h-14 items-center justify-between px-6">
         <div className="flex items-center gap-5">
           <Link href="/dashboard" className="flex items-center gap-2.5">
             <Image
