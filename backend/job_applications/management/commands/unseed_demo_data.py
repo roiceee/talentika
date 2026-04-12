@@ -17,6 +17,7 @@ SEED_JOB_PROFILE_TITLES = [
     "Accountant III",
     "Staff Nurse - ICU",
     "Barista",
+    "Clinical Coder",
 ]
 
 

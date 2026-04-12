@@ -596,6 +596,188 @@ RESUME_TEMPLATES = {
             ],
         },
     ],
+
+    "Clinical Coder": [
+        # ── Tier 0: Unqualified ──────────────────────────────────────────────
+        {
+            "summary": (
+                "Hospitality management graduate with 1 year of front-desk experience in the hotel "
+                "industry. Looking for an opportunity to transition into a new field. No background "
+                "in healthcare or medical documentation."
+            ),
+            "education": [
+                {
+                    "degree": "Bachelor of Science in Hospitality Management",
+                    "school": "University of Mindanao",
+                    "year": "2023",
+                },
+            ],
+            "experience": [
+                {
+                    "title": "Front Desk Associate",
+                    "company": "Seda Hotel Davao",
+                    "period": "June 2023 – Present",
+                    "duties": [
+                        "Handled guest check-in and check-out procedures",
+                        "Managed reservations and room assignments using the hotel PMS",
+                        "Addressed guest inquiries and resolved complaints in a timely manner",
+                    ],
+                }
+            ],
+            "skills": ["Customer Service", "MS Office", "PMS Software", "Communication"],
+            "certifications": [],
+        },
+        # ── Tier 1: Underqualified ───────────────────────────────────────────
+        {
+            "summary": (
+                "Business administration graduate with experience in office administration and "
+                "data encoding. Familiar with basic computer applications. Interested in "
+                "healthcare administration but has no formal medical records or coding experience."
+            ),
+            "education": [
+                {
+                    "degree": "Bachelor of Science in Business Administration (Major in Office Management)",
+                    "school": "Holy Cross of Davao College",
+                    "year": "2022",
+                },
+            ],
+            "experience": [
+                {
+                    "title": "Administrative Assistant",
+                    "company": "Davao Doctors Hospital – HR Department",
+                    "period": "September 2022 – Present",
+                    "duties": [
+                        "Maintained personnel files and encoded employee records into the HR system",
+                        "Assisted in scheduling meetings and preparing department reports",
+                        "Handled incoming and outgoing correspondence for the department",
+                    ],
+                }
+            ],
+            "skills": ["Data Entry", "MS Word & Excel", "Filing & Records Management", "Communication"],
+            "certifications": [],
+        },
+        # ── Tier 2: Minimally qualified ──────────────────────────────────────
+        {
+            "summary": (
+                "Fresh graduate of Health Information Management with foundational knowledge in "
+                "medical terminology and clinical documentation. Computer literate and highly "
+                "organized. Eager to apply academic training in a hospital setting."
+            ),
+            "education": [
+                {
+                    "degree": "Bachelor of Science in Health Information Management",
+                    "school": "Davao Medical School Foundation",
+                    "year": "2024",
+                },
+            ],
+            "experience": [
+                {
+                    "title": "OJT – Medical Records Clerk",
+                    "company": "Southern Philippines Medical Center",
+                    "period": "January 2024 – April 2024 (OJT)",
+                    "duties": [
+                        "Assisted in filing and retrieving patient medical records",
+                        "Encoded patient demographic data into the hospital information system",
+                        "Observed clinical coding workflows and ICD-10 code assignment by senior staff",
+                    ],
+                }
+            ],
+            "skills": [
+                "Medical Terminology (Basic)", "ICD-10 (Introductory)", "Data Entry",
+                "MS Office", "Hospital Information Systems",
+            ],
+            "certifications": [],
+        },
+        # ── Tier 3: Well qualified ───────────────────────────────────────────
+        {
+            "summary": (
+                "Health Information Management graduate with 1 year of clinical coding experience "
+                "in a tertiary hospital. Proficient in ICD-10 diagnosis coding and PhilHealth "
+                "case-rate documentation. Accurate, detail-oriented, and capable of managing "
+                "high-volume records efficiently."
+            ),
+            "education": [
+                {
+                    "degree": "Bachelor of Science in Health Information Management",
+                    "school": "University of the Philippines Manila",
+                    "year": "2022",
+                },
+            ],
+            "experience": [
+                {
+                    "title": "Medical Records Coder",
+                    "company": "Ricardo Limso Medical Center",
+                    "period": "August 2023 – Present",
+                    "duties": [
+                        "Assigned ICD-10-CM diagnosis and procedure codes from physician notes and discharge summaries",
+                        "Reviewed and validated clinical documentation for PhilHealth case-rate reimbursement",
+                        "Coordinated with attending physicians to clarify incomplete or ambiguous diagnoses",
+                        "Processed an average of 40 inpatient records per day with 98% coding accuracy",
+                    ],
+                }
+            ],
+            "skills": [
+                "ICD-10-CM Coding", "PhilHealth Case-Rate Documentation",
+                "Clinical Documentation Review", "Medical Terminology",
+                "Hospital Information Systems", "MS Excel",
+            ],
+            "certifications": [
+                "Registered Health Information Technician (RHIT) – AHIMA (in progress)",
+            ],
+        },
+        # ── Tier 4: Highly qualified ─────────────────────────────────────────
+        {
+            "summary": (
+                "Certified Clinical Coder with 3 years of inpatient and outpatient coding experience "
+                "in a multi-specialty hospital. Expert in ICD-10-CM/PCS, CPT, and PhilHealth Z-benefit "
+                "package coding. Proven track record of improving coding accuracy rates and reducing "
+                "claim denials through systematic documentation improvement initiatives."
+            ),
+            "education": [
+                {
+                    "degree": "Bachelor of Science in Health Information Management",
+                    "school": "Ateneo de Davao University",
+                    "year": "2020",
+                },
+            ],
+            "experience": [
+                {
+                    "title": "Senior Clinical Coder",
+                    "company": "Davao Doctors Hospital",
+                    "period": "March 2022 – Present",
+                    "duties": [
+                        "Performed ICD-10-CM/PCS and CPT coding for inpatient, outpatient, and ER records",
+                        "Led a coding audit initiative that improved department accuracy from 91% to 97%",
+                        "Trained 3 junior coders on ICD coding conventions and PhilHealth reimbursement workflows",
+                        "Collaborated with finance and billing teams to reduce claim denial rate by 15%",
+                        "Prepared monthly coding productivity and accuracy reports for the department head",
+                    ],
+                },
+                {
+                    "title": "Clinical Coder",
+                    "company": "Brokenshire College Hospital",
+                    "period": "July 2020 – February 2022",
+                    "duties": [
+                        "Assigned diagnosis and procedure codes for all inpatient discharge records",
+                        "Processed PhilHealth case-rate and Z-benefit package claims documentation",
+                        "Maintained coding compliance with DOH and PhilHealth regulatory standards",
+                    ],
+                },
+            ],
+            "skills": [
+                "ICD-10-CM/PCS Coding", "CPT Coding",
+                "PhilHealth Z-Benefit & Case-Rate Documentation",
+                "Clinical Documentation Improvement (CDI)",
+                "Coding Audit & Quality Assurance",
+                "Medical Terminology & Anatomy", "MS Excel & Health IS",
+            ],
+            "certifications": [
+                "Registered Health Information Technician (RHIT) – AHIMA",
+                "Certified Coding Specialist (CCS) – AHIMA",
+                "PhilHealth Accredited Coder – Z-Benefit Package",
+            ],
+        },
+    ],
 }
 
 

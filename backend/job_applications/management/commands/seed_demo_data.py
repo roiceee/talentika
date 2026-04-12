@@ -177,6 +177,36 @@ JOB_PROFILES_DATA = [
             {"category": "skill", "name": "Inventory management", "requirement_level": "preferred", "order": 5},
         ],
     },
+    {
+        "title": "Clinical Coder",
+        "category": "Healthcare",
+        "employment_type": "full_time",
+        "experience_level": "Entry Level (0-2 years)",
+        "description": (
+            "Ricardo Limso Medical Center, Inc. is hiring (1) Clinical Coder.\n\n"
+            "The Clinical Coder is responsible for reviewing patient medical records and assigning "
+            "the appropriate diagnostic and procedural codes in accordance with standard coding "
+            "guidelines (ICD, CPT). This role ensures accurate documentation for billing, "
+            "reporting, and PhilHealth reimbursement purposes.\n\n"
+            "Qualifications:\n"
+            "- Bachelor's/College Degree in any four (4) year course\n"
+            "- With Knowledge of Medical Terms or Willing to Learn\n"
+            "- Computer Literate\n"
+            "- Ability to handle transactions accurately and responsibly\n"
+            "- Strong communication and time management skills\n"
+            "- Detail-oriented and highly organized\n\n"
+            "Send your CV to: rlmc.careers@gmail.com"
+        ),
+        "qualifications": [
+            {"category": "education", "name": "Bachelor's/College Degree in any four (4) year course", "requirement_level": "required", "order": 0},
+            {"category": "skill", "name": "Knowledge of Medical Terminology", "requirement_level": "preferred", "order": 1},
+            {"category": "skill", "name": "Computer Literacy", "requirement_level": "required", "order": 2},
+            {"category": "skill", "name": "Accurate and responsible transaction handling", "requirement_level": "required", "order": 3},
+            {"category": "skill", "name": "Strong communication skills", "requirement_level": "required", "order": 4},
+            {"category": "skill", "name": "Time management", "requirement_level": "required", "order": 5},
+            {"category": "other", "name": "Detail-oriented and highly organized", "requirement_level": "required", "order": 6},
+        ],
+    },
 ]
 
 APPLICANTS_PER_PROFILE = 30
