@@ -10,6 +10,7 @@ import type {
   Organization,
   OrganizationMembership,
   OrganizationInvitation,
+  OrganizationInvitationWithLink,
   MemberRole,
 } from "@/types";
 import {
@@ -104,6 +105,8 @@ import {
   Calendar,
   Building,
   MoreHorizontal,
+  Copy,
+  Link2,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -132,7 +135,7 @@ export default function OrganizationDetailPage({
   }
   const [org, setOrg] = useState<Organization | null>(null);
   const [members, setMembers] = useState<OrganizationMembership[]>([]);
-  const [invitations, setInvitations] = useState<OrganizationInvitation[]>([]);
+  const [invitations, setInvitations] = useState<OrganizationInvitationWithLink[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSelectingOrg, setIsSelectingOrg] = useState(false);
 
@@ -1094,7 +1097,7 @@ function InvitationsTab({
   orgId,
   onUpdate,
 }: {
-  invitations: OrganizationInvitation[];
+  invitations: OrganizationInvitationWithLink[];
   isAdmin: boolean;
   canInvite: boolean;
   orgId: string;
@@ -1105,6 +1108,23 @@ function InvitationsTab({
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviteRole, setInviteRole] = useState<MemberRole>("MEMBER");
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [copyLinkDialogOpen, setCopyLinkDialogOpen] = useState(false);
+  const [copyLinkUrl, setCopyLinkUrl] = useState("");
+  const [copyLinkEmail, setCopyLinkEmail] = useState("");
+  const [copied, setCopied] = useState(false);
+
+  function openCopyLinkDialog(link: string, email: string) {
+    setCopyLinkUrl(link);
+    setCopyLinkEmail(email);
+    setCopied(false);
+    setCopyLinkDialogOpen(true);
+  }
+
+  async function handleCopyToClipboard(text: string) {
+    await navigator.clipboard.writeText(text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }
 
   async function handleCancel(invitationId: string | undefined) {
     if (!invitationId) return;
@@ -1129,8 +1149,10 @@ function InvitationsTab({
     setActionLoading(`resend-${invitationId}`);
     try {
       const result = await resendInvitation(orgId, invitationId);
-      if ((result as { email_sent?: boolean })?.email_sent) {
+      if (result.email_sent) {
         toast.success("Invitation resent");
+      } else if (result.invitation_link) {
+        openCopyLinkDialog(result.invitation_link, result.email ?? "");
       } else {
         toast.success("Invitation refreshed (email delivery pending)");
       }
@@ -1154,12 +1176,14 @@ function InvitationsTab({
         email: inviteEmail,
         role: inviteRole,
       });
-      if ((result as { email_sent?: boolean })?.email_sent) {
+      setDialogOpen(false);
+      if (result.email_sent) {
         toast.success(`Invitation sent to ${inviteEmail}`);
+      } else if (result.invitation_link) {
+        openCopyLinkDialog(result.invitation_link, inviteEmail);
       } else {
         toast.success("Invitation created (email delivery pending)");
       }
-      setDialogOpen(false);
       setInviteEmail("");
       setInviteRole("MEMBER");
       setIsSending(false);
@@ -1177,6 +1201,46 @@ function InvitationsTab({
   }
 
   return (
+    <>
+      {/* Copy-link dialog — shown when email delivery fails */}
+      <Dialog open={copyLinkDialogOpen} onOpenChange={setCopyLinkDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Link2 className="h-5 w-5" />
+              Share invitation link
+            </DialogTitle>
+            <DialogDescription>
+              The email to <strong>{copyLinkEmail}</strong> could not be
+              delivered. Copy the link below and share it directly.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex items-center gap-2 rounded-md border bg-muted px-3 py-2">
+            <span className="flex-1 truncate text-sm text-muted-foreground">
+              {copyLinkUrl}
+            </span>
+            <Button
+              size="sm"
+              variant="outline"
+              className="shrink-0"
+              onClick={() => handleCopyToClipboard(copyLinkUrl)}
+            >
+              {copied ? (
+                <Check className="mr-1 h-4 w-4 text-green-600" />
+              ) : (
+                <Copy className="mr-1 h-4 w-4" />
+              )}
+              {copied ? "Copied" : "Copy"}
+            </Button>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setCopyLinkDialogOpen(false)}>
+              Close
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
     <Card>
       <CardHeader>
         <div className="flex items-center justify-between">
@@ -1312,6 +1376,23 @@ function InvitationsTab({
                     <TableCell className="text-right">
                       {!inv.accepted_at && (
                         <div className="flex items-center justify-end gap-1">
+                          {inv.invitation_link && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8"
+                              title="Copy invitation link"
+                              disabled={actionLoading !== null}
+                              onClick={() =>
+                                openCopyLinkDialog(
+                                  inv.invitation_link!,
+                                  inv.email,
+                                )
+                              }
+                            >
+                              <Copy className="h-4 w-4" />
+                            </Button>
+                          )}
                           <Button
                             variant="ghost"
                             size="icon"
@@ -1376,5 +1457,6 @@ function InvitationsTab({
         )}
       </CardContent>
     </Card>
+    </>
   );
 }

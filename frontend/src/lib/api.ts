@@ -31,6 +31,13 @@ import { bffClient } from "@/lib/auth";
 // ---------------------------------------------------------------------------
 
 /**
+ * OrganizationInvitation extended with the shareable link returned by the API.
+ */
+export interface OrganizationInvitationWithLink extends OrganizationInvitation {
+  invitation_link?: string;
+}
+
+/**
  * Result type for invitation validation.
  */
 export interface InvitationValidationResult {
@@ -163,8 +170,8 @@ export async function leaveOrganization(orgId: string): Promise<unknown> {
 
 export async function listInvitations(
   orgId: string,
-): Promise<OrganizationInvitation[]> {
-  const response = await bffClient.get<OrganizationInvitation[]>(
+): Promise<OrganizationInvitationWithLink[]> {
+  const response = await bffClient.get<OrganizationInvitationWithLink[]>(
     `/api/organizations/${orgId}/invitations`,
   );
   return response.data;
@@ -173,11 +180,10 @@ export async function listInvitations(
 export async function createInvitation(
   orgId: string,
   data: InvitationCreate,
-): Promise<{ email_sent?: boolean }> {
-  const response = await bffClient.post<{ email_sent?: boolean }>(
-    `/api/organizations/${orgId}/invitations`,
-    data,
-  );
+): Promise<OrganizationInvitationWithLink & { email_sent?: boolean }> {
+  const response = await bffClient.post<
+    OrganizationInvitationWithLink & { email_sent?: boolean }
+  >(`/api/organizations/${orgId}/invitations`, data);
   return response.data;
 }
 
@@ -209,9 +215,9 @@ export async function cancelInvitation(
 export async function resendInvitation(
   orgId: string,
   invitationId: string,
-): Promise<OrganizationInvitation & { email_sent?: boolean }> {
+): Promise<OrganizationInvitationWithLink & { email_sent?: boolean }> {
   const response = await bffClient.post<
-    OrganizationInvitation & { email_sent?: boolean }
+    OrganizationInvitationWithLink & { email_sent?: boolean }
   >(`/api/organizations/${orgId}/invitations/${invitationId}/resend`);
   return response.data;
 }

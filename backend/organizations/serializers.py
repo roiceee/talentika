@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from django.core.exceptions import ValidationError
+from django.conf import settings
 from .models import (
     Address,
     Organization,
@@ -229,6 +230,11 @@ class OrganizationInvitationSerializer(serializers.ModelSerializer):
     invited_by_email = serializers.EmailField(source="invited_by.email", read_only=True)
     is_valid = serializers.BooleanField(read_only=True)
     is_expired = serializers.BooleanField(read_only=True)
+    invitation_link = serializers.SerializerMethodField()
+
+    def get_invitation_link(self, obj):
+        frontend_url = settings.FRONTEND_WEB_URL
+        return f"{frontend_url}/invite/accept?token={obj.token}"
 
     class Meta:
         model = OrganizationInvitation
@@ -244,6 +250,7 @@ class OrganizationInvitationSerializer(serializers.ModelSerializer):
             "created_at",
             "is_valid",
             "is_expired",
+            "invitation_link",
         ]
         read_only_fields = [
             "id",

@@ -26,7 +26,10 @@ export type {
   Question,
 } from "@/lib/client";
 
-export type { InvitationValidationResult } from "@/lib/api";
+export type {
+  InvitationValidationResult,
+  OrganizationInvitationWithLink,
+} from "@/lib/api";
 
 // Backwards-compatible aliases
 import type {
