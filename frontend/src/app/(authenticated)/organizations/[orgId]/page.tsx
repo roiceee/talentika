@@ -135,7 +135,9 @@ export default function OrganizationDetailPage({
   }
   const [org, setOrg] = useState<Organization | null>(null);
   const [members, setMembers] = useState<OrganizationMembership[]>([]);
-  const [invitations, setInvitations] = useState<OrganizationInvitationWithLink[]>([]);
+  const [invitations, setInvitations] = useState<
+    OrganizationInvitationWithLink[]
+  >([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSelectingOrg, setIsSelectingOrg] = useState(false);
 
@@ -1216,7 +1218,7 @@ function InvitationsTab({
             </DialogDescription>
           </DialogHeader>
           <div className="flex items-center gap-2 rounded-md border bg-muted px-3 py-2">
-            <span className="flex-1 truncate text-sm text-muted-foreground">
+            <span className="min-w-0 flex-1 truncate text-sm text-muted-foreground">
               {copyLinkUrl}
             </span>
             <Button
@@ -1234,229 +1236,232 @@ function InvitationsTab({
             </Button>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setCopyLinkDialogOpen(false)}>
+            <Button
+              variant="outline"
+              onClick={() => setCopyLinkDialogOpen(false)}
+            >
               Close
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-    <Card>
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <div>
-            <CardTitle>Invitations</CardTitle>
-            <CardDescription>Manage organization invitations</CardDescription>
-          </div>
-          {isAdmin && canInvite && (
-            <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-              <DialogTrigger asChild>
-                <Button size="sm">
-                  <Send className="mr-2 h-4 w-4" />
-                  Invite
-                </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <form onSubmit={handleInvite}>
-                  <DialogHeader>
-                    <DialogTitle>Invite member</DialogTitle>
-                    <DialogDescription>
-                      Send an invitation email to join this organization.
-                    </DialogDescription>
-                  </DialogHeader>
-                  <div className="space-y-4 py-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="invite-email">Email</Label>
-                      <Input
-                        id="invite-email"
-                        type="email"
-                        placeholder="user@example.com"
-                        value={inviteEmail}
-                        onChange={(e) => setInviteEmail(e.target.value)}
-                        required
-                      />
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle>Invitations</CardTitle>
+              <CardDescription>Manage organization invitations</CardDescription>
+            </div>
+            {isAdmin && canInvite && (
+              <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button size="sm">
+                    <Send className="mr-2 h-4 w-4" />
+                    Invite
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <form onSubmit={handleInvite}>
+                    <DialogHeader>
+                      <DialogTitle>Invite member</DialogTitle>
+                      <DialogDescription>
+                        Send an invitation email to join this organization.
+                      </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4 py-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="invite-email">Email</Label>
+                        <Input
+                          id="invite-email"
+                          type="email"
+                          placeholder="user@example.com"
+                          value={inviteEmail}
+                          onChange={(e) => setInviteEmail(e.target.value)}
+                          required
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Role</Label>
+                        <Select
+                          value={inviteRole}
+                          onValueChange={(v) => setInviteRole(v as MemberRole)}
+                        >
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="MEMBER">Member</SelectItem>
+                            <SelectItem value="ORG_ADMIN">Admin</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
                     </div>
-                    <div className="space-y-2">
-                      <Label>Role</Label>
-                      <Select
-                        value={inviteRole}
-                        onValueChange={(v) => setInviteRole(v as MemberRole)}
+                    <DialogFooter>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => setDialogOpen(false)}
                       >
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="MEMBER">Member</SelectItem>
-                          <SelectItem value="ORG_ADMIN">Admin</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                  <DialogFooter>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => setDialogOpen(false)}
-                    >
-                      Cancel
-                    </Button>
-                    <Button type="submit" disabled={isSending}>
-                      {isSending && (
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      )}
-                      Send invitation
-                    </Button>
-                  </DialogFooter>
-                </form>
-              </DialogContent>
-            </Dialog>
-          )}
-        </div>
-      </CardHeader>
-      <CardContent>
-        {invitations.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-8 text-center">
-            <Mail className="mb-4 h-10 w-10 text-muted-foreground" />
-            <p className="text-sm text-muted-foreground">
-              No invitations sent yet
-            </p>
+                        Cancel
+                      </Button>
+                      <Button type="submit" disabled={isSending}>
+                        {isSending && (
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        )}
+                        Send invitation
+                      </Button>
+                    </DialogFooter>
+                  </form>
+                </DialogContent>
+              </Dialog>
+            )}
           </div>
-        ) : (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Email</TableHead>
-                <TableHead>Role</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Invited by</TableHead>
-                <TableHead>Sent</TableHead>
-                {isAdmin && (
-                  <TableHead className="text-right">Actions</TableHead>
-                )}
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {invitations.map((inv) => (
-                <TableRow key={inv.id}>
-                  <TableCell className="font-medium">{inv.email}</TableCell>
-                  <TableCell>
-                    <Badge
-                      variant={
-                        inv.role === "ORG_ADMIN" ? "default" : "secondary"
-                      }
-                    >
-                      {inv.role === "ORG_ADMIN" ? "Admin" : "Member"}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    {inv.accepted_at ? (
-                      <span className="inline-flex items-center gap-1 text-green-700">
-                        <Check className="h-4 w-4" />
-                        Accepted
-                      </span>
-                    ) : inv.is_expired ? (
-                      <span className="inline-flex items-center gap-1 text-destructive">
-                        <X className="h-4 w-4" />
-                        Expired
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center gap-1 text-yellow-700">
-                        <Clock className="h-4 w-4" />
-                        Pending
-                      </span>
-                    )}
-                  </TableCell>
-                  <TableCell>{inv.invited_by_email}</TableCell>
-                  <TableCell>
-                    {inv.created_at
-                      ? new Date(inv.created_at).toLocaleDateString()
-                      : "—"}
-                  </TableCell>
+        </CardHeader>
+        <CardContent>
+          {invitations.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-8 text-center">
+              <Mail className="mb-4 h-10 w-10 text-muted-foreground" />
+              <p className="text-sm text-muted-foreground">
+                No invitations sent yet
+              </p>
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Email</TableHead>
+                  <TableHead>Role</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Invited by</TableHead>
+                  <TableHead>Sent</TableHead>
                   {isAdmin && (
-                    <TableCell className="text-right">
-                      {!inv.accepted_at && (
-                        <div className="flex items-center justify-end gap-1">
-                          {inv.invitation_link && (
+                    <TableHead className="text-right">Actions</TableHead>
+                  )}
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {invitations.map((inv) => (
+                  <TableRow key={inv.id}>
+                    <TableCell className="font-medium">{inv.email}</TableCell>
+                    <TableCell>
+                      <Badge
+                        variant={
+                          inv.role === "ORG_ADMIN" ? "default" : "secondary"
+                        }
+                      >
+                        {inv.role === "ORG_ADMIN" ? "Admin" : "Member"}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      {inv.accepted_at ? (
+                        <span className="inline-flex items-center gap-1 text-green-700">
+                          <Check className="h-4 w-4" />
+                          Accepted
+                        </span>
+                      ) : inv.is_expired ? (
+                        <span className="inline-flex items-center gap-1 text-destructive">
+                          <X className="h-4 w-4" />
+                          Expired
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 text-yellow-700">
+                          <Clock className="h-4 w-4" />
+                          Pending
+                        </span>
+                      )}
+                    </TableCell>
+                    <TableCell>{inv.invited_by_email}</TableCell>
+                    <TableCell>
+                      {inv.created_at
+                        ? new Date(inv.created_at).toLocaleDateString()
+                        : "—"}
+                    </TableCell>
+                    {isAdmin && (
+                      <TableCell className="text-right">
+                        {!inv.accepted_at && (
+                          <div className="flex items-center justify-end gap-1">
+                            {inv.invitation_link && (
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8"
+                                title="Copy invitation link"
+                                disabled={actionLoading !== null}
+                                onClick={() =>
+                                  openCopyLinkDialog(
+                                    inv.invitation_link!,
+                                    inv.email,
+                                  )
+                                }
+                              >
+                                <Copy className="h-4 w-4" />
+                              </Button>
+                            )}
                             <Button
                               variant="ghost"
                               size="icon"
                               className="h-8 w-8"
-                              title="Copy invitation link"
+                              title="Resend invitation"
                               disabled={actionLoading !== null}
-                              onClick={() =>
-                                openCopyLinkDialog(
-                                  inv.invitation_link!,
-                                  inv.email,
-                                )
-                              }
+                              onClick={() => handleResend(inv.id)}
                             >
-                              <Copy className="h-4 w-4" />
+                              {actionLoading === `resend-${inv.id}` ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                              ) : (
+                                <RotateCw className="h-4 w-4" />
+                              )}
                             </Button>
-                          )}
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8"
-                            title="Resend invitation"
-                            disabled={actionLoading !== null}
-                            onClick={() => handleResend(inv.id)}
-                          >
-                            {actionLoading === `resend-${inv.id}` ? (
-                              <Loader2 className="h-4 w-4 animate-spin" />
-                            ) : (
-                              <RotateCw className="h-4 w-4" />
-                            )}
-                          </Button>
-                          <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8 text-destructive hover:text-destructive"
-                                title="Cancel invitation"
-                                disabled={actionLoading !== null}
-                              >
-                                {actionLoading === `cancel-${inv.id}` ? (
-                                  <Loader2 className="h-4 w-4 animate-spin" />
-                                ) : (
-                                  <Ban className="h-4 w-4" />
-                                )}
-                              </Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                              <AlertDialogHeader>
-                                <AlertDialogTitle>
-                                  Cancel invitation?
-                                </AlertDialogTitle>
-                                <AlertDialogDescription>
-                                  This will cancel the invitation sent to{" "}
-                                  <strong>{inv.email}</strong>. They will no
-                                  longer be able to join using the invitation
-                                  link.
-                                </AlertDialogDescription>
-                              </AlertDialogHeader>
-                              <AlertDialogFooter>
-                                <AlertDialogCancel>Keep</AlertDialogCancel>
-                                <AlertDialogAction
-                                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                                  onClick={() => handleCancel(inv.id)}
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8 text-destructive hover:text-destructive"
+                                  title="Cancel invitation"
+                                  disabled={actionLoading !== null}
                                 >
-                                  Cancel invitation
-                                </AlertDialogAction>
-                              </AlertDialogFooter>
-                            </AlertDialogContent>
-                          </AlertDialog>
-                        </div>
-                      )}
-                    </TableCell>
-                  )}
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        )}
-      </CardContent>
-    </Card>
+                                  {actionLoading === `cancel-${inv.id}` ? (
+                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                  ) : (
+                                    <Ban className="h-4 w-4" />
+                                  )}
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>
+                                    Cancel invitation?
+                                  </AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    This will cancel the invitation sent to{" "}
+                                    <strong>{inv.email}</strong>. They will no
+                                    longer be able to join using the invitation
+                                    link.
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>Keep</AlertDialogCancel>
+                                  <AlertDialogAction
+                                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                    onClick={() => handleCancel(inv.id)}
+                                  >
+                                    Cancel invitation
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                          </div>
+                        )}
+                      </TableCell>
+                    )}
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+        </CardContent>
+      </Card>
     </>
   );
 }
