@@ -112,7 +112,7 @@ resource "digitalocean_app" "talentika-backend" {
     # ── AI analysis worker ──
     worker {
       name               = "ai-analysis-worker"
-      instance_count     = 1
+      instance_count     = 3
       instance_size_slug = var.app_instance_size
       run_command        = "uv run python manage.py run_analysis_workers --queue ai_queue"
 

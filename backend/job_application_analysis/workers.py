@@ -13,6 +13,7 @@ Status flow:
   Any step can transition to FAILED on error.
 """
 
+import asyncio
 import logging
 import traceback
 
@@ -213,14 +214,13 @@ def process_ocr(application_analysis_id: str):
         analysis.save(update_fields=["status", "error_message", "updated_at"])
 
 
-def process_ai_analysis(application_analysis_id: str):
+async def _process_ai_analysis_async(application_analysis_id: str):
     """
-    AI worker task — runs on the ``ai_queue``.
+    Core async AI worker logic.
 
-    1. Set status → AI_PENDING
-    2. Collect job profile + application data
-    3. Call OpenAI structured output
-    4. Persist result fields, set status → DONE
+    Called directly by the async worker loop in ``run_analysis_workers``.
+    Multiple instances of this coroutine can run concurrently within a single
+    process, each awaiting their own OpenAI HTTP call independently.
     """
     from job_application_analysis.models import ApplicationAnalysis
     from job_application_analysis.ai_service import (
@@ -228,38 +228,41 @@ def process_ai_analysis(application_analysis_id: str):
         BulkResumeAnalysisResult,
     )
 
-    analysis = ApplicationAnalysis.objects.select_related(
-        "job_application__job_profile"
-    ).get(id=application_analysis_id)
+    analysis = await asyncio.to_thread(
+        lambda: ApplicationAnalysis.objects.select_related(
+            "job_application__job_profile"
+        ).get(id=application_analysis_id)
+    )
 
     try:
         # 1. Mark AI_PENDING
         analysis.status = ApplicationAnalysis.Status.AI_PENDING
-        analysis.save(update_fields=["status", "updated_at"])
+        await asyncio.to_thread(
+            lambda: analysis.save(update_fields=["status", "updated_at"])
+        )
         logger.info("AI analysis started for %s", analysis.id)
 
         job_app = analysis.job_application
         job_profile = job_app.job_profile
 
-        # Bulk uploads are identified by the placeholder email set at upload time
         is_bulk_upload = job_app.email.endswith("@bulk.internal")
 
-        # 2. Collect context
-        qa_pairs = _collect_qa_pairs(job_app)
-
-        qualifications_list = list(
-            job_profile.qualifications.values(
-                "category",
-                "name",
-                "requirement_level",
-                "years_required",
-                "proficiency_level",
+        # 2. Collect context (DB reads — run in thread to avoid blocking event loop)
+        qa_pairs = await asyncio.to_thread(lambda: _collect_qa_pairs(job_app))
+        qualifications_list = await asyncio.to_thread(
+            lambda: list(
+                job_profile.qualifications.values(
+                    "category",
+                    "name",
+                    "requirement_level",
+                    "years_required",
+                    "proficiency_level",
+                )
             )
         )
 
-        # 3. Call AI — bulk uploads use BulkResumeAnalysisResult which instructs
-        #    the model to also extract applicant name / email / phone.
-        result = analyse_resume(
+        # 3. Call AI — this is the slow I/O step; truly async with AsyncOpenAI
+        result = await analyse_resume(
             resume_text=analysis.extracted_resume_text,
             job_title=job_profile.title,
             job_description=job_profile.description,
@@ -268,9 +271,7 @@ def process_ai_analysis(application_analysis_id: str):
             is_bulk_upload=is_bulk_upload,
         )
 
-        # 4. Back-fill contact info — only for bulk uploads.
-        # Done BEFORE saving DONE status so the frontend never sees "done"
-        # with stale placeholder data (avoids the polling race condition).
+        # 4. Back-fill contact info for bulk uploads
         if is_bulk_upload and isinstance(result, BulkResumeAnalysisResult):
             from job_applications.models import JobApplication as _JobApp
 
@@ -294,7 +295,9 @@ def process_ai_analysis(application_analysis_id: str):
             if info.email:
                 update_kwargs["email"] = info.email
             if update_kwargs:
-                _JobApp.objects.filter(pk=job_app.pk).update(**update_kwargs)
+                await asyncio.to_thread(
+                    lambda: _JobApp.objects.filter(pk=job_app.pk).update(**update_kwargs)
+                )
                 logger.info(
                     "Back-filled contact info for application %s: %s",
                     job_app.id,
@@ -306,24 +309,25 @@ def process_ai_analysis(application_analysis_id: str):
                     job_app.id,
                 )
 
-        # 5. Persist analysis and mark DONE — after back-fill so the frontend
-        # always sees consistent data when it polls the "done" status.
+        # 5. Persist and mark DONE
         analysis.ai_analysis_summary = result.ai_analysis_summary
         analysis.notable_traits = result.notable_traits
         analysis.key_skills = result.key_skills
         analysis.score_category = result.score_category
         analysis.detailed_analysis = result.detailed_analysis.model_dump()
         analysis.status = ApplicationAnalysis.Status.DONE
-        analysis.save(
-            update_fields=[
-                "ai_analysis_summary",
-                "notable_traits",
-                "key_skills",
-                "score_category",
-                "detailed_analysis",
-                "status",
-                "updated_at",
-            ]
+        await asyncio.to_thread(
+            lambda: analysis.save(
+                update_fields=[
+                    "ai_analysis_summary",
+                    "notable_traits",
+                    "key_skills",
+                    "score_category",
+                    "detailed_analysis",
+                    "status",
+                    "updated_at",
+                ]
+            )
         )
         logger.info(
             "AI analysis completed for %s (category=%s)",
@@ -335,7 +339,21 @@ def process_ai_analysis(application_analysis_id: str):
         logger.exception("AI analysis failed for %s", analysis.id)
         analysis.status = ApplicationAnalysis.Status.FAILED
         analysis.error_message = f"AI error: {exc}\n{traceback.format_exc()}"
-        analysis.save(update_fields=["status", "error_message", "updated_at"])
+        await asyncio.to_thread(
+            lambda: analysis.save(update_fields=["status", "error_message", "updated_at"])
+        )
+
+
+def process_ai_analysis(application_analysis_id: str):
+    """
+    AI worker task — runs on the ``ai_queue``.
+
+    Sync wrapper around ``_process_ai_analysis_async`` for compatibility with
+    the standard RQ worker (used locally / in dev).
+    In production the async worker loop in ``run_analysis_workers`` calls
+    ``_process_ai_analysis_async`` directly, bypassing this wrapper.
+    """
+    asyncio.run(_process_ai_analysis_async(application_analysis_id))
 
 
 # ---------------------------------------------------------------------------

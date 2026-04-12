@@ -179,7 +179,7 @@ def _build_user_prompt(
     return "".join(parts)
 
 
-def analyse_resume(
+async def analyse_resume(
     resume_text: str,
     job_title: str,
     job_description: str,
@@ -190,9 +190,9 @@ def analyse_resume(
     if not getattr(settings, "OPENAI_API_KEY", ""):
         raise ValueError("OPENAI_API_KEY is not set.")
 
-    from openai import OpenAI
+    from openai import AsyncOpenAI
 
-    client = OpenAI(api_key=settings.OPENAI_API_KEY)
+    client = AsyncOpenAI(api_key=settings.OPENAI_API_KEY)
 
     response_format = (
         BulkResumeAnalysisResult if is_bulk_upload else ResumeAnalysisResult
@@ -211,7 +211,7 @@ def analyse_resume(
         settings.OPENAI_MODEL,
         is_bulk_upload,
     )
-    completion = client.beta.chat.completions.parse(
+    completion = await client.beta.chat.completions.parse(
         model=settings.OPENAI_MODEL,
         messages=[
             {"role": "system", "content": system_prompt},
