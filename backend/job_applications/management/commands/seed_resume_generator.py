@@ -778,6 +778,174 @@ RESUME_TEMPLATES = {
             ],
         },
     ],
+
+    "Customer Service Representative": [
+        # ── Tier 0: Unqualified ──────────────────────────────────────────────
+        {
+            "summary": (
+                "Recent high school graduate seeking entry-level employment. No formal work "
+                "experience or post-secondary education. Willing to learn and take on new "
+                "challenges in any available role."
+            ),
+            "education": [
+                {
+                    "degree": "Senior High School Graduate (TVL – Home Economics)",
+                    "school": "Davao City National High School",
+                    "year": "2023",
+                },
+            ],
+            "experience": [],
+            "skills": ["Basic Computer Use", "Filipino & English Communication"],
+            "certifications": [],
+        },
+        # ── Tier 1: Underqualified ───────────────────────────────────────────
+        {
+            "summary": (
+                "College undergraduate with part-time retail experience. Friendly and "
+                "approachable with basic customer interaction skills. Looking to gain "
+                "professional experience while completing studies."
+            ),
+            "education": [
+                {
+                    "degree": "Bachelor of Science in Tourism Management (3rd Year, ongoing)",
+                    "school": "University of Mindanao",
+                    "year": "Expected 2025",
+                },
+            ],
+            "experience": [
+                {
+                    "title": "Part-time Sales Assistant",
+                    "company": "SM Department Store – Davao",
+                    "period": "November 2023 – February 2024 (seasonal)",
+                    "duties": [
+                        "Assisted customers in locating products and answered basic product queries",
+                        "Processed cash and card payments at the checkout counter",
+                        "Maintained cleanliness and restocked merchandise on the sales floor",
+                    ],
+                }
+            ],
+            "skills": ["Retail Customer Service", "Cash Handling", "Basic MS Office", "Communication"],
+            "certifications": [],
+        },
+        # ── Tier 2: Minimally qualified ──────────────────────────────────────
+        {
+            "summary": (
+                "Communication graduate with 6 months of call center experience handling "
+                "inbound customer queries. Comfortable on the phone and familiar with basic "
+                "ticketing workflows. Seeking a stable full-time customer service role."
+            ),
+            "education": [
+                {
+                    "degree": "Bachelor of Arts in Communication",
+                    "school": "Holy Cross of Davao College",
+                    "year": "2023",
+                },
+            ],
+            "experience": [
+                {
+                    "title": "Customer Service Agent (Contractual)",
+                    "company": "Teleperformance Davao",
+                    "period": "July 2023 – January 2024",
+                    "duties": [
+                        "Handled inbound calls for a telecommunications account",
+                        "Assisted customers with billing inquiries and service activation requests",
+                        "Logged call details and customer information into the ticketing system",
+                    ],
+                }
+            ],
+            "skills": [
+                "Inbound Call Handling", "Basic Ticketing System", "English Communication",
+                "MS Office", "Active Listening",
+            ],
+            "certifications": [],
+        },
+        # ── Tier 3: Well qualified ───────────────────────────────────────────
+        {
+            "summary": (
+                "Customer service professional with 1.5 years of BPO experience across voice "
+                "and non-voice channels. Consistently meets KPI targets for CSAT, AHT, and "
+                "first-call resolution. Skilled in de-escalation and CRM documentation."
+            ),
+            "education": [
+                {
+                    "degree": "Bachelor of Science in Business Administration (Major in Marketing)",
+                    "school": "Ateneo de Davao University",
+                    "year": "2022",
+                },
+            ],
+            "experience": [
+                {
+                    "title": "Customer Service Representative",
+                    "company": "Concentrix – Davao",
+                    "period": "September 2022 – Present",
+                    "duties": [
+                        "Managed inbound calls, emails, and live chat for a US-based e-commerce account",
+                        "Resolved order issues, refund requests, and account disputes with a 94% CSAT score",
+                        "Utilized Salesforce CRM to document interactions and track issue resolution",
+                        "Consistently achieved top-10 team ranking for first-call resolution rate",
+                        "Assisted in onboarding 4 new agents by shadowing and sharing best practices",
+                    ],
+                }
+            ],
+            "skills": [
+                "Voice & Non-Voice Support", "Salesforce CRM", "De-escalation Techniques",
+                "Email & Chat Support", "KPI Management", "English Communication",
+            ],
+            "certifications": [
+                "Concentrix Excellence Award – Q2 2023 (Top CSAT Performer)",
+            ],
+        },
+        # ── Tier 4: Highly qualified ─────────────────────────────────────────
+        {
+            "summary": (
+                "Senior customer service specialist with 3+ years of BPO and in-house support "
+                "experience. Expert in omnichannel support (voice, email, chat, social media) and "
+                "CRM systems. Has led a team of 8 agents and developed training materials that "
+                "improved team CSAT by 12 percentage points. Seeking a senior CSR or team lead role."
+            ),
+            "education": [
+                {
+                    "degree": "Bachelor of Science in Psychology",
+                    "school": "University of the Philippines Mindanao",
+                    "year": "2020",
+                },
+            ],
+            "experience": [
+                {
+                    "title": "Senior Customer Service Specialist / Team Lead (Acting)",
+                    "company": "TaskUs – Davao",
+                    "period": "January 2022 – Present",
+                    "duties": [
+                        "Handled escalated customer complaints across voice, email, and social media channels",
+                        "Acted as interim team lead for a group of 8 agents during supervisor vacancy",
+                        "Developed a conflict resolution playbook adopted by 3 teams across the site",
+                        "Conducted weekly coaching sessions that raised team CSAT from 81% to 93%",
+                        "Prepared daily performance dashboards for operations managers using MS Excel",
+                    ],
+                },
+                {
+                    "title": "Customer Service Representative",
+                    "company": "Sykes Asia – Davao",
+                    "period": "June 2020 – December 2021",
+                    "duties": [
+                        "Supported a US healthcare insurance account via inbound phone and email",
+                        "Resolved member eligibility, claims status, and benefits inquiries",
+                        "Maintained HIPAA compliance in all customer interactions and data handling",
+                    ],
+                },
+            ],
+            "skills": [
+                "Omnichannel Support (Voice, Email, Chat, Social Media)",
+                "Zendesk & Salesforce CRM", "De-escalation & Conflict Resolution",
+                "Team Coaching & Performance Management",
+                "KPI Reporting (CSAT, AHT, FCR)", "HIPAA Compliance",
+            ],
+            "certifications": [
+                "TaskUs Rising Star Award – 2023",
+                "Customer Service Excellence Certification – CCSP",
+            ],
+        },
+    ],
 }
 
 

@@ -207,6 +207,41 @@ JOB_PROFILES_DATA = [
             {"category": "other", "name": "Detail-oriented and highly organized", "requirement_level": "required", "order": 6},
         ],
     },
+    {
+        "title": "Customer Service Representative",
+        "category": "Customer Support",
+        "employment_type": "full_time",
+        "experience_level": "Entry Level (0-2 years)",
+        "description": (
+            "We are looking for a Customer Service Representative who will serve as the primary "
+            "point of contact for our customers. The ideal candidate is patient, empathetic, "
+            "and passionate about delivering an excellent customer experience.\n\n"
+            "Key Responsibilities:\n"
+            "- Handle inbound customer inquiries via phone, email, and chat\n"
+            "- Resolve customer complaints and concerns promptly and professionally\n"
+            "- Record and update customer information accurately in the CRM system\n"
+            "- Escalate unresolved issues to the appropriate department\n"
+            "- Meet individual KPIs for response time, resolution rate, and customer satisfaction\n\n"
+            "Qualifications:\n"
+            "- Bachelor's/College Degree in any field\n"
+            "- Excellent verbal and written communication skills in English\n"
+            "- Computer literate; experience with CRM tools is an advantage\n"
+            "- Strong problem-solving and conflict resolution skills\n"
+            "- Ability to multitask and work well under pressure\n"
+            "- Customer-oriented attitude with a positive demeanor\n\n"
+            "Job Type: Full-time\n"
+            "Work Setup: On-site"
+        ),
+        "qualifications": [
+            {"category": "education", "name": "Bachelor's/College Degree in any field", "requirement_level": "required", "order": 0},
+            {"category": "skill", "name": "Excellent verbal and written English communication", "requirement_level": "required", "order": 1},
+            {"category": "skill", "name": "Computer literacy", "requirement_level": "required", "order": 2},
+            {"category": "skill", "name": "CRM software experience", "requirement_level": "preferred", "order": 3},
+            {"category": "skill", "name": "Problem-solving and conflict resolution", "requirement_level": "required", "order": 4},
+            {"category": "skill", "name": "Multitasking under pressure", "requirement_level": "required", "order": 5},
+            {"category": "other", "name": "Customer-oriented attitude", "requirement_level": "required", "order": 6},
+        ],
+    },
 ]
 
 APPLICANTS_PER_PROFILE = 30
