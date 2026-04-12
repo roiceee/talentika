@@ -22,3 +22,7 @@ db_name       = "talentika"
 redis_size    = "db-s-1vcpu-1gb"
 redis_version = "8"
 
+# --- App Platform instance size ---
+
+app_instance_size = "apps-d-1vcpu-2gb"
+
