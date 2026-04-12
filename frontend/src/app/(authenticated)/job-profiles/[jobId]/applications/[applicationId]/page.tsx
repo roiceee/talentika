@@ -35,6 +35,7 @@ import {
   User,
   FileText,
   Download,
+  ExternalLink,
   MessageSquare,
   Loader2,
   Brain,
@@ -898,21 +899,31 @@ export default function ApplicationDetailPage({
                 Resume
               </CardTitle>
               {resumeUrl && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() =>
-                    handleDownload(resumeAttachment.file_name ?? "resume")
-                  }
-                  disabled={isDownloading}
-                >
-                  {isDownloading ? (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  ) : (
-                    <Download className="mr-2 h-4 w-4" />
-                  )}
-                  {isDownloading ? "Downloading…" : "Download"}
-                </Button>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => window.open(resumeUrl, "_blank")}
+                  >
+                    <ExternalLink className="mr-2 h-4 w-4" />
+                    Full Screen
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() =>
+                      handleDownload(resumeAttachment.file_name ?? "resume")
+                    }
+                    disabled={isDownloading}
+                  >
+                    {isDownloading ? (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    ) : (
+                      <Download className="mr-2 h-4 w-4" />
+                    )}
+                    {isDownloading ? "Downloading…" : "Download"}
+                  </Button>
+                </div>
               )}
             </div>
             <p className="text-sm text-muted-foreground">
