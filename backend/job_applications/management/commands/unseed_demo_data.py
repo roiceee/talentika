@@ -9,6 +9,8 @@ SEED_EMAILS = [
     "tester1@example.com",
     "tester2@example.com",
     "tester3@example.com",
+    "tester4@example.com",
+    "tester5@example.com",
 ]
 
 SEED_ORG_NAME = "test"

@@ -65,6 +65,22 @@ ORG_USERS = [
         "password": "password123",
         "role": "MEMBER",
     },
+    {
+        "email": "tester4@example.com",
+        "username": "tester4",
+        "first_name": "Tester",
+        "last_name": "Four",
+        "password": "password123",
+        "role": "MEMBER",
+    },
+    {
+        "email": "tester5@example.com",
+        "username": "tester5",
+        "first_name": "Tester",
+        "last_name": "Five",
+        "password": "password123",
+        "role": "MEMBER",
+    },
 ]
 
 JOB_PROFILES_DATA = [
