@@ -45,12 +45,16 @@ async def _run_async_worker(queue_name: str, concurrency: int):
     }
     handler = handlers[queue_name]
 
-    async_conn = aioredis.Redis.from_url(
-        settings.REDIS_URL,
-        decode_responses=True,
-        socket_keepalive=True,
-        health_check_interval=30,
-    )
+    async_conn_kwargs = {
+        "decode_responses": True,
+        "socket_keepalive": True,
+        "health_check_interval": 30,
+    }
+    if getattr(settings, "REDIS_SSL", False):
+        import ssl as ssl_module
+        async_conn_kwargs["ssl_cert_reqs"] = ssl_module.CERT_NONE
+
+    async_conn = aioredis.Redis.from_url(settings.REDIS_URL, **async_conn_kwargs)
     sync_conn = _get_redis_connection()
     semaphore = asyncio.Semaphore(concurrency)
 
