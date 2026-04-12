@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from drf_yasg.utils import swagger_serializer_method
+from django.db.models import Count
 
 from users.serializers.user_serializer import UserSerializer
 from .models import (
@@ -130,6 +131,17 @@ class JobProfileListSerializer(serializers.ModelSerializer):
         source="organization.name", read_only=True
     )
     created_by_email = serializers.EmailField(source="created_by.email", read_only=True)
+    application_count = serializers.SerializerMethodField()
+    application_status_counts = serializers.SerializerMethodField()
+
+    @swagger_serializer_method(serializer_or_field=serializers.IntegerField())
+    def get_application_count(self, obj):
+        return obj.applications.count()
+
+    @swagger_serializer_method(serializer_or_field=serializers.DictField(child=serializers.IntegerField()))
+    def get_application_status_counts(self, obj):
+        rows = obj.applications.values("status").annotate(count=Count("id"))
+        return {row["status"]: row["count"] for row in rows}
 
     class Meta:
         model = JobProfile
@@ -147,6 +159,8 @@ class JobProfileListSerializer(serializers.ModelSerializer):
             "created_by_email",
             "is_active",
             "created_at",
+            "application_count",
+            "application_status_counts",
         ]
         read_only_fields = ["id", "created_at"]
 

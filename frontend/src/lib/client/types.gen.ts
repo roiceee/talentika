@@ -758,6 +758,16 @@ export type JobProfileList = {
      * Created at
      */
     readonly created_at?: string;
+    /**
+     * Application count
+     */
+    readonly application_count?: number;
+    /**
+     * Application status counts
+     */
+    readonly application_status_counts?: {
+        [key: string]: number;
+    };
 };
 
 export type JobApplicationDetailWithAnalysis = {
@@ -2325,6 +2335,52 @@ export type ApiOrganizationsJobProfilesApplicationsListResponses = {
 };
 
 export type ApiOrganizationsJobProfilesApplicationsListResponse = ApiOrganizationsJobProfilesApplicationsListResponses[keyof ApiOrganizationsJobProfilesApplicationsListResponses];
+
+export type ApiOrganizationsJobProfilesApplicationsBulkCreateData = {
+    body: {
+        /**
+         * Resume files (repeat for each file)
+         */
+        files: Blob | File;
+    };
+    path: {
+        /**
+         * Organization UUID
+         */
+        org_id: string;
+        /**
+         * Job Profile UUID
+         */
+        job_profile_id: string;
+    };
+    query?: never;
+    url: '/api/organizations/{org_id}/job-profiles/{job_profile_id}/applications/bulk/';
+};
+
+export type ApiOrganizationsJobProfilesApplicationsBulkCreateErrors = {
+    /**
+     * Job profile has required questions — bulk upload is not allowed
+     */
+    409: unknown;
+};
+
+export type ApiOrganizationsJobProfilesApplicationsBulkCreateResponses = {
+    /**
+     * Bulk upload results
+     */
+    201: {
+        results?: Array<{
+            file_name?: string;
+            status?: string;
+            application_id?: string;
+            error?: string;
+        }>;
+        created?: number;
+        failed?: number;
+    };
+};
+
+export type ApiOrganizationsJobProfilesApplicationsBulkCreateResponse = ApiOrganizationsJobProfilesApplicationsBulkCreateResponses[keyof ApiOrganizationsJobProfilesApplicationsBulkCreateResponses];
 
 export type ApiOrganizationsJobProfilesApplicationsReadData = {
     body?: never;

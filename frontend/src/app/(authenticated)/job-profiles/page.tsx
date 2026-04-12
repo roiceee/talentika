@@ -27,7 +27,14 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Briefcase, Plus, Clock, ArrowUpDown, Search, X } from "lucide-react";
+import { Briefcase, Plus, Clock, ArrowUpDown, Search, X, Users } from "lucide-react";
+
+const STATUS_DISPLAY: Record<string, { label: string; className: string }> = {
+  to_be_reviewed: { label: "To Review",   className: "text-muted-foreground" },
+  reviewed:       { label: "Reviewed",    className: "text-blue-600" },
+  shortlisted:    { label: "Shortlisted", className: "text-green-600" },
+  rejected:       { label: "Rejected",    className: "text-red-500" },
+};
 
 const EMPLOYMENT_TYPE_LABELS: Record<string, string> = {
   full_time: "Full Time",
@@ -306,7 +313,7 @@ export default function JobProfilesPage() {
                     </div>
                   </CardHeader>
 
-                  <CardContent className="flex-1 pb-3">
+                  <CardContent className="flex-1 pb-3 space-y-3">
                     <div className="flex flex-wrap gap-1.5">
                       {profile.employment_type &&
                         profile.employment_type !== "not_applicable" && (
@@ -326,6 +333,30 @@ export default function JobProfilesPage() {
                           {profile.experience_level_name}
                         </Badge>
                       )}
+                    </div>
+
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                        <Users className="h-3.5 w-3.5" />
+                        <span>
+                          {profile.application_count ?? 0} applicant
+                          {(profile.application_count ?? 0) !== 1 ? "s" : ""}
+                        </span>
+                      </div>
+                      {profile.application_status_counts &&
+                        (profile.application_count ?? 0) > 0 && (
+                          <div className="flex flex-wrap gap-x-2 gap-y-0.5 text-xs pl-5">
+                            {Object.entries(STATUS_DISPLAY).map(([key, { label, className }]) => {
+                              const count = profile.application_status_counts?.[key] ?? 0;
+                              if (count === 0) return null;
+                              return (
+                                <span key={key} className={className}>
+                                  {count} {label}
+                                </span>
+                              );
+                            })}
+                          </div>
+                        )}
                     </div>
                   </CardContent>
 
