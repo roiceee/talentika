@@ -2,4 +2,4 @@
 # Run all integration tests
 set -e
 cd "$(dirname "$0")"
-uv run python manage.py test tests.integration --verbosity=2
+uv run pytest tests/integration/ -v
