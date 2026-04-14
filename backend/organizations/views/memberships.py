@@ -110,6 +110,62 @@ def remove_member(request, org_id, membership_id):
 
 
 @swagger_auto_schema(
+    method="patch",
+    operation_description="Update a member's role. Only org admins can do this. Cannot demote the last admin.",
+    request_body=openapi.Schema(
+        type=openapi.TYPE_OBJECT,
+        required=["role"],
+        properties={"role": openapi.Schema(type=openapi.TYPE_STRING, enum=["ORG_ADMIN", "MEMBER"])},
+    ),
+    responses={
+        200: OrganizationMembershipSerializer,
+        400: "Invalid role or cannot demote last admin",
+        403: "Only organization admins can change roles",
+        404: "Organization or membership not found",
+    },
+    tags=["Organizations"],
+)
+@api_view(["PATCH"])
+@permission_classes([IsAuthenticated, IsOrganizationAdmin])
+def update_member_role(request, org_id, membership_id):
+    """
+    Change a member's role to ORG_ADMIN or MEMBER.
+
+    Rules:
+    - Only org admins can change roles
+    - Admins can change their own role
+    - Cannot demote the last admin
+    """
+    organization = get_object_or_404(Organization, id=org_id)
+    membership = get_object_or_404(
+        OrganizationMembership, id=membership_id, organization=organization
+    )
+
+    new_role = request.data.get("role")
+    if new_role not in (OrganizationMembership.Role.ORG_ADMIN, OrganizationMembership.Role.MEMBER):
+        return Response(
+            {"error": "Invalid role. Must be ORG_ADMIN or MEMBER."},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    # If demoting an admin, ensure they're not the last one
+    if membership.role == OrganizationMembership.Role.ORG_ADMIN and new_role == OrganizationMembership.Role.MEMBER:
+        admin_count = OrganizationMembership.objects.filter(
+            organization=organization, role=OrganizationMembership.Role.ORG_ADMIN
+        ).count()
+        if admin_count <= 1:
+            return Response(
+                {"error": "Cannot demote the last admin. Assign another admin first."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+    membership.role = new_role
+    membership.save(update_fields=["role"])
+    serializer = OrganizationMembershipSerializer(membership)
+    return Response(serializer.data)
+
+
+@swagger_auto_schema(
     method="delete",
     operation_description="""
     Leave the organization.

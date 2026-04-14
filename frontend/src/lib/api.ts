@@ -159,6 +159,18 @@ export async function removeMember(
   return response.data;
 }
 
+export async function updateMemberRole(
+  orgId: string,
+  membershipId: string,
+  role: "ORG_ADMIN" | "MEMBER",
+): Promise<OrganizationMembership> {
+  const response = await bffClient.patch<OrganizationMembership>(
+    `/api/organizations/${orgId}/members/${membershipId}`,
+    { role },
+  );
+  return response.data;
+}
+
 export async function leaveOrganization(orgId: string): Promise<unknown> {
   const response = await bffClient.delete(`/api/organizations/${orgId}/leave`);
   return response.data;

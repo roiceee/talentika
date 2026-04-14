@@ -8,6 +8,7 @@ from .organizations import (
 from .memberships import (
     list_organization_members,
     remove_member,
+    update_member_role,
     leave_organization,
 )
 from .invitations import (
@@ -33,6 +34,7 @@ __all__ = [
     # Memberships
     "list_organization_members",
     "remove_member",
+    "update_member_role",
     "leave_organization",
     # Invitations
     "create_invitation",

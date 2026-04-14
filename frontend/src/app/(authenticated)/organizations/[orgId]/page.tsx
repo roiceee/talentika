@@ -19,6 +19,7 @@ import {
   deleteOrganization,
   listMembers,
   removeMember,
+  updateMemberRole,
   leaveOrganization,
   listInvitations,
   createInvitation,
@@ -362,6 +363,7 @@ function OverviewTab({
 
   // Members state
   const [removingId, setRemovingId] = useState<string | null>(null);
+  const [updatingRoleId, setUpdatingRoleId] = useState<string | null>(null);
   const [isLeaving, setIsLeaving] = useState(false);
 
   async function handleSave(e: React.FormEvent) {
@@ -395,6 +397,22 @@ function OverviewTab({
       }
     } finally {
       setRemovingId(null);
+    }
+  }
+
+  async function handleRoleChange(membershipId: string, role: "ORG_ADMIN" | "MEMBER") {
+    setUpdatingRoleId(membershipId);
+    try {
+      await updateMemberRole(orgId, membershipId, role);
+      toast.success(`Role updated to ${role === "ORG_ADMIN" ? "Admin" : "Member"}`);
+      await onUpdate();
+    } catch (error) {
+      if (error instanceof AxiosError) {
+        const data = error.response?.data;
+        toast.error(data?.error ?? data?.detail ?? "Failed to update role");
+      }
+    } finally {
+      setUpdatingRoleId(null);
     }
   }
 
@@ -607,15 +625,29 @@ function OverviewTab({
                   </TableCell>
                   <TableCell>{membership.user?.email}</TableCell>
                   <TableCell>
-                    <Badge
-                      variant={
-                        membership.role === "ORG_ADMIN"
-                          ? "default"
-                          : "secondary"
-                      }
-                    >
-                      {membership.role === "ORG_ADMIN" ? "Admin" : "Member"}
-                    </Badge>
+                    {isAdmin ? (
+                      <Select
+                        value={membership.role ?? "MEMBER"}
+                        onValueChange={(val) =>
+                          handleRoleChange(membership.id!, val as "ORG_ADMIN" | "MEMBER")
+                        }
+                        disabled={updatingRoleId === membership.id}
+                      >
+                        <SelectTrigger className="h-7 w-28 text-xs">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="ORG_ADMIN">Admin</SelectItem>
+                          <SelectItem value="MEMBER">Member</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    ) : (
+                      <Badge
+                        variant={membership.role === "ORG_ADMIN" ? "default" : "secondary"}
+                      >
+                        {membership.role === "ORG_ADMIN" ? "Admin" : "Member"}
+                      </Badge>
+                    )}
                   </TableCell>
                   <TableCell>
                     {membership.created_at

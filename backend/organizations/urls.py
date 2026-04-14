@@ -7,6 +7,7 @@ from .views import (
     delete_organization,
     list_organization_members,
     remove_member,
+    update_member_role,
     leave_organization,
     create_invitation,
     list_organization_invitations,
@@ -44,6 +45,11 @@ urlpatterns = [
         "organizations/<uuid:org_id>/members/<uuid:membership_id>/",
         remove_member,
         name="remove-member",
+    ),
+    path(
+        "organizations/<uuid:org_id>/members/<uuid:membership_id>/role/",
+        update_member_role,
+        name="update-member-role",
     ),
     path(
         "organizations/<uuid:org_id>/leave/",
