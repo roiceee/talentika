@@ -34,7 +34,10 @@ flowchart LR
     SERVER --> REDIS
     SERVER --> S3
     OCR --> REDIS
+    OCR --> PG
     OCR --> S3
     AI --> REDIS
+    AI --> PG
     EXPORT --> REDIS
+    EXPORT --> PG
 ```
