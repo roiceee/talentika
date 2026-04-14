@@ -384,51 +384,51 @@ export default function JobProfileDetailPage({
               <LinkIcon className="h-3.5 w-3.5" />
               Copy URL
             </Button>
-            {isAdmin && (
-              <>
-                {hasSubmissions ? (
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="text-muted-foreground cursor-not-allowed gap-2"
-                      >
-                        <Lock className="h-3.5 w-3.5" />
-                        Edit
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>
-                        Editing is disabled because this job profile has
-                        submissions.
-                      </p>
-                    </TooltipContent>
-                  </Tooltip>
-                ) : (
-                  <Button variant="outline" size="sm" onClick={() => setIsEditMode(true)} className="gap-2">
-                    <Pencil className="h-3.5 w-3.5" />
+            {hasSubmissions ? (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="text-muted-foreground cursor-not-allowed gap-2"
+                  >
+                    <Lock className="h-3.5 w-3.5" />
                     Edit
                   </Button>
-                )}
-                <div className={`flex items-center gap-2 border rounded-md px-3 h-9 transition-colors ${isActive ? "border-emerald-200 bg-emerald-50" : ""}`}>
-                  {isTogglingActive ? (
-                    <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-                  ) : (
-                    <Switch
-                      id="is_active_toggle"
-                      checked={isActive}
-                      onCheckedChange={handleToggleActive}
-                      disabled={isTogglingActive}
-                    />
-                  )}
-                  <Label
-                    htmlFor="is_active_toggle"
-                    className="text-sm cursor-pointer select-none"
-                  >
-                    {isActive ? "Accepting" : "Closed"}
-                  </Label>
-                </div>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>
+                    Editing is disabled because this job profile has
+                    submissions.
+                  </p>
+                </TooltipContent>
+              </Tooltip>
+            ) : (
+              <Button variant="outline" size="sm" onClick={() => setIsEditMode(true)} className="gap-2">
+                <Pencil className="h-3.5 w-3.5" />
+                Edit
+              </Button>
+            )}
+            <div className={`flex items-center gap-2 border rounded-md px-3 h-9 transition-colors ${isActive ? "border-emerald-200 bg-emerald-50" : ""}`}>
+              {isTogglingActive ? (
+                <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+              ) : (
+                <Switch
+                  id="is_active_toggle"
+                  checked={isActive}
+                  onCheckedChange={handleToggleActive}
+                  disabled={isTogglingActive}
+                />
+              )}
+              <Label
+                htmlFor="is_active_toggle"
+                className="text-sm cursor-pointer select-none"
+              >
+                {isActive ? "Accepting" : "Closed"}
+              </Label>
+            </div>
+            {isAdmin && (
+              <>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button variant="ghost" size="icon" className="h-9 w-9">
