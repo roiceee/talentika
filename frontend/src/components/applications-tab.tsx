@@ -307,8 +307,10 @@ export function ApplicationsTab({
       });
       setData(result);
     } catch (error) {
-      if (error instanceof AxiosError && error.response?.status === 403) {
-        toast.error("You don't have permission to view applications");
+      if (error instanceof AxiosError) {
+        const data = error.response?.data;
+        const msg = data?.error ?? data?.detail;
+        toast.error(msg ?? (error.response?.status === 403 ? "You don't have permission to view applications" : "Failed to load applications"));
       } else {
         toast.error("Failed to load applications");
       }
@@ -385,8 +387,13 @@ export function ApplicationsTab({
               }
             : prev,
         );
-      } catch {
-        toast.error("Failed to retry analysis");
+      } catch (error) {
+        if (error instanceof AxiosError) {
+          const data = error.response?.data;
+          toast.error(data?.error ?? data?.detail ?? "Failed to retry analysis");
+        } else {
+          toast.error("Failed to retry analysis");
+        }
       } finally {
         setRetryingIds((prev) => {
           const next = new Set(prev);
@@ -415,8 +422,13 @@ export function ApplicationsTab({
               }
             : prev,
         );
-      } catch {
-        toast.error("Failed to delete application");
+      } catch (error) {
+        if (error instanceof AxiosError) {
+          const data = error.response?.data;
+          toast.error(data?.error ?? data?.detail ?? "Failed to delete application");
+        } else {
+          toast.error("Failed to delete application");
+        }
       } finally {
         setDeletingAppIds((prev) => {
           const next = new Set(prev);
@@ -453,8 +465,8 @@ export function ApplicationsTab({
       }
     } catch (error) {
       if (error instanceof AxiosError) {
-        const msg = error.response?.data?.error ?? "Bulk upload failed.";
-        toast.error(msg);
+        const data = error.response?.data;
+        toast.error(data?.error ?? data?.detail ?? "Bulk upload failed.");
       } else {
         toast.error("Bulk upload failed.");
       }
