@@ -281,6 +281,50 @@ def delete_job_profile(request, job_id):
     return Response(status=status.HTTP_204_NO_CONTENT)
 
 
+@swagger_auto_schema(
+    method="delete",
+    operation_description="Soft-delete a job profile within an organization. Verifies the job profile belongs to the org and that the requester is an admin of that org.",
+    responses={
+        204: "Job profile deleted successfully",
+        403: "Forbidden — not an org admin",
+        404: "Job profile or organization not found",
+    },
+    tags=["Job Profiles"],
+)
+@api_view(["DELETE"])
+@permission_classes([IsAuthenticated])
+def delete_org_job_profile(request, org_id, job_id):
+    """
+    Soft-delete a job profile scoped to an organization.
+
+    Ensures:
+    - The organization exists.
+    - The job profile belongs to that organization.
+    - The requesting user is an ORG_ADMIN of that organization.
+    """
+    organization = get_object_or_404(Organization, id=org_id)
+    job_profile = get_object_or_404(
+        JobProfile.objects.select_related("organization"),
+        id=job_id,
+        organization=organization,
+    )
+
+    is_admin = request.user.is_superuser or OrganizationMembership.objects.filter(
+        user=request.user,
+        organization=organization,
+        role="ORG_ADMIN",
+    ).exists()
+    if not is_admin:
+        return Response(
+            {"error": "Only organization admins can delete job profiles."},
+            status=status.HTTP_403_FORBIDDEN,
+        )
+
+    job_profile.deleted_at = timezone.now()
+    job_profile.save(update_fields=["deleted_at"])
+    return Response(status=status.HTTP_204_NO_CONTENT)
+
+
 # ─── Org-specific job categories ─────────────────────────────────────────────
 
 @swagger_auto_schema(method='get', tags=['Job Profile - Reference Data'], responses={200: 'list'})

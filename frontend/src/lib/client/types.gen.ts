@@ -693,6 +693,10 @@ export type OrganizationInvitation = {
      * Is expired
      */
     readonly is_expired?: boolean;
+    /**
+     * Invitation link
+     */
+    readonly invitation_link?: string;
 };
 
 export type JobProfileList = {
@@ -2176,6 +2180,34 @@ export type ApiOrganizationsJobProfilesListResponses = {
 
 export type ApiOrganizationsJobProfilesListResponse = ApiOrganizationsJobProfilesListResponses[keyof ApiOrganizationsJobProfilesListResponses];
 
+export type ApiOrganizationsJobProfilesDeleteDeleteData = {
+    body?: never;
+    path: {
+        org_id: string;
+        job_id: string;
+    };
+    query?: never;
+    url: '/api/organizations/{org_id}/job-profiles/{job_id}/delete/';
+};
+
+export type ApiOrganizationsJobProfilesDeleteDeleteErrors = {
+    /**
+     * Forbidden — not an org admin
+     */
+    403: unknown;
+    /**
+     * Job profile or organization not found
+     */
+    404: unknown;
+};
+
+export type ApiOrganizationsJobProfilesDeleteDeleteResponses = {
+    /**
+     * Job profile deleted successfully
+     */
+    204: unknown;
+};
+
 export type ApiOrganizationsJobProfilesAnalysesListData = {
     body?: never;
     path: {
@@ -2751,6 +2783,39 @@ export type ApiOrganizationsMembersDeleteResponses = {
      */
     204: unknown;
 };
+
+export type ApiOrganizationsMembersRolePartialUpdateData = {
+    body: {
+        role: 'ORG_ADMIN' | 'MEMBER';
+    };
+    path: {
+        org_id: string;
+        membership_id: string;
+    };
+    query?: never;
+    url: '/api/organizations/{org_id}/members/{membership_id}/role/';
+};
+
+export type ApiOrganizationsMembersRolePartialUpdateErrors = {
+    /**
+     * Invalid role or cannot demote last admin
+     */
+    400: unknown;
+    /**
+     * Only organization admins can change roles
+     */
+    403: unknown;
+    /**
+     * Organization or membership not found
+     */
+    404: unknown;
+};
+
+export type ApiOrganizationsMembersRolePartialUpdateResponses = {
+    200: OrganizationMembership;
+};
+
+export type ApiOrganizationsMembersRolePartialUpdateResponse = ApiOrganizationsMembersRolePartialUpdateResponses[keyof ApiOrganizationsMembersRolePartialUpdateResponses];
 
 export type ApiOrganizationsProfilePictureCreateData = {
     body: {

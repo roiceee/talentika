@@ -11,10 +11,12 @@ import {
   deleteJobProfile,
   listOrgJobCategories,
   listOrgExperienceLevels,
+  listMembers,
   createOrgJobCategory,
   createOrgExperienceLevel,
   type OrgRefItem,
 } from "@/lib/api";
+import { useAuth } from "@/contexts/auth-context";
 import type {
   JobProfileDetail,
   Qualification,
@@ -84,8 +86,10 @@ export default function JobProfileDetailPage({
   const router = useRouter();
   const searchParams = useSearchParams();
   const activeTab = searchParams.get("tab") ?? "details";
+  const { user } = useAuth();
 
   const [profile, setProfile] = useState<JobProfileDetail | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [categories, setCategories] = useState<OrgRefItem[]>([]);
   const [experienceLevels, setExperienceLevels] = useState<OrgRefItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -102,12 +106,15 @@ export default function JobProfileDetailPage({
       setProfile(prof);
       const orgId = (prof.organization as { id?: string })?.id;
       if (orgId) {
-        const [cats, levels] = await Promise.all([
+        const [cats, levels, members] = await Promise.all([
           listOrgJobCategories(orgId),
           listOrgExperienceLevels(orgId),
+          listMembers(orgId),
         ]);
         setCategories(cats ?? []);
         setExperienceLevels(levels ?? []);
+        const myMembership = members.find((m) => m.user?.id === user?.id);
+        setIsAdmin(myMembership?.role === "ORG_ADMIN");
       }
     } catch (error) {
       if (error instanceof AxiosError) {
@@ -377,130 +384,139 @@ export default function JobProfileDetailPage({
               <LinkIcon className="h-3.5 w-3.5" />
               Copy URL
             </Button>
-            {hasSubmissions ? (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="text-muted-foreground cursor-not-allowed gap-2"
-                  >
-                    <Lock className="h-3.5 w-3.5" />
+            {isAdmin && (
+              <>
+                {hasSubmissions ? (
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="text-muted-foreground cursor-not-allowed gap-2"
+                      >
+                        <Lock className="h-3.5 w-3.5" />
+                        Edit
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>
+                        Editing is disabled because this job profile has
+                        submissions.
+                      </p>
+                    </TooltipContent>
+                  </Tooltip>
+                ) : (
+                  <Button variant="outline" size="sm" onClick={() => setIsEditMode(true)} className="gap-2">
+                    <Pencil className="h-3.5 w-3.5" />
                     Edit
                   </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>
-                    Editing is disabled because this job profile has
-                    submissions.
-                  </p>
-                </TooltipContent>
-              </Tooltip>
-            ) : (
-              <Button variant="outline" size="sm" onClick={() => setIsEditMode(true)} className="gap-2">
-                <Pencil className="h-3.5 w-3.5" />
-                Edit
-              </Button>
-            )}
-            <div className={`flex items-center gap-2 border rounded-md px-3 h-9 transition-colors ${isActive ? "border-emerald-200 bg-emerald-50" : ""}`}>
-              {isTogglingActive ? (
-                <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-              ) : (
-                <Switch
-                  id="is_active_toggle"
-                  checked={isActive}
-                  onCheckedChange={handleToggleActive}
-                  disabled={isTogglingActive}
-                />
-              )}
-              <Label
-                htmlFor="is_active_toggle"
-                className="text-sm cursor-pointer select-none"
-              >
-                {isActive ? "Accepting" : "Closed"}
-              </Label>
-            </div>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-9 w-9">
-                  {isDeletingProfile ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
+                )}
+                <div className={`flex items-center gap-2 border rounded-md px-3 h-9 transition-colors ${isActive ? "border-emerald-200 bg-emerald-50" : ""}`}>
+                  {isTogglingActive ? (
+                    <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
                   ) : (
-                    <MoreHorizontal className="h-4 w-4" />
+                    <Switch
+                      id="is_active_toggle"
+                      checked={isActive}
+                      onCheckedChange={handleToggleActive}
+                      disabled={isTogglingActive}
+                    />
                   )}
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem
-                  className="text-destructive focus:text-destructive focus:bg-destructive/10"
-                  onSelect={() => {
-                    setDeleteProfileConfirm("");
-                    setDeleteProfileDialogOpen(true);
+                  <Label
+                    htmlFor="is_active_toggle"
+                    className="text-sm cursor-pointer select-none"
+                  >
+                    {isActive ? "Accepting" : "Closed"}
+                  </Label>
+                </div>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="icon" className="h-9 w-9">
+                      {isDeletingProfile ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <MoreHorizontal className="h-4 w-4" />
+                      )}
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem
+                      className="text-destructive focus:text-destructive focus:bg-destructive/10"
+                      onSelect={() => {
+                        setDeleteProfileConfirm("");
+                        setDeleteProfileDialogOpen(true);
+                      }}
+                    >
+                      <Trash2 className="mr-2 h-4 w-4" />
+                      Delete job profile
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+                <Dialog
+                  open={deleteProfileDialogOpen}
+                  onOpenChange={(open) => {
+                    if (!isDeletingProfile) setDeleteProfileDialogOpen(open);
                   }}
                 >
-                  <Trash2 className="mr-2 h-4 w-4" />
-                  Delete job profile
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-            <Dialog
-              open={deleteProfileDialogOpen}
-              onOpenChange={(open) => {
-                if (!isDeletingProfile) setDeleteProfileDialogOpen(open);
-              }}
-            >
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Delete job profile?</DialogTitle>
-                  <DialogDescription>
-                    This will permanently delete &quot;{profile.title}&quot; and
-                    all associated applications. This action cannot be undone.
-                  </DialogDescription>
-                </DialogHeader>
-                <div className="space-y-2">
-                  <Label htmlFor="confirm-delete-profile" className="text-sm">
-                    Type <span className="font-semibold">confirm deletion</span> to proceed
-                  </Label>
-                  <Input
-                    id="confirm-delete-profile"
-                    value={deleteProfileConfirm}
-                    onChange={(e) => setDeleteProfileConfirm(e.target.value)}
-                    placeholder="confirm deletion"
-                    autoComplete="off"
-                  />
-                </div>
-                <DialogFooter>
-                  <Button
-                    variant="outline"
-                    onClick={() => setDeleteProfileDialogOpen(false)}
-                    disabled={isDeletingProfile}
-                  >
-                    Cancel
-                  </Button>
-                  <Button
-                    variant="destructive"
-                    disabled={deleteProfileConfirm !== "confirm deletion" || isDeletingProfile}
-                    onClick={async () => {
-                      const orgId = (profile.organization as { id?: string })?.id;
-                      if (!orgId) return;
-                      setIsDeletingProfile(true);
-                      try {
-                        await deleteJobProfile(orgId, jobId);
-                        toast.success("Job profile deleted");
-                        router.push("/job-profiles");
-                      } catch {
-                        toast.error("Failed to delete job profile");
-                        setIsDeletingProfile(false);
-                        setDeleteProfileDialogOpen(false);
-                      }
-                    }}
-                  >
-                    {isDeletingProfile && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    Delete
-                  </Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Delete job profile?</DialogTitle>
+                      <DialogDescription>
+                        This will permanently delete &quot;{profile.title}&quot; and
+                        all associated applications. This action cannot be undone.
+                      </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-2">
+                      <Label htmlFor="confirm-delete-profile" className="text-sm">
+                        Type <span className="font-semibold">confirm deletion</span> to proceed
+                      </Label>
+                      <Input
+                        id="confirm-delete-profile"
+                        value={deleteProfileConfirm}
+                        onChange={(e) => setDeleteProfileConfirm(e.target.value)}
+                        placeholder="confirm deletion"
+                        autoComplete="off"
+                      />
+                    </div>
+                    <DialogFooter>
+                      <Button
+                        variant="outline"
+                        onClick={() => setDeleteProfileDialogOpen(false)}
+                        disabled={isDeletingProfile}
+                      >
+                        Cancel
+                      </Button>
+                      <Button
+                        variant="destructive"
+                        disabled={deleteProfileConfirm !== "confirm deletion" || isDeletingProfile}
+                        onClick={async () => {
+                          const orgId = (profile.organization as { id?: string })?.id;
+                          if (!orgId) return;
+                          setIsDeletingProfile(true);
+                          try {
+                            await deleteJobProfile(orgId, jobId);
+                            toast.success("Job profile deleted");
+                            router.push("/job-profiles");
+                          } catch (error) {
+                            if (error instanceof AxiosError) {
+                              const data = error.response?.data;
+                              toast.error(data?.error ?? data?.detail ?? "Failed to delete job profile");
+                            } else {
+                              toast.error("Failed to delete job profile");
+                            }
+                            setIsDeletingProfile(false);
+                            setDeleteProfileDialogOpen(false);
+                          }
+                        }}
+                      >
+                        {isDeletingProfile && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        Delete
+                      </Button>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
+              </>
+            )}
           </div>
         </div>
       </div>
