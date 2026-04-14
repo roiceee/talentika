@@ -12,7 +12,7 @@ import csv
 import io
 import logging
 import traceback
-from pathlib import Path
+from pathlib import Path  # still needed for xlsx temp file
 
 logger = logging.getLogger(__name__)
 
@@ -85,7 +85,6 @@ def process_export(export_job_id: str):
     """Generate the export file for the given ApplicationExportJob."""
     from job_applications.models import ApplicationExportJob, JobApplication
     from job_application_analysis.models import ApplicationAnalysis
-    from django.conf import settings
 
     export_job = ApplicationExportJob.objects.select_related("job_profile").get(
         id=export_job_id
@@ -155,9 +154,9 @@ def process_export(export_job_id: str):
 
             rows.append(row)
 
-        # Generate file
-        exports_dir = Path(settings.MEDIA_ROOT) / "exports"
-        exports_dir.mkdir(parents=True, exist_ok=True)
+        # Generate file in memory / temp path then upload to storage
+        from job_applications.storage import get_storage
+        import tempfile
 
         status_label = export_job.application_status or "all"
         profile_title = export_job.job_profile.title.replace(" ", "_")[:30]
@@ -165,34 +164,44 @@ def process_export(export_job_id: str):
 
         if export_job.export_format == ApplicationExportJob.ExportFormat.CSV:
             file_name = f"{base_name}.csv"
-            file_path = exports_dir / file_name
-            with open(file_path, "w", newline="", encoding="utf-8") as f:
-                writer = csv.writer(f)
-                writer.writerow(all_headers)
-                writer.writerows(rows)
+            content_type = "text/csv"
+            buf = io.StringIO()
+            writer = csv.writer(buf)
+            writer.writerow(all_headers)
+            writer.writerows(rows)
+            file_bytes = buf.getvalue().encode("utf-8")
         else:
             # XLSX
             import openpyxl
 
             file_name = f"{base_name}.xlsx"
-            file_path = exports_dir / file_name
+            content_type = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
             wb = openpyxl.Workbook()
             ws = wb.active
             ws.title = "Applications"
             ws.append(all_headers)
             for row in rows:
                 ws.append(row)
-            # Auto-width columns (approximate)
             for col_idx, header in enumerate(all_headers, 1):
                 ws.column_dimensions[
                     openpyxl.utils.get_column_letter(col_idx)
                 ].width = max(len(header) + 2, 12)
-            wb.save(file_path)
+            with tempfile.NamedTemporaryFile(suffix=".xlsx", delete=False) as tmp:
+                tmp_path = Path(tmp.name)
+            wb.save(tmp_path)
+            file_bytes = tmp_path.read_bytes()
+            tmp_path.unlink(missing_ok=True)
 
-        export_job.file_path = str(file_path)
+        storage_key, _ = get_storage().save_at_path(
+            io.BytesIO(file_bytes),
+            f"exports/{file_name}",
+            content_type=content_type,
+        )
+
+        export_job.file_path = storage_key
         export_job.status = ApplicationExportJob.ExportStatus.DONE
         export_job.save(update_fields=["file_path", "status", "updated_at"])
-        logger.info("Export completed: %s", file_path)
+        logger.info("Export completed: %s", storage_key)
 
     except Exception as exc:
         logger.exception("Export failed for job %s", export_job_id)

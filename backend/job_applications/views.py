@@ -1583,7 +1583,7 @@ def poll_export(request, org_id, job_profile_id, export_id):
 @permission_classes([IsAuthenticated, IsOrganizationMember])
 def download_export(request, org_id, job_profile_id, export_id):
     """Serve the completed export file."""
-    from django.http import FileResponse
+    from django.http import HttpResponse
     from pathlib import Path
     from .models import ApplicationExportJob
 
@@ -1602,24 +1602,24 @@ def download_export(request, org_id, job_profile_id, export_id):
             {"error": "Export not ready."}, status=status.HTTP_400_BAD_REQUEST
         )
 
-    file_path = Path(export_job.file_path)
-    if not file_path.exists():
-        return Response(
-            {"error": "Export file not found."}, status=status.HTTP_404_NOT_FOUND
-        )
-
     content_type = (
         "text/csv"
         if export_job.export_format == "csv"
         else "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     )
 
-    return FileResponse(
-        open(file_path, "rb"),
-        content_type=content_type,
-        as_attachment=True,
-        filename=file_path.name,
-    )
+    try:
+        file_bytes = get_storage().get_file_bytes(export_job.file_path)
+    except Exception:
+        logger.exception("Failed to retrieve export file for job %s", export_id)
+        return Response(
+            {"error": "Export file not found."}, status=status.HTTP_404_NOT_FOUND
+        )
+
+    filename = Path(export_job.file_path).name
+    response = HttpResponse(file_bytes, content_type=content_type)
+    response["Content-Disposition"] = f'attachment; filename="{filename}"'
+    return response
 
 
 # ---------------------------------------------------------------------------
