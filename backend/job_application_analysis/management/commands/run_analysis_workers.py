@@ -4,7 +4,7 @@ Django management command to start the RQ workers for the analysis pipeline.
 Usage:
     uv run python manage.py run_analysis_workers                      # all queues
     uv run python manage.py run_analysis_workers --queue ocr_queue
-    uv run python manage.py run_analysis_workers --queue ocr_queue --concurrency 4
+    uv run python manage.py run_analysis_workers --queue ocr_queue --concurrency 1
     uv run python manage.py run_analysis_workers --queue ai_queue
     uv run python manage.py run_analysis_workers --queue ai_queue --concurrency 20
     uv run python manage.py run_analysis_workers --queue export_queue
@@ -93,7 +93,7 @@ class Command(BaseCommand):
             default=10,
             help=(
                 "Max concurrent jobs for async queue workers (ocr_queue, ai_queue). "
-                "Recommended: 4 for ocr_queue, 10+ for ai_queue. Default: 10."
+                "Recommended: 1 for ocr_queue, 10+ for ai_queue. Default: 10."
             ),
         )
 
