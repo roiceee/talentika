@@ -70,6 +70,8 @@ services:
         "run_analysis_workers",
         "--queue",
         "ai_queue",
+        "--concurrency",
+        "1",
       ]
     volumes:
       - .:/app
