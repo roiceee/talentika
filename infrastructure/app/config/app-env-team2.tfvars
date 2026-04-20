@@ -21,7 +21,7 @@ app_env = {
   DB_PORT     = 25060
 
   DEBUG         = "False"
-  SECRET_KEY    = "sdfsfxcvzxgwfwersdfsdfsdfasdfx"
+  SECRET_KEY    = "django-insecure-+q^i)fe^yw6d1b^4f$q_2%xq%1nbv&7@a!@o2rf-t5-=8^^*f+"
   ALLOWED_HOSTS = "*"
 
   DJANGO_SUPERUSER_USERNAME = "admin"
