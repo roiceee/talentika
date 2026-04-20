@@ -32,7 +32,7 @@ export default function RootLayout({
         <TooltipProvider>
           <AuthProvider>
             {children}
-            <Toaster richColors position="top-right" />
+            <Toaster richColors position="bottom-right" />
           </AuthProvider>
         </TooltipProvider>
       </body>
