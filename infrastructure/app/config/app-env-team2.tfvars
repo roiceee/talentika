@@ -41,7 +41,7 @@ app_env = {
   STORAGE_BACKEND         = "s3"
   AWS_ACCESS_KEY_ID       = "AKIAVC3OT5JDM34ZXMAG"
   AWS_SECRET_ACCESS_KEY   = "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"
-  AWS_STORAGE_BUCKET_NAME = "talentika-t2-prod-bucket"
+  AWS_STORAGE_BUCKET_NAME = "talentika-prod-bucket"
   AWS_S3_REGION_NAME      = "ap-southeast-1"
 
   INVITATION_EXPIRY_DAYS = 7

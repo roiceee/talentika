@@ -239,6 +239,39 @@ variable "dockerhub_registry" {
   default     = "roiceee"
 }
 
+variable "legacy_storage_bucket" {
+  description = "Optional: name of a pre-existing S3 bucket to grant the backend IAM user access (for data migration scenarios)"
+  type        = string
+  default     = ""
+}
+
+# Grant the IAM user access to the legacy bucket when specified
+resource "aws_iam_user_policy" "legacy_bucket_access" {
+  count = var.legacy_storage_bucket != "" ? 1 : 0
+
+  name = "legacy-bucket-access"
+  user = module.s3.backend_user_name
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "s3:GetObject",
+          "s3:PutObject",
+          "s3:DeleteObject",
+          "s3:ListBucket",
+          "s3:HeadBucket"
+        ]
+        Resource = [
+          "arn:aws:s3:::${var.legacy_storage_bucket}",
+          "arn:aws:s3:::${var.legacy_storage_bucket}/*"
+        ]
+      }
+    ]
+  })
+}
 
 
 # =================================================================

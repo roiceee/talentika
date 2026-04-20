@@ -25,3 +25,6 @@ redis_version = "8"
 # --- App Platform instance size ---
 
 app_instance_size = "apps-d-1vcpu-2gb"
+
+# --- Use the original prod bucket (data was synced here) ---
+legacy_storage_bucket = "talentika-prod-bucket"
