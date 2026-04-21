@@ -145,6 +145,9 @@ AWS_SECRET_ACCESS_KEY = os.getenv("AWS_SECRET_ACCESS_KEY", "")
 AWS_STORAGE_BUCKET_NAME = os.getenv("AWS_STORAGE_BUCKET_NAME", "")
 AWS_S3_REGION_NAME = os.getenv("AWS_S3_REGION_NAME", "us-east-1")
 
+# Invitation Configuration
+INVITATION_EXPIRY_DAYS = int(os.getenv("INVITATION_EXPIRY_DAYS", "7"))
+
 # Redis Configuration (used by RQ workers for the analysis pipeline)
 REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379/0")
 # Set REDIS_SSL=True in production when using a TLS-enabled Redis (e.g. Upstash, ElastiCache)
