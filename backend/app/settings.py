@@ -55,6 +55,7 @@ INSTALLED_APPS = [
     "job_application_analysis",
     "geo",
     "drf_yasg",
+    "django_erd_generator"
 ]
 
 # Custom User Model

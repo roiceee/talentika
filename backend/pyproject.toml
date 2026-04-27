@@ -28,4 +28,5 @@ dependencies = [
     "pytest>=9.0.3",
     "pytest-django>=4.12.0",
     "pytest-rich>=0.2.0",
+    "django-erd-generator>=0.1.7",
 ]

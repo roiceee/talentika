@@ -21,5 +21,9 @@ terraform.rc
 
 # Lock file (commit this)
 # .terraform.lock.hcl
+
+# Secret/environment variable files — never commit these
 prod-secrets.tfvars
+prod-secrets-team2.tfvars
 app-env.auto.tfvars
+app-env-team2.tfvars
