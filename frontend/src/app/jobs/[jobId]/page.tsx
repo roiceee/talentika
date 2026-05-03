@@ -272,8 +272,8 @@ export default function PublicJobProfilePage({
       address: {
         line1,
         line2: line2 || undefined,
-        city: cityName,
-        province_state: stateCode,
+        city: cityName || "N/A",
+        province_state: stateCode || "N/A",
         postal_code: postalCode,
         country: countryCode,
       },
@@ -510,9 +510,7 @@ export default function PublicJobProfilePage({
 
             {/* Province / State */}
             <div className="space-y-2">
-              <Label>
-                Province / State <span className="text-destructive">*</span>
-              </Label>
+              <Label>Province / State</Label>
               <LocationCombobox
                 placeholder={
                   countryCode
@@ -534,9 +532,7 @@ export default function PublicJobProfilePage({
 
             {/* City */}
             <div className="space-y-2">
-              <Label>
-                City <span className="text-destructive">*</span>
-              </Label>
+              <Label>City</Label>
               <LocationCombobox
                 placeholder={
                   stateCode ? "Select city..." : "Select a province/state first"
