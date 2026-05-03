@@ -196,6 +196,11 @@ export default function PublicJobProfilePage({
     await processResumeFile(file);
   }
 
+  function handleDragEnter(e: React.DragEvent<HTMLLabelElement>) {
+    e.preventDefault();
+    setIsDraggingOver(true);
+  }
+
   function handleDragOver(e: React.DragEvent<HTMLLabelElement>) {
     e.preventDefault();
     setIsDraggingOver(true);
@@ -203,11 +208,15 @@ export default function PublicJobProfilePage({
 
   function handleDragLeave(e: React.DragEvent<HTMLLabelElement>) {
     e.preventDefault();
-    setIsDraggingOver(false);
+    // Only reset when the cursor truly leaves the label, not when moving between child elements
+    if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+      setIsDraggingOver(false);
+    }
   }
 
   async function handleDrop(e: React.DragEvent<HTMLLabelElement>) {
     e.preventDefault();
+    e.stopPropagation();
     setIsDraggingOver(false);
     const file = e.dataTransfer.files?.[0];
     if (!file) return;
@@ -631,6 +640,7 @@ export default function PublicJobProfilePage({
             <div className="space-y-3">
               <label
                 htmlFor="resume"
+                onDragEnter={handleDragEnter}
                 onDragOver={handleDragOver}
                 onDragLeave={handleDragLeave}
                 onDrop={handleDrop}
