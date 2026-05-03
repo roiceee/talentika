@@ -360,7 +360,7 @@ export default function ApplicationDetailPage({
       {/* Applicant Info */}
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between">
+          <div className="flex flex-wrap items-start justify-between gap-3">
             <div className="flex items-center gap-3">
               <div className="flex h-10 w-10 items-center justify-center rounded-full bg-muted">
                 <User className="h-5 w-5 text-muted-foreground" />
@@ -676,7 +676,7 @@ export default function ApplicationDetailPage({
                                   <Badge
                                     key={i}
                                     variant="secondary"
-                                    className="text-xs"
+                                    className="text-xs whitespace-normal h-auto shrink"
                                   >
                                     {skill}
                                   </Badge>
@@ -701,7 +701,7 @@ export default function ApplicationDetailPage({
                                 <Badge
                                   key={i}
                                   variant="outline"
-                                  className="text-xs"
+                                  className="text-xs whitespace-normal h-auto shrink"
                                 >
                                   {trait}
                                 </Badge>
@@ -869,7 +869,7 @@ export default function ApplicationDetailPage({
                                   <Badge
                                     key={i}
                                     variant="outline"
-                                    className="text-xs"
+                                    className="text-xs whitespace-normal h-auto shrink"
                                   >
                                     {cert}
                                   </Badge>
