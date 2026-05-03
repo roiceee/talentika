@@ -527,7 +527,7 @@ export default function JobProfileDetailPage({
         onValueChange={(val) => router.replace(`?tab=${val}`)}
         className="mt-2"
       >
-        <TabsList className="bg-muted/60 border border-border/50">
+        <TabsList className="bg-muted/60 border border-border/50 h-auto flex-wrap">
           <TabsTrigger value="details" className="gap-1.5 data-[state=active]:text-primary">
             <List className="h-3.5 w-3.5" />
             Details
