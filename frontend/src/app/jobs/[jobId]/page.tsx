@@ -82,7 +82,9 @@ export default function PublicJobProfilePage({
 
   // Load countries once on mount
   useEffect(() => {
-    getCountries().then(setCountryOptions);
+    getCountries()
+      .then(setCountryOptions)
+      .catch(() => toast.error("Failed to load countries"));
   }, []);
 
   // Reload states when countryCode changes
@@ -91,7 +93,9 @@ export default function PublicJobProfilePage({
       setStateOptions([]);
       return;
     }
-    getStates(countryCode).then(setStateOptions);
+    getStates(countryCode)
+      .then(setStateOptions)
+      .catch(() => toast.error("Failed to load provinces/states"));
   }, [countryCode]);
 
   // Reload cities when stateCode changes
@@ -100,7 +104,9 @@ export default function PublicJobProfilePage({
       setCityOptions([]);
       return;
     }
-    getCities(countryCode, stateCode).then(setCityOptions);
+    getCities(countryCode, stateCode)
+      .then(setCityOptions)
+      .catch(() => toast.error("Failed to load cities"));
   }, [countryCode, stateCode]);
 
   // Question answers: key = question id, value = answer

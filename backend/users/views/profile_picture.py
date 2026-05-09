@@ -1,3 +1,5 @@
+import logging
+
 from rest_framework.decorators import api_view, permission_classes, parser_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.parsers import MultiPartParser
@@ -8,6 +10,8 @@ from drf_yasg import openapi
 
 from ..serializers import UserProfileSerializer
 from job_applications.storage import get_storage
+
+logger = logging.getLogger(__name__)
 
 
 ALLOWED_IMAGE_TYPES = {"image/jpeg", "image/png", "image/webp"}
@@ -80,11 +84,18 @@ def upload_profile_picture(request):
     import uuid as _uuid
 
     storage_path = f"profile_pictures/users/{user.id}/{_uuid.uuid4().hex[:12]}.{ext}"
-    storage_path, _url = storage.save_at_path(
-        file=file,
-        storage_path=storage_path,
-        content_type=file.content_type,
-    )
+    try:
+        storage_path, _url = storage.save_at_path(
+            file=file,
+            storage_path=storage_path,
+            content_type=file.content_type,
+        )
+    except Exception:
+        logger.exception("Failed to upload profile picture for user %s", user.id)
+        return Response(
+            {"detail": "Failed to upload file. Please try again."},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        )
 
     user.profile_picture = storage_path
     user.save(update_fields=["profile_picture"])

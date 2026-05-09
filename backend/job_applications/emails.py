@@ -2,8 +2,12 @@
 Email utilities for job application notifications.
 """
 
+import logging
+
 from django.core.mail import send_mail
 from django.conf import settings
+
+logger = logging.getLogger(__name__)
 
 
 def send_application_confirmation_email(job_application):
@@ -86,6 +90,8 @@ Please do not reply to this email.
             fail_silently=False,
         )
         return True
-    except Exception as e:
-        print(f"Failed to send application confirmation email: {str(e)}")
+    except Exception:
+        logger.exception(
+            "Failed to send application confirmation email to %s", job_application.email
+        )
         return False

@@ -207,20 +207,35 @@ def upload_resume(request):
 
     storage = get_storage()
     sha256_hash = compute_sha256(uploaded_file)
-    storage_path, _ = storage.save(
-        file=uploaded_file,
-        filename=uploaded_file.name,
-        content_type=uploaded_file.content_type or "application/octet-stream",
-        metadata={"purpose": "resume"},
-    )
 
-    temp_upload = TemporaryFileUpload.objects.create(
-        storage_path=storage_path,
-        file_name=uploaded_file.name,
-        file_size=uploaded_file.size,
-        content_type=uploaded_file.content_type or "",
-        sha256_hash=sha256_hash,
-    )
+    try:
+        storage_path, _ = storage.save(
+            file=uploaded_file,
+            filename=uploaded_file.name,
+            content_type=uploaded_file.content_type or "application/octet-stream",
+            metadata={"purpose": "resume"},
+        )
+    except Exception:
+        logger.exception("Failed to save uploaded resume to storage")
+        return Response(
+            {"file": "Failed to store file. Please try again."},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        )
+
+    try:
+        temp_upload = TemporaryFileUpload.objects.create(
+            storage_path=storage_path,
+            file_name=uploaded_file.name,
+            file_size=uploaded_file.size,
+            content_type=uploaded_file.content_type or "",
+            sha256_hash=sha256_hash,
+        )
+    except Exception:
+        logger.exception("Failed to create TemporaryFileUpload record")
+        return Response(
+            {"file": "Failed to record upload. Please try again."},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        )
 
     return Response(
         {

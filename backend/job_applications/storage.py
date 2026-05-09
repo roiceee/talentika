@@ -3,14 +3,18 @@ File storage abstraction for handling file uploads.
 Provides a consistent interface for local and cloud storage (S3, Azure, etc.).
 """
 
-from abc import ABC, abstractmethod
-from typing import BinaryIO, Optional
-from pathlib import Path
-from django.core.files.storage import FileSystemStorage
-from django.conf import settings
+import logging
 import os
 import uuid
+from abc import ABC, abstractmethod
 from datetime import datetime
+from pathlib import Path
+from typing import BinaryIO, Optional
+
+from django.conf import settings
+from django.core.files.storage import FileSystemStorage
+
+logger = logging.getLogger(__name__)
 
 
 class FileStorageBackend(ABC):
@@ -223,9 +227,8 @@ class LocalFileStorage(FileStorageBackend):
                 self.storage.delete(storage_path)
                 return True
             return False
-        except Exception as e:
-            # Log error in production
-            print(f"Error deleting file {storage_path}: {e}")
+        except Exception:
+            logger.exception("Error deleting local file %s", storage_path)
             return False
 
     def get_url(self, storage_path: str) -> str:
@@ -337,8 +340,8 @@ class S3FileStorage(FileStorageBackend):
         try:
             self.client.delete_object(Bucket=self.bucket_name, Key=storage_path)
             return True
-        except Exception as e:
-            print(f"Error deleting S3 object {storage_path}: {e}")
+        except Exception:
+            logger.exception("Error deleting S3 object %s", storage_path)
             return False
 
     def get_url(self, storage_path: str, expires_in: int = 3600) -> str:

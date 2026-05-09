@@ -2,10 +2,14 @@
 Email utilities for organization invitations and notifications.
 """
 
+import logging
+
 from django.core.mail import send_mail
 from django.template.loader import render_to_string
 from django.conf import settings
 from django.utils.html import strip_tags
+
+logger = logging.getLogger(__name__)
 
 
 def send_invitation_email(invited_user, organization, invited_by):
@@ -149,9 +153,8 @@ def send_invitation_email(invited_user, organization, invited_by):
             fail_silently=False,
         )
         return True
-    except Exception as e:
-        # Log the error (in production, use proper logging)
-        print(f"Failed to send invitation email: {str(e)}")
+    except Exception:
+        logger.exception("Failed to send invitation email to %s", invited_user.email)
         return False
 
 
@@ -328,7 +331,6 @@ def send_invitation_token_email(invitation):
             fail_silently=False,
         )
         return True
-    except Exception as e:
-        # TODO: Implement proper logging in production
-        print(f"Failed to send invitation email: {str(e)}")
+    except Exception:
+        logger.exception("Failed to send invitation token email to %s", invitation.email)
         return False

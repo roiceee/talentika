@@ -1,3 +1,5 @@
+import logging
+
 from rest_framework.decorators import api_view, permission_classes, parser_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.parsers import MultiPartParser
@@ -10,6 +12,8 @@ from organizations.permissions import IsOrganizationAdmin
 from organizations.models import Organization
 from organizations.serializers import OrganizationSerializer
 from job_applications.storage import get_storage
+
+logger = logging.getLogger(__name__)
 
 
 ALLOWED_IMAGE_TYPES = {"image/jpeg", "image/png", "image/webp"}
@@ -100,11 +104,18 @@ def upload_org_profile_picture(request, org_id):
     storage_path = (
         f"profile_pictures/organizations/{org.id}/{_uuid.uuid4().hex[:12]}.{ext}"
     )
-    storage_path, _url = storage.save_at_path(
-        file=file,
-        storage_path=storage_path,
-        content_type=file.content_type,
-    )
+    try:
+        storage_path, _url = storage.save_at_path(
+            file=file,
+            storage_path=storage_path,
+            content_type=file.content_type,
+        )
+    except Exception:
+        logger.exception("Failed to upload org profile picture for org %s", org_id)
+        return Response(
+            {"detail": "Failed to upload file. Please try again."},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        )
 
     org.profile_picture = storage_path
     org.save(update_fields=["profile_picture"])
