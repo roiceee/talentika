@@ -248,6 +248,43 @@ export function ApplicationsTab({
   const [bulkResults, setBulkResults] = useState<BulkUploadResult[] | null>(
     null,
   );
+  const [isBulkDraggingOver, setIsBulkDraggingOver] = useState(false);
+
+  const handleBulkDragEnter = (e: React.DragEvent<HTMLLabelElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsBulkDraggingOver(true);
+  };
+
+  const handleBulkDragOver = (e: React.DragEvent<HTMLLabelElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
+  const handleBulkDragLeave = (e: React.DragEvent<HTMLLabelElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.currentTarget.contains(e.relatedTarget as Node)) return;
+    setIsBulkDraggingOver(false);
+  };
+
+  const handleBulkDrop = (e: React.DragEvent<HTMLLabelElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsBulkDraggingOver(false);
+    const incoming = Array.from(e.dataTransfer.files).filter((f) =>
+      /\.(pdf|doc|docx)$/i.test(f.name),
+    );
+    if (incoming.length === 0) return;
+    setBulkFiles((prev) => {
+      const existing = new Set(prev.map((f) => `${f.name}:${f.size}`));
+      const merged = [
+        ...prev,
+        ...incoming.filter((f) => !existing.has(`${f.name}:${f.size}`)),
+      ];
+      return merged.slice(0, 50);
+    });
+  };
 
   // Server state
   const [data, setData] = useState<PaginatedApplications | null>(null);
@@ -1177,11 +1214,15 @@ export function ApplicationsTab({
             <div className="space-y-4">
               <label
                 htmlFor="bulk-file-input"
-                className="flex flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-border/60 p-8 text-center cursor-pointer hover:border-primary/40 hover:bg-muted/20 transition-colors"
+                className={`flex flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed p-8 text-center cursor-pointer transition-colors ${isBulkDraggingOver ? "border-primary bg-muted/30" : "border-border/60 hover:border-primary/40 hover:bg-muted/20"}`}
+                onDragEnter={handleBulkDragEnter}
+                onDragOver={handleBulkDragOver}
+                onDragLeave={handleBulkDragLeave}
+                onDrop={handleBulkDrop}
               >
                 <Upload className="h-8 w-8 text-muted-foreground" />
                 <span className="text-sm font-medium">
-                  Click to select files
+                  {isBulkDraggingOver ? "Drop files here" : "Click or drag files here"}
                 </span>
                 <span className="text-xs text-muted-foreground">
                   PDF, DOC, DOCX — up to 50 files

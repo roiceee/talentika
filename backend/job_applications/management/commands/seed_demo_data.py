@@ -433,7 +433,7 @@ class Command(BaseCommand):
             first_name = rng.choice(FIRST_NAMES)
             last_name = rng.choice(LAST_NAMES)
             email = f"applicant_p{profile_idx}_{applicant_num:02d}@example.com"
-            phone = f"09{rng.randint(100_000_000, 999_999_999)}"
+            phone = f"0900{profile_idx:02d}{applicant_num:05d}"
             filename = f"{first_name.lower()}_{last_name.lower()}_resume.pdf"
 
             pdf_bytes = generate_resume(
