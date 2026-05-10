@@ -1,12 +1,16 @@
 """
 Duplicate detection service for job applications.
 
-Email uniqueness is enforced as a hard constraint in the serializer before
-this service is called. This service scores the remaining signals:
+Two hard constraints are enforced in the serializer before this service runs:
+  - Email uniqueness  (one application per email per job profile)
+  - File hash uniqueness  (same resume file cannot be resubmitted)
 
-  - Fuzzy name matching            (rapidfuzz, weight 0.55)
-  - Exact phone match              (weight 0.20)
-  - SHA-256 file hash match        (weight 0.25)
+This service scores the remaining soft signals:
+
+  - Fuzzy name matching  (rapidfuzz, weight 0.55)
+  - Exact phone match    (weight 0.20)
+  - SHA-256 file hash    (weight 0.25, kept for scoring even though exact
+                          hash matches are already blocked as a hard constraint)
 
 Weights are calibrated so that either combination alone crosses the 0.75
 threshold:

@@ -214,6 +214,21 @@ class JobApplicationCreateSerializer(serializers.ModelSerializer):
             except TemporaryFileUpload.DoesNotExist:
                 pass
 
+        # Hard constraint: same resume file cannot be submitted twice for the same position.
+        if sha256_hash:
+            from .models import ApplicationAttachment
+            if ApplicationAttachment.objects.filter(
+                job_application__job_profile=job_profile,
+                sha256_hash=sha256_hash,
+            ).exists():
+                raise serializers.ValidationError(
+                    {
+                        "resume": (
+                            "This resume file has already been submitted for this position."
+                        )
+                    }
+                )
+
         duplicates = find_duplicates(
             job_profile=job_profile,
             first_name=attrs.get("first_name", ""),
