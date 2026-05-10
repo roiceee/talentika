@@ -807,22 +807,55 @@ export function ApplicationsTab({
     skillFilters.length === 0 &&
     traitFilters.length === 0;
 
-  if (isEmpty) {
-    return (
-      <Card className="border-dashed">
-        <CardContent className="flex flex-col items-center justify-center py-16 text-center">
-          <div className="h-14 w-14 rounded-full bg-primary/10 flex items-center justify-center mb-4">
-            <FileText className="h-7 w-7 text-primary" />
-          </div>
-          <h3 className="text-base font-semibold mb-1">No applications yet</h3>
-          <p className="text-sm text-muted-foreground max-w-sm">
-            Applications will appear here once candidates apply for this job
-            profile.
-          </p>
-        </CardContent>
-      </Card>
-    );
-  }
+  const emptyStateCard = isEmpty ? (
+    <Card className="border-dashed">
+      <CardContent className="flex flex-col items-center justify-center py-16 text-center">
+        <div className="h-14 w-14 rounded-full bg-primary/10 flex items-center justify-center mb-4">
+          <FileText className="h-7 w-7 text-primary" />
+        </div>
+        <h3 className="text-base font-semibold mb-1">No applications yet</h3>
+        <p className="text-sm text-muted-foreground max-w-sm mb-4">
+          Applications will appear here once candidates apply for this job
+          profile.
+        </p>
+        {hasRequiredQuestions ? (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-1.5 cursor-not-allowed text-muted-foreground"
+                disabled
+              >
+                <Upload className="h-3.5 w-3.5" />
+                Bulk upload
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>
+                Bulk upload is unavailable because this job profile has
+                required questions. Applicants must submit directly.
+              </p>
+            </TooltipContent>
+          </Tooltip>
+        ) : (
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-1.5"
+            onClick={() => {
+              setBulkFiles([]);
+              setBulkResults(null);
+              setBulkDialogOpen(true);
+            }}
+          >
+            <Upload className="h-3.5 w-3.5" />
+            Bulk upload
+          </Button>
+        )}
+      </CardContent>
+    </Card>
+  ) : null;
 
   const totalCount = data?.count ?? 0;
   const currentPage = pagination.pageIndex + 1;
@@ -860,6 +893,8 @@ export function ApplicationsTab({
 
   return (
     <div className="space-y-3">
+      {emptyStateCard}
+      {!isEmpty && (<>
       {/* Toolbar */}
       <div className="flex flex-wrap items-center gap-2">
         <Input
@@ -1165,6 +1200,8 @@ export function ApplicationsTab({
           </Button>
         </div>
       </div>
+
+      </>)}
 
       {/* Bulk Upload Dialog */}
       <Dialog
