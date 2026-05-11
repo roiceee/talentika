@@ -98,7 +98,7 @@ resource "digitalocean_app" "talentika-backend" {
       name               = "ocr-worker"
       instance_count     = 1
       instance_size_slug = "apps-d-1vcpu-2gb"
-      run_command        = "uv run python manage.py run_analysis_workers --queue ocr_queue --concurrency 2"
+      run_command        = "uv run python manage.py run_analysis_workers --queue ocr_queue --concurrency 3"
 
       image {
         registry_type        = "DOCKER_HUB"
@@ -114,7 +114,7 @@ resource "digitalocean_app" "talentika-backend" {
       name               = "ai-analysis-worker"
       instance_count     = 1
       instance_size_slug = "apps-s-1vcpu-0.5gb"
-      run_command        = "uv run python manage.py run_analysis_workers --queue ai_queue --concurrency 1"
+      run_command        = "uv run python manage.py run_analysis_workers --queue ai_queue --concurrency 3"
 
       image {
         registry_type        = "DOCKER_HUB"
