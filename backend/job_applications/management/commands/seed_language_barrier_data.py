@@ -32,15 +32,25 @@ from .seed_resume_generator import RESUME_TEMPLATES, build_resume_pdf
 
 
 def _suitable_english_template():
-    """Tier-3 Barista template with the summary updated from '2 years' to
-    '3 years' so it matches the new 3-year JD requirement."""
+    """Tier-3 Barista template with the summary updated to '3 years' and
+    explicit cash handling / order taking added so the candidate clearly
+    meets every required AND preferred qualification."""
     base = RESUME_TEMPLATES["Barista"][3]
+    extra_duty = (
+        "Handled daily cash and card transactions, took customer orders at "
+        "the POS, and reconciled end-of-shift sales reports"
+    )
     return {
         **base,
         "summary": base["summary"].replace(
             "2 years of specialty coffee experience",
             "3 years of specialty coffee experience",
         ),
+        "experience": [
+            {**exp, "duties": [*exp["duties"], extra_duty]}
+            for exp in base["experience"]
+        ],
+        "skills": [*base["skills"], "Cash Handling & POS Operations", "Order Taking"],
     }
 
 
@@ -149,6 +159,7 @@ TAGLISH_TEMPLATES = {
                     "Nag-calibrate ng espresso machines at gumawa ng weekly deep cleaning ng equipment",
                     "In-charge sa daily ingredient inventory at coordination ng supply restocking",
                     "Nag-train ng 2 bagong baristas sa techniques at customer service etiquette",
+                    "Humawak ng daily cash at card transactions, kumuha ng customer orders sa POS, at nag-reconcile ng end-of-shift sales reports",
                 ],
             }
         ],
@@ -159,6 +170,8 @@ TAGLISH_TEMPLATES = {
             "Shift Supervision",
             "Pag-train ng Staff",
             "Inventory Management",
+            "Cash Handling at POS Operations",
+            "Order Taking",
         ],
         "certifications": [
             "SCAE Introduction to Coffee Certificate",
@@ -270,6 +283,7 @@ TAGALOG_TEMPLATES = {
                     "Nag-aayos at lingguhang naglilinis ng mga makinang pang-espresso",
                     "Nangangasiwa ng pang-araw-araw na imbentaryo ng sangkap at koordinasyon sa supply",
                     "Nagsanay ng dalawang bagong tagatimpla sa teknik at wastong pakikitungo sa mamimili",
+                    "Humahawak ng pang-araw-araw na bayad sa pera at kard, tumatanggap ng order ng mamimili sa POS, at sinusuri ang ulat ng benta sa katapusan ng iskedyul",
                 ],
             }
         ],
@@ -280,6 +294,8 @@ TAGALOG_TEMPLATES = {
             "Pamamahala ng Iskedyul",
             "Pagsasanay ng Tauhan",
             "Pamamahala ng Imbentaryo",
+            "Paghawak ng Pera at Sistema ng POS",
+            "Pagtanggap ng Order",
         ],
         "certifications": [
             "SCAE Introduction to Coffee Certificate",
